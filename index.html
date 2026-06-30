@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>God's Gambit: Mythos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg id="arrowSvgLayer">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#58a6ff" />
+    </marker>
+  </defs>
+  <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" stroke="#58a6ff" stroke-width="3" marker-end="url(#arrowhead)" stroke-linecap="round" />
+</svg>
+
+<div class="attack-indicator" id="attackIndicator">⚔️</div>
+
+<div id="appLayout" class="app-layout">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel left-panel-outer" id="leftPanelOuter" style="display:none;">
+    <div class="deck-pile enemy" id="enemyDeckPile">30</div>
+    <div class="grave-display" id="enemyGraveBtn">💀 <span id="enemyGraveCount">0</span></div>
+    <button class="info-btn" id="btnInfoPanel" title="Dice & Passive Info">ℹ️</button>
+    <div style="flex-grow: 1; width: 100%;"></div>
+    <div class="grave-display" id="playerGraveBtn">💀 <span id="playerGraveCount">0</span></div>
+    <div class="deck-pile player" id="playerDeckPile">25</div>
+  </div>
+
+  <div class="game-container" id="stageBlock">
+
+    <!-- MAIN MENU -->
+    <div class="main-menu" id="mainMenu" style="display:flex;">
+      <h1>GOD'S GAMBIT</h1>
+      <div class="menu-subtitle">Philippine Mythological Warfare</div>
+      <div class="menu-buttons">
+        <div class="menu-btn-main pve-btn" id="btnPVE">⚔️ PLAY PVE</div>
+        <div class="menu-btn-main pvp-btn">
+          🏆 PVP ARENA
+          <span class="coming-soon-badge">— Coming Soon —</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACTION SELECT -->
+    <div class="menu-screen" id="menuScreen" style="display:none;">
+      <h1>GOD'S GAMBIT</h1>
+      <div class="menu-subtitle">Choose Your Faction</div>
+      <div class="faction-select-container">
+        <div class="faction-card heroes" id="btnChooseHeroes">
+          <h3>✨ Heroes & Warriors</h3>
+          <p>Command legendary protectors like Lam-ang, Lapulapu, and Bantugan alongside ancient blessings to defend the realms.</p>
+        </div>
+        <div class="faction-card monsters" id="btnChooseMonsters">
+          <h3>👹 Mythical Monsters</h3>
+          <p>Unleash the cataclysmic wrath of the Bakunawa, Minokawa, Kapre, and dynamic curses to tear down your opposition.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERLAYS -->
+    <div class="god-select-overlay" id="godSelectOverlay">
+      <div class="god-select-box">
+        <h2 id="godSelectTitle">Choose Your God</h2>
+        <div class="god-choices" id="godChoicesContainer"></div>
+      </div>
+    </div>
+
+    <div class="row-select-overlay" id="rowSelectOverlay">
+      <div class="row-select-box">
+        <h2>🐉 Bakunawa: Choose Target Row</h2>
+        <div class="row-choices">
+          <div class="row-choice-btn" data-target="melee">⚔️ Enemy Melee</div>
+          <div class="row-choice-btn" data-target="ranged">🏹 Enemy Ranged</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dice-overlay" id="diceOverlay">
+      <div class="dice-box">
+        <div class="dice-title">🎲 Fate Dice</div>
+        <div class="dice-result" id="diceResult">?</div>
+        <div class="dice-effect-name" id="diceEffectName"></div>
+        <div class="dice-effect-desc" id="diceEffectDesc"></div>
+      </div>
+    </div>
+
+    <div class="graveyard-overlay" id="graveyardOverlay">
+      <div class="graveyard-box">
+        <h2 id="graveyardTitle">Graveyard</h2>
+        <div id="graveyardContent"></div>
+        <button class="close-btn" onclick="document.getElementById('graveyardOverlay').classList.remove('active')">Close</button>
+      </div>
+    </div>
+
+    <div class="surrender-overlay" id="surrenderOverlay">
+      <div class="surrender-box">
+        <h2>Surrender?</h2>
+        <p style="color:#8b949e;margin-bottom:1.5rem;">Are you sure you want to concede?</p>
+        <div class="surrender-buttons">
+          <button class="surrender-btn yes" id="btnSurrenderYes">Yes, Surrender</button>
+          <button class="surrender-btn no" id="btnSurrenderNo">No, Keep Fighting</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO OVERLAY -->
+    <div class="info-overlay" id="infoOverlay">
+      <div class="info-box">
+        <div class="info-tabs">
+          <button class="info-tab-btn active" id="tabDiceBtn">🎲 Dice Effects</button>
+          <button class="info-tab-btn" id="tabPassivesBtn">🛡️ Passives</button>
+        </div>
+        <div id="infoTabContent"></div>
+        <button class="close-btn" onclick="document.getElementById('infoOverlay').classList.remove('active')">Close</button>
+      </div>
+    </div>
+
+    <!-- GAME INTERFACE -->
+    <div class="game-interface" id="gameInterface">
+      <div class="main-board-area">
+        <div class="battlefield-wrapper">
+
+          <!-- LEFT GOD SIDE BLOCK -->
+          <div class="god-side-block" id="godSideBlock">
+            <div class="god-card-wrapper" id="enemyGodWrapper">
+              <div id="enemyGodSide"></div>
+              <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">100</div>
+            </div>
+            <div class="god-card-wrapper" id="playerGodWrapper">
+              <div id="playerGodSide"></div>
+              <div class="god-hp-display player-hp" id="playerGodHpDisplay">100</div>
+            </div>
+          </div>
+
+          <!-- BATTLEFIELD CENTER -->
+          <div class="battlefield">
+            <div class="row"><div class="row-label">🏹</div><div class="slots-container">
+              <div class="slot enemy-slot" id="enemyRanged1" data-row="ranged" data-idx="0"></div>
+              <div class="slot enemy-slot" id="enemyRanged2" data-row="ranged" data-idx="1"></div>
+              <div class="slot enemy-slot" id="enemyRanged3" data-row="ranged" data-idx="2"></div>
+              <div class="slot enemy-slot" id="enemyRanged4" data-row="ranged" data-idx="3"></div>
+              <div class="slot enemy-slot" id="enemyRanged5" data-row="ranged" data-idx="4"></div>
+            </div></div>
+            <div class="row"><div class="row-label">⚔️</div><div class="slots-container">
+              <div class="slot enemy-slot" id="enemyMelee1" data-row="melee" data-idx="0"></div>
+              <div class="slot enemy-slot" id="enemyMelee2" data-row="melee" data-idx="1"></div>
+              <div class="slot enemy-slot" id="enemyMelee3" data-row="melee" data-idx="2"></div>
+              <div class="slot enemy-slot" id="enemyMelee4" data-row="melee" data-idx="3"></div>
+              <div class="slot enemy-slot" id="enemyMelee5" data-row="melee" data-idx="4"></div>
+            </div></div>
+            <div class="row"><div class="row-label">⚔️</div><div class="slots-container">
+              <div class="slot player-slot" id="playerMelee1" data-row="melee" data-idx="0"></div>
+              <div class="slot player-slot" id="playerMelee2" data-row="melee" data-idx="1"></div>
+              <div class="slot player-slot" id="playerMelee3" data-row="melee" data-idx="2"></div>
+              <div class="slot player-slot" id="playerMelee4" data-row="melee" data-idx="3"></div>
+              <div class="slot player-slot" id="playerMelee5" data-row="melee" data-idx="4"></div>
+            </div></div>
+            <div class="row"><div class="row-label">🏹</div><div class="slots-container">
+              <div class="slot player-slot" id="playerRanged1" data-row="ranged" data-idx="0"></div>
+              <div class="slot player-slot" id="playerRanged2" data-row="ranged" data-idx="1"></div>
+              <div class="slot player-slot" id="playerRanged3" data-row="ranged" data-idx="2"></div>
+              <div class="slot player-slot" id="playerRanged4" data-row="ranged" data-idx="3"></div>
+              <div class="slot player-slot" id="playerRanged5" data-row="ranged" data-idx="4"></div>
+            </div></div>
+          </div>
+        </div>
+
+        <div class="hand-fan-container" id="handFanContainer"></div>
+
+        <div class="info-panel">
+          <span id="logMessage">Drag cards to play or click to attack!</span>
+          <span>Round: <span id="roundDisplay">1</span></span>
+          <span>Dice: <span id="diceInfo">Every 2 Rounds</span></span>
+          <button class="menu-btn" id="btnMenu">Exit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel right-panel-outer" id="rightPanelOuter" style="display:none;">
+    <div class="right-panel-main">
+      <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
+      <div class="pillar-label">Enemy Prov</div>
+      <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
+      <button class="circular-end-turn" id="btnEndTurn">⏭️ End</button>
+      <div class="pillar-label">Your Prov</div>
+      <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
+      <div class="timer-pill" id="turnTimer">30s</div>
+    </div>
+    <button class="circular-surrender" id="btnSurrender">🏳️</button>
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overlayTitle">YOUR TURN</h2>
+  </div>
+</div>
+
+<script>
+(function() {
+  const PASSIVES = {
+    'Shield 1': { name: 'Shield 1', desc: 'Absorbs 1 hit', type: 'defensive', icon: '🛡️', cssClass: 'passive-shield' },
+    'Shield 2': { name: 'Shield 2', desc: 'Absorbs 2 hits', type: 'defensive', icon: '🛡️🛡️', cssClass: 'passive-shield' },
+    'Thorns 1': { name: 'Thorns 1', desc: 'Deal 1 dmg back (even if killed)', type: 'defensive', icon: '🌹', cssClass: 'passive-thorns' },
+    'Thorns 2': { name: 'Thorns 2', desc: 'Deal 2 dmg back (even if killed)', type: 'defensive', icon: '🌹🌹', cssClass: 'passive-thorns' },
+    'Guard': { name: 'Guard', desc: 'Adjacent allies protected', type: 'defensive', icon: '🔰', cssClass: 'passive-guard' },
+    'Regen 1': { name: 'Regen 1', desc: 'Heal 1 HP per turn', type: 'defensive', icon: '💚', cssClass: 'passive-regen' },
+    'Pierce': { name: 'Pierce', desc: 'Ignore enemy Shield', type: 'offensive', icon: '🗡️', cssClass: '' },
+    'Double Strike': { name: 'Double Strike', desc: 'Attack twice per turn', type: 'offensive', icon: '⚔️⚔️', cssClass: 'passive-doublestrike' },
+    'Lifesteal 1': { name: 'Lifesteal 1', desc: 'Heal 1 HP on kill', type: 'offensive', icon: '🩸', cssClass: 'passive-lifesteal' },
+    'Berserk': { name: 'Berserk', desc: '+3 ATK if below half HP', type: 'offensive', icon: '💢', cssClass: 'passive-berserk' },
+    'Taunt': { name: 'Taunt', desc: 'Enemy must attack this first', type: 'utility', icon: '📢', cssClass: 'passive-taunt' },
+  };
+
+  function assignPassive(card) {
+    if (card.passive || card.type === 'Spell') return;
+    const passivesList = Object.keys(PASSIVES);
+    const roll = Math.random();
+    if (roll < 0.6) {
+      const defensive = passivesList.filter(p => PASSIVES[p].type === 'defensive');
+      card.passive = defensive[Math.floor(Math.random() * defensive.length)];
+    } else if (roll < 0.85) {
+      const offensive = passivesList.filter(p => PASSIVES[p].type === 'offensive');
+      card.passive = offensive[Math.floor(Math.random() * offensive.length)];
+    } else {
+      card.passive = 'Taunt';
+    }
+  }
+
+  const BRONZE_UNITS_HEROES = [
+    { name: 'Lam-ang Bold', type: 'Unit', cost: 1, row: 'melee', atk: 2, hp: 2, maxHp: 2 },
+    { name: 'Lapulapu Guard', type: 'Unit', cost: 1, row: 'melee', atk: 1, hp: 3, maxHp: 3 },
+    { name: 'Bantugan Scout', type: 'Unit', cost: 1, row: 'ranged', atk: 2, hp: 1, maxHp: 1 },
+    { name: 'Agila Marksman', type: 'Unit', cost: 2, row: 'ranged', atk: 3, hp: 2, maxHp: 2 },
+    { name: 'Tuwaang Seeker', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 2, maxHp: 2 },
+    { name: 'Handiong Elite', type: 'Unit', cost: 3, row: 'melee', atk: 4, hp: 4, maxHp: 4 },
+    { name: 'Basi Champion', type: 'Unit', cost: 3, row: 'melee', atk: 3, hp: 5, maxHp: 5 },
+    { name: 'Sulayman Bow', type: 'Unit', cost: 4, row: 'ranged', atk: 5, hp: 4, maxHp: 4 },
+    { name: 'Datu Legend', type: 'Unit', cost: 5, row: 'melee', atk: 5, hp: 5, maxHp: 5 },
+    { name: 'Dayang Healer', type: 'Unit', cost: 3, row: 'ranged', atk: 2, hp: 6, maxHp: 6 },
+    { name: 'Timawa Spear', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 3, maxHp: 3 },
+    { name: 'Babaylan Seer', type: 'Unit', cost: 4, row: 'ranged', atk: 4, hp: 3, maxHp: 3 },
+    { name: 'Bagani Axe', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3 },
+  ];
+  const BRONZE_UNITS_MONSTERS = [
+    { name: 'Duwende Trick', type: 'Unit', cost: 1, row: 'melee', atk: 2, hp: 2, maxHp: 2 },
+    { name: 'Sirena Scout', type: 'Unit', cost: 1, row: 'ranged', atk: 2, hp: 1, maxHp: 1 },
+    { name: 'Tiyanak Lurker', type: 'Unit', cost: 1, row: 'melee', atk: 3, hp: 1, maxHp: 1 },
+    { name: 'Tikbalang Wild', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 2, maxHp: 2 },
+    { name: 'Sigbin Stalker', type: 'Unit', cost: 2, row: 'ranged', atk: 2, hp: 3, maxHp: 3 },
+    { name: 'Kapre Shield', type: 'Unit', cost: 3, row: 'melee', atk: 4, hp: 4, maxHp: 4 },
+    { name: 'Aswang Ripper', type: 'Unit', cost: 3, row: 'melee', atk: 5, hp: 2, maxHp: 2 },
+    { name: 'Bakunawa Elite', type: 'Unit', cost: 4, row: 'ranged', atk: 5, hp: 4, maxHp: 4 },
+    { name: 'Minokawa Titan', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 6, maxHp: 6 },
+    { name: 'Berberoka Swamp', type: 'Unit', cost: 3, row: 'ranged', atk: 3, hp: 5, maxHp: 5 },
+    { name: 'Mangagaway Hex', type: 'Unit', cost: 2, row: 'melee', atk: 2, hp: 4, maxHp: 4 },
+    { name: 'Manananggal Flight', type: 'Unit', cost: 4, row: 'ranged', atk: 4, hp: 3, maxHp: 3 },
+    { name: 'Santelmo Fire', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3 },
+  ];
+  const GOLD_UNITS_HEROES = [
+    { name: 'Bayani Champion', type: 'Unit', cost: 6, row: 'melee', atk: 6, hp: 6, maxHp: 6 },
+    { name: 'Lakan Commander', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 5, maxHp: 5 },
+    { name: 'Maharlika Lord', type: 'Unit', cost: 6, row: 'ranged', atk: 5, hp: 7, maxHp: 7 },
+    { name: 'Datu Paragon', type: 'Unit', cost: 8, row: 'melee', atk: 8, hp: 6, maxHp: 6 },
+    { name: 'Sultan Wise', type: 'Unit', cost: 7, row: 'ranged', atk: 6, hp: 5, maxHp: 5 },
+    { name: 'Babaylan Elder', type: 'Unit', cost: 6, row: 'melee', atk: 4, hp: 8, maxHp: 8 },
+    { name: 'Bagani Hero', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 6, maxHp: 6 },
+  ];
+  const GOLD_UNITS_MONSTERS = [
+    { name: 'Dragon Serpent', type: 'Unit', cost: 6, row: 'ranged', atk: 7, hp: 5, maxHp: 5 },
+    { name: 'Kataw Warlord', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 5, maxHp: 5 },
+    { name: 'Pugot Terror', type: 'Unit', cost: 6, row: 'ranged', atk: 6, hp: 6, maxHp: 6 },
+    { name: 'Busaw Giant', type: 'Unit', cost: 8, row: 'melee', atk: 8, hp: 6, maxHp: 6 },
+    { name: 'Mambabarang Plague', type: 'Unit', cost: 7, row: 'ranged', atk: 5, hp: 7, maxHp: 7 },
+    { name: 'Wakwak Night', type: 'Unit', cost: 6, row: 'melee', atk: 6, hp: 5, maxHp: 5 },
+    { name: 'Ikugan Maw', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 6, maxHp: 6 },
+  ];
+  const SPELLS = [
+    { name: 'Divine Blessing', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
+    { name: 'Agimat Shield', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
+    { name: 'Lightning Bolt', type: 'Spell', cost: 1, effect: 'damage_3', desc: 'Deal 3 damage' },
+    { name: 'Heavenly Strike', type: 'Spell', cost: 6, effect: 'damage_6', desc: 'Deal 6 damage' },
+    { name: 'Ancestral Call', type: 'Spell', cost: 7, effect: 'resurrect_2', desc: 'Resurrect 2 cards' },
+    { name: 'Firestorm', type: 'Spell', cost: 4, effect: 'damage_all_2', desc: 'Deal 2 to all enemies' },
+    { name: 'Dark Ritual', type: 'Spell', cost: 7, effect: 'destroy_strongest', desc: 'Destroy strongest enemy' },
+    { name: 'Nature Wrath', type: 'Spell', cost: 3, effect: 'damage_3', desc: 'Deal 3 damage' },
+    { name: 'Mystic Barrier', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
+    { name: 'Soul Drain', type: 'Spell', cost: 5, effect: 'damage_6', desc: 'Deal 6 damage' },
+  ];
+
+  const GODS = {
+    heroes: [
+      { name: 'Bathala', power: 'Wrath of Heaven', desc: 'Destroy 3 random enemy cards', effect: 'bathala_ult' },
+      { name: 'Lam-Ang', power: 'Ancestral Resurrection', desc: 'Resurrect 2 random cards from your graveyard', effect: 'lamang_ult' }
+    ],
+    monsters: [
+      { name: 'Bakunawa', power: 'Moon Devourer', desc: 'Deal 2 damage to all enemy cards in chosen row', effect: 'bakunawa_ult' },
+      { name: 'Engkanto', power: 'Mystic Ward', desc: 'Give +3 HP to 3 of your cards', effect: 'engkanto_ult' }
+    ]
+  };
+
+  const DICE_EVENTS = [
+    { name: "Reaper's Toll", desc: 'Oldest unit on each side dies', emoji: '💀' },
+    { name: 'Shifting Sands', desc: 'Random unit on each side switches rows', emoji: '🔄' },
+    { name: 'Crossfire', desc: 'Random enemy ranged & melee fight', emoji: '💥' },
+    { name: 'Blood Price', desc: 'Both Gods take 2 damage', emoji: '🩸' },
+    { name: 'Lingering Soul', desc: 'Each player returns 1 card from graveyard (need 2+ each)', emoji: '👻' },
+    { name: 'Static Shock', desc: 'Random unit on each side takes 2 damage', emoji: '⚡' }
+  ];
+
+  let state = {};
+  let dragTracker = { active: false, type: null, origin: null, startX: 0, startY: 0 };
+  let selectedAttacker = null;
+
+  function shuffle(a) { for (let i=a.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  function buildDeck(faction) {
+    const bronzeUnits = faction === 'heroes' ? BRONZE_UNITS_HEROES : BRONZE_UNITS_MONSTERS;
+    const goldUnits = faction === 'heroes' ? GOLD_UNITS_HEROES : GOLD_UNITS_MONSTERS;
+    let deck = [];
+    for (let i=0; i<13; i++) {
+      let c = bronzeUnits[i % bronzeUnits.length];
+      let card = { ...c, id: 'c_b_' + i + '_' + Math.random().toString(36).slice(2,6), playOrder: i };
+      assignPassive(card);
+      deck.push(card);
+    }
+    for (let i=0; i<7; i++) {
+      let c = goldUnits[i % goldUnits.length];
+      let card = { ...c, id: 'c_g_' + i + '_' + Math.random().toString(36).slice(2,6), playOrder: 13+i };
+      assignPassive(card);
+      deck.push(card);
+    }
+    for (let i=0; i<10; i++) {
+      let c = SPELLS[i % SPELLS.length];
+      let card = { ...c, id: 'c_s_' + i + '_' + Math.random().toString(36).slice(2,6), playOrder: 20+i };
+      deck.push(card);
+    }
+    return shuffle(deck);
+  }
+
+  let pendingFaction = null;
+  let playerPlayOrderCounter = 0;
+  let enemyPlayOrderCounter = 0;
+
+  function getBorderClass(cost) { return cost >= 6 ? 'gold-border' : 'bronze-border'; }
+
+  function showGodSelection(faction) {
+    pendingFaction = faction;
+    const overlay = document.getElementById('godSelectOverlay');
+    const container = document.getElementById('godChoicesContainer');
+    const title = document.getElementById('godSelectTitle');
+    title.textContent = faction === 'heroes' ? 'Choose Your Hero God' : 'Choose Your Monster God';
+    const gods = GODS[faction];
+    container.innerHTML = gods.map(g => `
+      <div class="god-choice-card" data-god="${g.name}" data-effect="${g.effect}">
+        <h3>${g.name}</h3>
+        <div class="god-power">⚡ ${g.power}</div>
+        <p style="color:#8b949e;font-size:0.75rem;margin-top:0.5rem;">${g.desc}</p>
+      </div>
+    `).join('');
+    overlay.classList.add('active');
+    container.querySelectorAll('.god-choice-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const godName = card.dataset.god;
+        const godEffect = card.dataset.effect;
+        overlay.classList.remove('active');
+        resetGame(pendingFaction, godName, godEffect);
+      });
+    });
+  }
+
+  function resetGame(chosenFaction, godName, godEffect) {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
+    selectedAttacker = null;
+    const opposingFaction = chosenFaction === 'heroes' ? 'monsters' : 'heroes';
+    const enemyGods = GODS[opposingFaction];
+    const enemyGod = enemyGods[Math.floor(Math.random() * enemyGods.length)];
+    playerPlayOrderCounter = 0;
+    enemyPlayOrderCounter = 0;
+    state = {
+      faction: chosenFaction,
+      enemyFaction: opposingFaction,
+      godName: godName,
+      godEffect: godEffect,
+      enemyGodName: enemyGod.name,
+      enemyGodEffect: enemyGod.effect,
+      deck: buildDeck(chosenFaction),
+      enemyDeckSize: 30,
+      hand: [],
+      playerGrave: [],
+      enemyGrave: [],
+      playerMelee: [null,null,null,null,null],
+      playerRanged: [null,null,null,null,null],
+      enemyMelee: [null,null,null,null,null],
+      enemyRanged: [null,null,null,null,null],
+      godHp: 100,
+      enemyGodHp: 100,
+      provUsed: 0,
+      provPool: 1,
+      provPerTurn: 1,
+      round: 1,
+      turn: 'player',
+      gameOver: false,
+      turnTimer: 30,
+      ultAvailable: true,
+      enemyUltAvailable: true,
+      ultRefreshed: false,
+      timerInterval: null,
+      enemyTimerInterval: null
+    };
+    for (let i = 0; i < 5; i++) drawCard();
+    const sampleEnemy = opposingFaction === 'heroes'
+      ? { ...BRONZE_UNITS_HEROES[0], id: 'en1_init', hasAttacked: false, playOrder: enemyPlayOrderCounter++, passive: 'Guard' }
+      : { ...BRONZE_UNITS_MONSTERS[3], id: 'en1_init', hasAttacked: false, playOrder: enemyPlayOrderCounter++, passive: 'Thorns 1' };
+    if (!sampleEnemy.passive) assignPassive(sampleEnemy);
+    state.enemyMelee[2] = sampleEnemy;
+
+    document.getElementById('menuScreen').style.display = 'none';
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('gameInterface').classList.add('active');
+    document.getElementById('leftPanelOuter').style.display = 'flex';
+    document.getElementById('rightPanelOuter').style.display = 'flex';
+    document.getElementById('diceInfo').textContent = 'Every 2 Rounds';
+    document.getElementById('enemyTimer').textContent = '30s';
+
+    renderAll();
+    startTimer();
+    triggerAutoOverlay('Match Started');
+    setupPointerEngine();
+    checkAffordableCards();
+  }
+
+  function drawCard() {
+    if (!state.deck.length) return;
+    let card = state.deck.pop();
+    card._isNewDraw = true;
+    if (!card.passive && card.type !== 'Spell') assignPassive(card);
+    state.hand.push(card);
+  }
+
+  function startTimer() {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.turnTimer = 30;
+    const timerElement = document.getElementById('turnTimer');
+    timerElement.classList.remove('critical-danger');
+    timerElement.textContent = `${state.turnTimer}s`;
+    state.timerInterval = setInterval(() => {
+      state.turnTimer--;
+      timerElement.textContent = `${state.turnTimer}s`;
+      if (state.turnTimer <= 10) timerElement.classList.add('critical-danger');
+      else timerElement.classList.remove('critical-danger');
+      if (state.turnTimer <= 0 && state.turn === 'player' && !state.gameOver) endTurn();
+    }, 1000);
+  }
+
+  function triggerAutoOverlay(title) {
+    const overlay = document.getElementById('overlay');
+    document.getElementById('overlayTitle').textContent = title;
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 1000);
+    spawnActionSpark(window.innerWidth/2, window.innerHeight/2, '✨');
+  }
+
+  function executeShake() {
+    const stage = document.getElementById('stageBlock');
+    stage.classList.remove('shake-effect');
+    void stage.offsetWidth;
+    stage.classList.add('shake-effect');
+    setTimeout(() => stage.classList.remove('shake-effect'), 400);
+  }
+
+  function executeHeavyShake() {
+    const stage = document.getElementById('stageBlock');
+    stage.classList.remove('heavy-shake-effect');
+    void stage.offsetWidth;
+    stage.classList.add('heavy-shake-effect');
+    setTimeout(() => stage.classList.remove('heavy-shake-effect'), 600);
+  }
+
+  function showFloatingDamage(element, damage, color) {
+    const rect = element.getBoundingClientRect();
+    const floatEl = document.createElement('div');
+    floatEl.className = 'floating-damage';
+    floatEl.textContent = `-${damage}`;
+    floatEl.style.left = rect.left + rect.width / 2 - 15 + 'px';
+    floatEl.style.top = rect.top + 'px';
+    if (color) floatEl.style.color = color;
+    document.body.appendChild(floatEl);
+    setTimeout(() => floatEl.remove(), 1000);
+    spawnActionSpark(rect.left + rect.width/2, rect.top, '💥');
+  }
+
+  function animateCardSlash(element) {
+    element.classList.add('card-slash-anim');
+    setTimeout(() => element.classList.remove('card-slash-anim'), 500);
+  }
+
+  function spawnClickRipple(x, y) {
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    ripple.style.left = x - 10 + 'px';
+    ripple.style.top = y - 10 + 'px';
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  }
+
+  function spawnActionSpark(x, y, emoji) {
+    const spark = document.createElement('div');
+    spark.className = 'action-spark';
+    spark.textContent = emoji || '✨';
+    spark.style.left = x - 12 + 'px';
+    spark.style.top = y - 12 + 'px';
+    document.body.appendChild(spark);
+    setTimeout(() => spark.remove(), 500);
+  }
+
+  function hasEnemyUnits() { return state.enemyMelee.some(u => u !== null) || state.enemyRanged.some(u => u !== null); }
+
+  function checkAffordableCards() {
+    if (state.turn !== 'player' || state.gameOver) return;
+    const availableProv = state.provPool - state.provUsed;
+    const hasAffordable = state.hand.some(c => c.cost <= availableProv);
+    renderAll();
+    if (!hasAffordable && state.hand.length > 0) {
+      document.getElementById('logMessage').textContent = '⚠️ No affordable cards! Auto-ending turn...';
+      setTimeout(() => { if (state.turn === 'player' && !state.gameOver) endTurn(); }, 1500);
+    }
+  }
+
+  function showGraveyard(type) {
+    const overlay = document.getElementById('graveyardOverlay');
+    const content = document.getElementById('graveyardContent');
+    const title = document.getElementById('graveyardTitle');
+    const grave = type === 'player' ? state.playerGrave : state.enemyGrave;
+    title.textContent = type === 'player' ? 'Your Graveyard' : 'Enemy Graveyard';
+    if (grave.length === 0) {
+      content.innerHTML = '<p style="color:#8b949e;text-align:center;">No cards in graveyard</p>';
+    } else {
+      content.innerHTML = grave.map(c => `
+        <div class="grave-card-item">
+          <span><strong>${c.name}</strong> ${c.type === 'Spell' ? '(Spell)' : ''}</span>
+          <span class="grave-card-stats">
+            ${c.atk !== undefined ? '<span>⚔️ ' + c.atk + '</span>' : ''}
+            ${c.maxHp !== undefined ? '<span>❤️ ' + c.maxHp + '</span>' : ''}
+            <span>🍗 ${c.cost}</span>
+            ${c.passive ? '<span style="color:#d09a00;font-size:0.65rem;">' + (PASSIVES[c.passive]?.icon || '') + c.passive + '</span>' : ''}
+          </span>
+        </div>
+      `).join('');
+    }
+    overlay.classList.add('active');
+  }
+
+  function triggerDiceRoll() {
+    const overlay = document.getElementById('diceOverlay');
+    const resultEl = document.getElementById('diceResult');
+    const effectNameEl = document.getElementById('diceEffectName');
+    const effectDescEl = document.getElementById('diceEffectDesc');
+    overlay.classList.add('active');
+    resultEl.textContent = '?';
+    resultEl.classList.add('dice-spinning');
+    effectNameEl.textContent = '';
+    effectDescEl.textContent = '';
+    const roll = Math.floor(Math.random() * 6) + 1;
+    const event = DICE_EVENTS[roll - 1];
+    setTimeout(() => {
+      resultEl.classList.remove('dice-spinning');
+      resultEl.textContent = event.emoji;
+      effectNameEl.textContent = event.name;
+      effectDescEl.textContent = event.desc;
+      executeHeavyShake();
+      setTimeout(() => {
+        applyDiceEffect(roll);
+        overlay.classList.remove('active');
+        renderAll();
+        spawnActionSpark(window.innerWidth/2, window.innerHeight/2, event.emoji);
+      }, 3500);
+    }, 1500);
+  }
+
+  function applyDiceEffect(roll) {
+    switch(roll) {
+      case 1: setTimeout(() => {
+        let playerUnits = [];
+        state.playerMelee.forEach((c, i) => { if(c) playerUnits.push({card: c, arr: state.playerMelee, idx: i}); });
+        state.playerRanged.forEach((c, i) => { if(c) playerUnits.push({card: c, arr: state.playerRanged, idx: i}); });
+        if (playerUnits.length > 0) {
+          playerUnits.sort((a, b) => (a.card.playOrder || 999) - (b.card.playOrder || 999));
+          const oldest = playerUnits[0];
+          state.playerGrave.push({...oldest.card, hp: oldest.card.maxHp});
+          oldest.arr[oldest.idx] = null;
+        }
+        let enemyUnits = [];
+        state.enemyMelee.forEach((c, i) => { if(c) enemyUnits.push({card: c, arr: state.enemyMelee, idx: i}); });
+        state.enemyRanged.forEach((c, i) => { if(c) enemyUnits.push({card: c, arr: state.enemyRanged, idx: i}); });
+        if (enemyUnits.length > 0) {
+          enemyUnits.sort((a, b) => (a.card.playOrder || 999) - (b.card.playOrder || 999));
+          const oldest = enemyUnits[0];
+          state.enemyGrave.push({...oldest.card, hp: oldest.card.maxHp});
+          oldest.arr[oldest.idx] = null;
+        }
+        document.getElementById('logMessage').textContent = "💀 Reaper's Toll: Oldest units destroyed!";
+        renderAll();
+      }, 1000); break;
+      case 2: setTimeout(() => {
+        let pAll = [];
+        state.playerMelee.forEach((c, i) => { if(c) pAll.push({card: c, arr: state.playerMelee, idx: i, row: 'melee'}); });
+        state.playerRanged.forEach((c, i) => { if(c) pAll.push({card: c, arr: state.playerRanged, idx: i, row: 'ranged'}); });
+        if (pAll.length > 0) {
+          const pRand = pAll[Math.floor(Math.random() * pAll.length)];
+          const targetArr = pRand.row === 'melee' ? state.playerRanged : state.playerMelee;
+          const emptySlot = targetArr.findIndex(s => s === null);
+          if (emptySlot !== -1) { targetArr[emptySlot] = pRand.card; pRand.arr[pRand.idx] = null; }
+        }
+        let eAll = [];
+        state.enemyMelee.forEach((c, i) => { if(c) eAll.push({card: c, arr: state.enemyMelee, idx: i, row: 'melee'}); });
+        state.enemyRanged.forEach((c, i) => { if(c) eAll.push({card: c, arr: state.enemyRanged, idx: i, row: 'ranged'}); });
+        if (eAll.length > 0) {
+          const eRand = eAll[Math.floor(Math.random() * eAll.length)];
+          const targetArr = eRand.row === 'melee' ? state.enemyRanged : state.enemyMelee;
+          const emptySlot = targetArr.findIndex(s => s === null);
+          if (emptySlot !== -1) { targetArr[emptySlot] = eRand.card; eRand.arr[eRand.idx] = null; }
+        }
+        document.getElementById('logMessage').textContent = '🔄 Shifting Sands: Units switched rows!';
+        renderAll();
+      }, 1000); break;
+      case 3: (function() {
+        let eRanged = []; let eMelee = [];
+        state.enemyRanged.forEach((c, i) => { if(c) eRanged.push({card: c, idx: i}); });
+        state.enemyMelee.forEach((c, i) => { if(c) eMelee.push({card: c, idx: i}); });
+        if (eRanged.length > 0 && eMelee.length > 0) {
+          const r = eRanged[Math.floor(Math.random() * eRanged.length)];
+          const m = eMelee[Math.floor(Math.random() * eMelee.length)];
+          if (r.card.atk >= m.card.hp) {
+            state.enemyGrave.push({...m.card, hp: m.card.maxHp});
+            state.enemyMelee[m.idx] = null;
+          } else if (m.card.atk >= r.card.hp) {
+            state.enemyGrave.push({...r.card, hp: r.card.maxHp});
+            state.enemyRanged[r.idx] = null;
+          }
+          document.getElementById('logMessage').textContent = '💥 Crossfire: Enemy units fought each other!';
+          renderAll();
+        }
+      })(); break;
+      case 4: setTimeout(() => {
+        state.godHp = Math.max(0, state.godHp - 2);
+        state.enemyGodHp = Math.max(0, state.enemyGodHp - 2);
+        executeShake();
+        document.getElementById('logMessage').textContent = '🩸 Blood Price: Both Gods lost 2 HP!';
+        renderAll();
+      }, 800); break;
+      case 5: setTimeout(() => {
+        if (state.playerGrave.length >= 2 && state.enemyGrave.length >= 2) {
+          const pCard = state.playerGrave.splice(Math.floor(Math.random() * state.playerGrave.length), 1)[0];
+          state.hand.push({...pCard, _isNewDraw: true});
+          const eCard = state.enemyGrave.splice(Math.floor(Math.random() * state.enemyGrave.length), 1)[0];
+          state.enemyDeckSize++;
+          document.getElementById('logMessage').textContent = '👻 Lingering Soul: Each player returned 1 card from graveyard!';
+        } else {
+          document.getElementById('logMessage').textContent = '👻 Lingering Soul: Not enough cards in graveyards (need at least 2 each).';
+        }
+        renderAll();
+      }, 1000); break;
+      case 6: setTimeout(() => {
+        let pUnits = [];
+        state.playerMelee.forEach((c, i) => { if(c) pUnits.push({card: c, arr: state.playerMelee, idx: i}); });
+        state.playerRanged.forEach((c, i) => { if(c) pUnits.push({card: c, arr: state.playerRanged, idx: i}); });
+        if (pUnits.length > 0) {
+          const pTarget = pUnits[Math.floor(Math.random() * pUnits.length)];
+          pTarget.card.hp -= 2;
+          if (pTarget.card.hp <= 0) { state.playerGrave.push({...pTarget.card, hp: pTarget.card.maxHp}); pTarget.arr[pTarget.idx] = null; }
+        }
+        let enUnits = [];
+        state.enemyMelee.forEach((c, i) => { if(c) enUnits.push({card: c, arr: state.enemyMelee, idx: i}); });
+        state.enemyRanged.forEach((c, i) => { if(c) enUnits.push({card: c, arr: state.enemyRanged, idx: i}); });
+        if (enUnits.length > 0) {
+          const eTarget = enUnits[Math.floor(Math.random() * enUnits.length)];
+          eTarget.card.hp -= 2;
+          if (eTarget.card.hp <= 0) { state.enemyGrave.push({...eTarget.card, hp: eTarget.card.maxHp}); eTarget.arr[eTarget.idx] = null; }
+        }
+        document.getElementById('logMessage').textContent = '⚡ Static Shock: Random units took 2 damage!';
+        renderAll();
+      }, 1000); break;
+    }
+  }
+
+  function setupPointerEngine() {
+    const svgLayer = document.getElementById('arrowSvgLayer');
+    const arrowLine = document.getElementById('arrowLine');
+    const attackIndicator = document.getElementById('attackIndicator');
+
+    document.addEventListener('mousedown', (e) => {
+      spawnClickRipple(e.clientX, e.clientY);
+      if (state.gameOver || state.turn !== 'player') return;
+
+      const boardCard = e.target.closest('.player-slot .card');
+      if (boardCard && !boardCard.classList.contains('has-attacked')) {
+        const slot = boardCard.closest('.slot');
+        if (!slot || !slot.dataset.row || slot.dataset.idx === undefined) return;
+        selectedAttacker = { row: slot.dataset.row, idx: parseInt(slot.dataset.idx) };
+        document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
+        boardCard.classList.add('selected-for-attack');
+        document.getElementById('logMessage').textContent = '🎯 Card selected! Click an enemy to attack.';
+        spawnActionSpark(e.clientX, e.clientY, '🎯');
+        dragTracker = { active: true, type: 'combat', origin: { row: slot.dataset.row, idx: parseInt(slot.dataset.idx) }, startX: e.clientX, startY: e.clientY };
+        svgLayer.style.display = 'block';
+        updateArrow(e.clientX, e.clientY);
+        return;
+      }
+
+      if (selectedAttacker && !selectedAttacker.isHandCard && (e.target.closest('.enemy-slot') || e.target.closest('#enemyGodHpDisplay') || e.target.closest('#enemyGodSide'))) {
+       const target = e.target.closest('.enemy-slot') || e.target.closest('#enemyGodHpDisplay') || e.target.closest('#enemyGodSide');
+        if (target) { resolveDragAction(target); selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); svgLayer.style.display = 'none'; attackIndicator.style.display = 'none'; return; }
+      }
+      if (selectedAttacker && !selectedAttacker.isHandCard) { selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); document.getElementById('logMessage').textContent = 'Click a card to attack, or drag to play!'; }
+
+      const handCard = e.target.closest('.fan-card-wrapper');
+      if (handCard) {
+        const idx = parseInt(handCard.dataset.idx);
+        const cardData = state.hand[idx];
+        if (cardData && !handCard.querySelector('.card.unaffordable')) {
+          if (cardData.type === 'Unit') {
+            document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
+            handCard.querySelector('.card').classList.add('selected-for-attack');
+            selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
+            document.getElementById('logMessage').textContent = '🎯 Card selected! Click an empty player slot to play.';
+            spawnActionSpark(e.clientX, e.clientY, '🎯');
+            return;
+          }
+          dragTracker = { active: true, type: 'spell', origin: { handIdx: idx, card: cardData }, startX: e.clientX, startY: e.clientY };
+          svgLayer.style.display = 'block';
+          updateArrow(e.clientX, e.clientY);
+          return;
+        }
+      }
+      if (selectedAttacker && selectedAttacker.isHandCard && e.target.closest('.player-slot')) {
+        const targetSlot = e.target.closest('.player-slot');
+        if (targetSlot) { playCardFromHandToSlot(targetSlot, selectedAttacker); selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); return; }
+      }
+
+      const handCardDrag = e.target.closest('.fan-card-wrapper');
+      if (handCardDrag && !selectedAttacker?.isHandCard) {
+        const idx = parseInt(handCardDrag.dataset.idx);
+        const cardData = state.hand[idx];
+        if (cardData && !handCardDrag.querySelector('.card.unaffordable')) {
+          dragTracker = { active: true, type: cardData.type === 'Spell' ? 'spell' : 'play-unit', origin: { handIdx: idx, card: cardData }, startX: e.clientX, startY: e.clientY };
+          svgLayer.style.display = 'block'; updateArrow(e.clientX, e.clientY);
+        }
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragTracker.active) { attackIndicator.style.display = 'none'; return; }
+      updateArrow(e.clientX, e.clientY);
+      if (dragTracker.type === 'combat') {
+        const enemyUnder = e.target.closest('.enemy-slot, #enemyGodHpDisplay, #enemyGodSide, .god-hp-display, .god-card-wrapper');
+        if (enemyUnder) { const rect = enemyUnder.getBoundingClientRect(); attackIndicator.style.display = 'block'; attackIndicator.style.left = rect.left + rect.width / 2 - 18 + 'px'; attackIndicator.style.top = rect.top - 8 + 'px'; }
+        else { attackIndicator.style.display = 'none'; }
+      }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (!dragTracker.active) return;
+      svgLayer.style.display = 'none'; attackIndicator.style.display = 'none';
+      const targetSlot = e.target.closest('.slot, .player-slot, #enemyGodHpDisplay, #enemyGodSide, .god-hp-display, .god-card-wrapper');
+      if (targetSlot) { resolveDragAction(targetSlot); selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); }
+      dragTracker.active = false;
+    });
+
+    function updateArrow(currentX, currentY) {
+      arrowLine.setAttribute('x1', dragTracker.startX);
+      arrowLine.setAttribute('y1', dragTracker.startY);
+      arrowLine.setAttribute('x2', currentX);
+      arrowLine.setAttribute('y2', currentY);
+    }
+  }
+
+  function playCardFromHandToSlot(targetSlot, handSelection) {
+    if (handSelection.card.type !== 'Unit') return;
+    const availableProv = state.provPool - state.provUsed;
+    const { handIdx, card } = handSelection;
+    if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
+    const tgtRow = targetSlot.dataset.row; const tgtIdx = parseInt(targetSlot.dataset.idx);
+    let targetArr = (tgtRow === 'melee') ? state.playerMelee : state.playerRanged;
+    if (targetArr[tgtIdx]) return;
+    state.hand.splice(handIdx, 1);
+    if (!card.passive && card.type !== 'Spell') assignPassive(card);
+    targetArr[tgtIdx] = { ...card, hasAttacked: false, playOrder: playerPlayOrderCounter++ };
+    state.provUsed += card.cost;
+    document.getElementById('logMessage').textContent = `Played ${card.name}${card.passive ? ' [' + card.passive + ']' : ''}`;
+    renderAll(); checkAffordableCards();
+  }
+
+  function getEffectiveAtk(card) {
+    let atk = card.atk;
+    if (card.passive === 'Berserk' && card.hp < card.maxHp / 2) atk += 3;
+    return atk;
+  }
+
+  function getShieldValue(card) {
+    if (card.passive === 'Shield 1') return 1;
+    if (card.passive === 'Shield 2') return 2;
+    return 0;
+  }
+
+  function hasTauntOnBoard(arr1, arr2) {
+    return [...arr1, ...arr2].some(c => c && c.passive === 'Taunt' && c.hp > 0);
+  }
+
+  function findTauntTarget(arr1, arr2) {
+    for (let i = 0; i < arr1.length; i++) { if (arr1[i] && arr1[i].passive === 'Taunt' && arr1[i].hp > 0) return { arr: arr1, idx: i }; }
+    for (let i = 0; i < arr2.length; i++) { if (arr2[i] && arr2[i].passive === 'Taunt' && arr2[i].hp > 0) return { arr: arr2, idx: i }; }
+    return null;
+  }
+
+  function resolveDragAction(target) {
+    if (!target) return;
+    const availableProv = state.provPool - state.provUsed;
+    spawnActionSpark(target.getBoundingClientRect().left + target.getBoundingClientRect().width/2, target.getBoundingClientRect().top, '⚡');
+
+    if (dragTracker.type === 'combat' || (selectedAttacker && !selectedAttacker.isHandCard && target)) {
+      let src = dragTracker.type === 'combat' ? dragTracker.origin : selectedAttacker;
+      if (!src || !src.row || src.idx === undefined) return;
+      const attackerArr = (src.row === 'melee') ? state.playerMelee : state.playerRanged;
+      const attacker = attackerArr[src.idx];
+      if (!attacker || attacker.hasAttacked) return;
+
+            if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
+        if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear all enemy units first!'; return; }
+        const effAtk = getEffectiveAtk(attacker);
+        state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake();
+        showFloatingDamage(target, effAtk, '#ff6b35');
+        document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk} damage!`;
+        renderAll(); return;
+      }
+      
+      if (target.classList.contains('enemy-slot')) {
+        const tgtRow = target.dataset.row; const tgtIdx = parseInt(target.dataset.idx);
+        const enemyArr = (tgtRow === 'melee') ? state.enemyMelee : state.enemyRanged;
+        let enemyCard = enemyArr[tgtIdx];
+
+        if (!enemyCard && hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear all enemy units first!'; return; }
+        if (!enemyCard && !hasEnemyUnits()) {
+          const effAtk = getEffectiveAtk(attacker);
+          state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake();
+          showFloatingDamage(target, effAtk, '#ff6b35');
+          document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk} damage!`;
+          renderAll(); return;
+        }
+
+        // TAUNT CHECK
+        if (hasTauntOnBoard(state.enemyMelee, state.enemyRanged)) {
+          let enemyHasTaunt = enemyCard && enemyCard.passive === 'Taunt' && enemyCard.hp > 0;
+          if (!enemyHasTaunt) {
+            document.getElementById('logMessage').textContent = '⚠️ An enemy has Taunt! You must attack it first.';
+            return;
+          }
+        }
+
+        const targetDom = target.querySelector('.card');
+        const attackerSlotEl = document.querySelector(`.player-slot[data-row="${src.row}"][data-idx="${src.idx}"]`);
+        const attackerDom = attackerSlotEl?.querySelector('.card');
+        if (attackerDom) animateCardSlash(attackerDom);
+
+        let effAtk = getEffectiveAtk(attacker);
+        let shieldVal = getShieldValue(enemyCard);
+        if (attacker.passive === 'Pierce') shieldVal = 0;
+
+        if (shieldVal > 0) {
+          shieldVal--;
+          enemyCard.passive = shieldVal > 0 ? `Shield ${shieldVal}` : null;
+          document.getElementById('logMessage').textContent = `🛡️ ${enemyCard.name}'s shield absorbed the hit!`;
+          attacker.hasAttacked = true;
+          targetDom?.classList.add('defend-flash'); executeShake(); renderAll(); return;
+        }
+
+        let attacks = attacker.passive === 'Double Strike' ? 2 : 1;
+        for (let a = 0; a < attacks; a++) {
+          if (!enemyCard || enemyCard.hp <= 0) break;
+          if (effAtk >= enemyCard.hp) {
+            document.getElementById('logMessage').textContent = `💥 ${attacker.name} destroyed ${enemyCard.name}!`;
+            showFloatingDamage(target, enemyCard.hp);
+            if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
+              const healAmt = parseInt(attacker.passive.split(' ')[1]) || 1;
+              attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmt);
+              spawnActionSpark(target.getBoundingClientRect().left, target.getBoundingClientRect().top, '💚');
+            }
+            if (enemyCard.passive && enemyCard.passive.startsWith('Thorns')) {
+              const thornDmg = parseInt(enemyCard.passive.split(' ')[1]) || 1;
+              attacker.hp -= thornDmg;
+              showFloatingDamage(attackerSlotEl || target, thornDmg, '#ff8800');
+              if (attacker.hp <= 0) { state.playerGrave.push({...attacker, hp: attacker.maxHp}); attackerArr[src.idx] = null; }
+            }
+            state.enemyGrave.push({...enemyCard, hp: enemyCard.maxHp});
+            enemyArr[tgtIdx] = null;
+            enemyCard = null;
+            targetDom?.classList.add('burst-vanish'); executeShake();
+          } else {
+            enemyCard.hp -= effAtk; showFloatingDamage(target, effAtk);
+            if (enemyCard.passive && enemyCard.passive.startsWith('Thorns')) {
+              const thornDmg = parseInt(enemyCard.passive.split(' ')[1]) || 1;
+              attacker.hp -= thornDmg;
+              showFloatingDamage(attackerSlotEl || target, thornDmg, '#ff8800');
+              if (attacker.hp <= 0) { state.playerGrave.push({...attacker, hp: attacker.maxHp}); attackerArr[src.idx] = null; break; }
+            }
+            targetDom?.classList.add('defend-flash'); executeShake();
+          }
+        }
+        attacker.hasAttacked = true;
+        setTimeout(() => renderAll(), 400);
+      }
+    }
+
+    if (dragTracker.type === 'play-unit') {
+      const { handIdx, card } = dragTracker.origin;
+      if (target.classList.contains('player-slot')) {
+        if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
+        const tgtRow = target.dataset.row; const tgtIdx = parseInt(target.dataset.idx);
+        let targetArr = (tgtRow === 'melee') ? state.playerMelee : state.playerRanged;
+        if (targetArr[tgtIdx]) return;
+        state.hand.splice(handIdx, 1);
+        if (!card.passive && card.type !== 'Spell') assignPassive(card);
+        targetArr[tgtIdx] = { ...card, hasAttacked: false, playOrder: playerPlayOrderCounter++ };
+        state.provUsed += card.cost;
+        document.getElementById('logMessage').textContent = `Played ${card.name}${card.passive ? ' [' + card.passive + ']' : ''}`;
+        renderAll(); checkAffordableCards();
+      }
+    }
+
+    if (dragTracker.type === 'spell') {
+      const { handIdx, card } = dragTracker.origin;
+      if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
+      if (card.effect === 'damage_3' && target.classList.contains('enemy-slot')) {
+        const enemyArr = (target.dataset.row === 'melee') ? state.enemyMelee : state.enemyRanged; const idx = parseInt(target.dataset.idx);
+        if (enemyArr[idx]) { state.provUsed += card.cost; state.hand.splice(handIdx, 1); enemyArr[idx].hp -= 3; showFloatingDamage(target, 3); if (enemyArr[idx].hp <= 0) { state.enemyGrave.push({...enemyArr[idx], hp: enemyArr[idx].maxHp}); enemyArr[idx] = null; target.querySelector('.card')?.classList.add('burst-vanish'); } executeShake(); document.getElementById('logMessage').textContent = '🔥 Spell dealt 3 damage!'; setTimeout(() => { renderAll(); checkAffordableCards(); }, 400); }
+      } else if (card.effect === 'divine_buff' && target.classList.contains('player-slot')) {
+        const playerArr = (target.dataset.row === 'melee') ? state.playerMelee : state.playerRanged; const idx = parseInt(target.dataset.idx);
+        if (playerArr[idx]) { state.provUsed += card.cost; state.hand.splice(handIdx, 1); playerArr[idx].atk += 2; playerArr[idx].hp += 2; playerArr[idx].maxHp += 2; document.getElementById('logMessage').textContent = `✨ Buffed ${playerArr[idx].name}!`; renderAll(); checkAffordableCards(); }
+      } else if (card.effect === 'damage_6' && target.classList.contains('enemy-slot')) {
+        const enemyArr = (target.dataset.row === 'melee') ? state.enemyMelee : state.enemyRanged; const idx = parseInt(target.dataset.idx);
+        if (enemyArr[idx]) { state.provUsed += card.cost; state.hand.splice(handIdx, 1); enemyArr[idx].hp -= 6; showFloatingDamage(target, 6); if (enemyArr[idx].hp <= 0) { state.enemyGrave.push({...enemyArr[idx], hp: enemyArr[idx].maxHp}); enemyArr[idx] = null; target.querySelector('.card')?.classList.add('burst-vanish'); } executeShake(); document.getElementById('logMessage').textContent = '🔥🔥 Heavenly Strike dealt 6 damage!'; setTimeout(() => { renderAll(); checkAffordableCards(); }, 400); }
+      } else if (card.effect === 'damage_all_2' && target.classList.contains('enemy-slot')) {
+        state.provUsed += card.cost; state.hand.splice(handIdx, 1); [state.enemyMelee, state.enemyRanged].forEach(arr => { arr.forEach((c, i) => { if (c) { c.hp -= 2; if (c.hp <= 0) { state.enemyGrave.push({...c, hp: c.maxHp}); arr[i] = null; } } }); }); executeHeavyShake(); document.getElementById('logMessage').textContent = '🌋 Cataclysm dealt 2 damage to all enemies!'; setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
+      } else if (card.effect === 'destroy_strongest' && target.classList.contains('enemy-slot')) {
+        state.provUsed += card.cost; state.hand.splice(handIdx, 1); let strongest = null; let strongestArr = null; let strongestIdx = -1;
+        [{arr: state.enemyMelee}, {arr: state.enemyRanged}].forEach(({arr}) => { arr.forEach((c, i) => { if (c && (!strongest || c.atk > strongest.atk)) { strongest = c; strongestArr = arr; strongestIdx = i; } }); });
+        if (strongest) { state.enemyGrave.push({...strongest, hp: strongest.maxHp}); strongestArr[strongestIdx] = null; executeHeavyShake(); document.getElementById('logMessage').textContent = `💀 Dark Ritual destroyed ${strongest.name}!`; }
+        setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
+      } else if (card.effect === 'resurrect_2' && target.classList.contains('player-slot')) {
+        state.provUsed += card.cost; state.hand.splice(handIdx, 1); if (state.playerGrave.length > 0) { const resurrect = shuffle([...state.playerGrave]).slice(0, Math.min(2, state.playerGrave.length)); resurrect.forEach(card => { state.playerGrave.splice(state.playerGrave.indexOf(card), 1); for (let arr of [state.playerMelee, state.playerRanged]) { for (let j = 0; j < arr.length; j++) { if (!arr[j]) { arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: playerPlayOrderCounter++ }; return; } } } state.hand.push({ ...card }); }); document.getElementById('logMessage').textContent = '✨ Ancestral Call resurrected cards!'; }
+        setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
+      }
+    }
+  }
+
+  function getPassiveCssClass(card) {
+    if (!card || !card.passive || !PASSIVES[card.passive]) return '';
+    return PASSIVES[card.passive].cssClass || '';
+  }
+
+  function renderCardHTML(c, availableProv) {
+    if (!c) return '';
+    let isUnaffordable = availableProv !== undefined && c.cost > availableProv;
+    let borderClass = c.type === 'Spell' ? 'spell-red-border' : getBorderClass(c.cost);
+    let passiveClass = getPassiveCssClass(c);
+    let passiveTypeClass = c.passive && PASSIVES[c.passive] ? PASSIVES[c.passive].type : '';
+    let classes = `card ${c.type === 'Spell' ? 'spell-card' : ''} ${borderClass} ${c.hasAttacked ? 'has-attacked' : ''} ${isUnaffordable ? 'unaffordable' : ''} ${passiveClass}`;
+    let passiveInfo = c.passive && PASSIVES[c.passive] ? PASSIVES[c.passive] : null;
+    if (c.type === 'Spell') {
+      return `<div class="${classes}"><div class="card-top-row"><span class="card-spell-icon">🔥</span><span class="card-prov-badge">🍗 ${c.cost}</span></div><div class="card-spell-desc-top">${c.desc}</div><div class="card-name-center">${c.name}</div></div>`;
+    }
+    return `<div class="${classes}"><div class="card-top-row"><span class="card-atk-badge">${c.atk !== undefined ? '⚔️ ' + c.atk : ''}</span><span class="card-hp-badge">${c.hp !== undefined && !isNaN(c.hp) ? '❤️ ' + c.hp : '❤️ ?'}</span><span class="card-prov-badge">🍗 ${c.cost}</span></div><div class="card-name-center">${c.name}</div>${passiveInfo ? `<div class="card-passive-badge ${passiveTypeClass}">${passiveInfo.icon} ${passiveInfo.name}</div>` : ''}</div>`;
+  }
+
+  function executeUltimateScreenEffect(effectType) {
+    const stage = document.getElementById('stageBlock');
+    switch(effectType) {
+      case 'bathala_ult': stage.classList.add('bathala-ult-screen'); setTimeout(() => stage.classList.remove('bathala-ult-screen'), 1000); break;
+      case 'lamang_ult': stage.classList.add('lamang-ult-glow'); setTimeout(() => stage.classList.remove('lamang-ult-glow'), 1200); break;
+      case 'bakunawa_ult': stage.classList.add('bakunawa-ult-screen'); setTimeout(() => stage.classList.remove('bakunawa-ult-screen'), 1000); break;
+      case 'engkanto_ult': stage.classList.add('engkanto-ult-screen'); setTimeout(() => stage.classList.remove('engkanto-ult-screen'), 1200); break;
+    }
+  }
+
+  function triggerUltimate() {
+    if (!state.ultAvailable || state.gameOver || state.turn !== 'player') return;
+    const godSlot = document.getElementById('playerGodSide').querySelector('.card');
+    if (godSlot) godSlot.classList.add('god-ult-animation');
+    setTimeout(() => { if (godSlot) godSlot.classList.remove('god-ult-animation'); }, 800);
+    executeHeavyShake();
+    executeUltimateScreenEffect(state.godEffect);
+    switch(state.godEffect) {
+      case 'bathala_ult':
+        state.ultAvailable = false;
+        let allEnemyCards = [];
+        state.enemyMelee.forEach((c, i) => { if(c) allEnemyCards.push({card: c, arr: state.enemyMelee, idx: i, row: 'melee'}); });
+        state.enemyRanged.forEach((c, i) => { if(c) allEnemyCards.push({card: c, arr: state.enemyRanged, idx: i, row: 'ranged'}); });
+        const targets = shuffle(allEnemyCards).slice(0, Math.min(3, allEnemyCards.length));
+        targets.forEach((t, i) => { setTimeout(() => { const slotId = `enemy${t.row.charAt(0).toUpperCase() + t.row.slice(1)}${t.idx + 1}`; const slot = document.getElementById(slotId); const cardEl = slot?.querySelector('.card'); if (cardEl) { cardEl.classList.add('burst-vanish'); showFloatingDamage(slot, t.card.hp); } state.enemyGrave.push({...t.card, hp: t.card.maxHp}); t.arr[t.idx] = null; }, i * 150); });
+        setTimeout(() => { document.getElementById('logMessage').textContent = `💥 Bathala destroyed ${targets.length} enemy cards!`; renderAll(); }, targets.length * 150 + 200);
+        break;
+      case 'lamang_ult':
+        state.ultAvailable = false;
+        if (state.playerGrave.length > 0) {
+          const resurrect = shuffle([...state.playerGrave]).slice(0, Math.min(2, state.playerGrave.length));
+          let resurrectedCount = 0;
+          resurrect.forEach((card, i) => { state.playerGrave.splice(state.playerGrave.indexOf(card), 1); let placed = false; for (let arr of [state.playerMelee, state.playerRanged]) { for (let j = 0; j < arr.length; j++) { if (!arr[j] && card.type === 'Unit') { arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: playerPlayOrderCounter++ }; placed = true; resurrectedCount++; break; } } if (placed) break; } if (!placed) state.hand.push({ ...card }); });
+          document.getElementById('logMessage').textContent = `✨ Lam-Ang resurrected ${resurrectedCount} cards!`;
+        } else { document.getElementById('logMessage').textContent = 'No cards to resurrect!'; state.ultAvailable = true; }
+        renderAll(); break;
+      case 'bakunawa_ult':
+        const rowOverlay = document.getElementById('rowSelectOverlay'); rowOverlay.classList.add('active');
+        rowOverlay.querySelectorAll('.row-choice-btn').forEach(btn => { btn.onclick = () => { rowOverlay.classList.remove('active'); state.ultAvailable = false; const targetRow = btn.dataset.target; const enemyArr = targetRow === 'melee' ? state.enemyMelee : state.enemyRanged; let damagedCount = 0; enemyArr.forEach((c, idx) => { if (c) { c.hp -= 2; damagedCount++; const slotId = `enemy${targetRow.charAt(0).toUpperCase() + targetRow.slice(1)}${idx + 1}`; const slot = document.getElementById(slotId); if (slot) showFloatingDamage(slot, 2); if (c.hp <= 0) { setTimeout(() => { const cardEl = slot?.querySelector('.card'); cardEl?.classList.add('burst-vanish'); state.enemyGrave.push({...c, hp: c.maxHp}); enemyArr[idx] = null; }, idx * 100); } } }); executeHeavyShake(); document.getElementById('logMessage').textContent = `🌑 Bakunawa dealt 2 damage to ${damagedCount} enemy ${targetRow} cards!`; setTimeout(() => renderAll(), enemyArr.length * 100 + 200); }; });
+        return;
+      case 'engkanto_ult':
+        state.ultAvailable = false;
+        let allPlayerCards = [];
+        state.playerMelee.forEach((c, i) => { if(c) allPlayerCards.push({card: c, arr: state.playerMelee, idx: i, row: 'Melee'}); });
+        state.playerRanged.forEach((c, i) => { if(c) allPlayerCards.push({card: c, arr: state.playerRanged, idx: i, row: 'Ranged'}); });
+        const buffs = shuffle(allPlayerCards).slice(0, Math.min(3, allPlayerCards.length));
+        buffs.forEach((t, i) => { setTimeout(() => { t.card.hp += 3; t.card.maxHp += 3; }, i * 200); });
+        document.getElementById('logMessage').textContent = `✨ Engkanto buffed ${buffs.length} cards with +3 HP!`;
+        setTimeout(() => renderAll(), buffs.length * 200 + 300); break;
+    }
+    if (state.godEffect !== 'bakunawa_ult') { setTimeout(() => renderAll(), 300); }
+  }
+  window.triggerUltimate = triggerUltimate;
+
+  function refreshUltimate() {
+    if (state.ultAvailable || state.ultRefreshed || state.gameOver || state.turn !== 'player') return;
+    const availableProv = state.provPool - state.provUsed;
+    if (availableProv < 10) return;
+    state.provUsed += 10;
+    state.ultAvailable = true;
+    state.ultRefreshed = true;
+    document.getElementById('logMessage').textContent = '⚡ Ultimate refreshed for 10 provisions!';
+    renderAll();
+  }
+  window.refreshUltimate = refreshUltimate;
+
+  function executeEnemyAITurn() {
+    let enemyTime = 30;
+    const enemyTimerEl = document.getElementById('enemyTimer');
+    enemyTimerEl.textContent = enemyTime + 's';
+    enemyTimerEl.classList.remove('critical-danger');
+    if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
+    state.enemyTimerInterval = setInterval(() => {
+      enemyTime--;
+      enemyTimerEl.textContent = enemyTime + 's';
+      if (enemyTime <= 10) enemyTimerEl.classList.add('critical-danger');
+      else enemyTimerEl.classList.remove('critical-danger');
+      if (enemyTime <= 0) clearInterval(state.enemyTimerInterval);
+    }, 1000);
+
+    const allEnemyAttackers = [];
+    state.enemyMelee.forEach((u, idx) => { if (u && !u.hasAttacked) allEnemyAttackers.push({ card: u, arr: state.enemyMelee, idx, row: 'melee' }); });
+    state.enemyRanged.forEach((u, idx) => { if (u && !u.hasAttacked) allEnemyAttackers.push({ card: u, arr: state.enemyRanged, idx, row: 'ranged' }); });
+
+    allEnemyAttackers.forEach(attackerInfo => {
+      let u = attackerInfo.card;
+      let tauntTarget = findTauntTarget(state.playerMelee, state.playerRanged);
+      let targetArr, targetIdx;
+
+      if (tauntTarget) {
+        targetArr = tauntTarget.arr;
+        targetIdx = tauntTarget.idx;
+      } else {
+        let allTargets = [];
+        state.playerMelee.forEach((c, i) => { if (c) allTargets.push({ card: c, arr: state.playerMelee, idx: i }); });
+        state.playerRanged.forEach((c, i) => { if (c) allTargets.push({ card: c, arr: state.playerRanged, idx: i }); });
+        allTargets.sort((a, b) => a.card.hp - b.card.hp);
+        if (allTargets.length > 0) {
+          const best = allTargets[0];
+          targetArr = best.arr;
+          targetIdx = best.idx;
+        }
+      }
+
+      if (targetArr && targetIdx !== undefined && targetArr[targetIdx]) {
+        let target = targetArr[targetIdx];
+        let effAtk = u.atk;
+        if (u.passive === 'Berserk' && u.hp < u.maxHp / 2) effAtk += 3;
+        let shieldVal = getShieldValue(target);
+        if (u.passive === 'Pierce') shieldVal = 0;
+
+        if (shieldVal > 0) {
+          shieldVal--;
+          target.passive = shieldVal > 0 ? `Shield ${shieldVal}` : null;
+        } else {
+          let attacks = u.passive === 'Double Strike' ? 2 : 1;
+          for (let a = 0; a < attacks; a++) {
+            if (!targetArr[targetIdx] || targetArr[targetIdx].hp <= 0) break;
+            target = targetArr[targetIdx];
+            if (effAtk >= target.hp) {
+              if (target.passive && target.passive.startsWith('Thorns')) {
+                const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
+                u.hp -= thornDmg;
+                if (u.hp <= 0) { state.enemyGrave.push({...u, hp: u.maxHp}); attackerInfo.arr[attackerInfo.idx] = null; break; }
+              }
+              if (u.passive && u.passive.startsWith('Lifesteal')) {
+                const healAmt = parseInt(u.passive.split(' ')[1]) || 1;
+                u.hp = Math.min(u.maxHp, u.hp + healAmt);
+              }
+              state.playerGrave.push({...target, hp: target.maxHp});
+              targetArr[targetIdx] = null;
+            } else {
+              target.hp -= effAtk;
+              if (target.hp <= 0) {
+                if (target.passive && target.passive.startsWith('Thorns')) {
+                  const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
+                  u.hp -= thornDmg;
+                  if (u.hp <= 0) { state.enemyGrave.push({...u, hp: u.maxHp}); attackerInfo.arr[attackerInfo.idx] = null; break; }
+                }
+                state.playerGrave.push({...target, hp: target.maxHp});
+                targetArr[targetIdx] = null;
+              }
+            }
+          }
+        }
+      } else {
+        state.godHp -= u.atk;
+        executeShake();
+      }
+      if (attackerInfo.arr[attackerInfo.idx]) attackerInfo.arr[attackerInfo.idx].hasAttacked = true;
+    });
+
+    if (state.godHp <= 0) { state.gameOver = true; renderAll(); triggerAutoOverlay('💀 Defeat'); clearInterval(state.enemyTimerInterval); enemyTimerEl.textContent = '30s'; return; }
+
+    let enemyProvPool = state.provPerTurn + 2;
+    let enemyProvUsed = 0;
+    let cardsPlayed = 0;
+    const maxCards = Math.min(3, enemyProvPool);
+
+    while (cardsPlayed < maxCards && state.enemyDeckSize > 0) {
+      const bronzePool = state.enemyFaction === 'heroes' ? BRONZE_UNITS_HEROES : BRONZE_UNITS_MONSTERS;
+      const goldPool = state.enemyFaction === 'heroes' ? GOLD_UNITS_HEROES : GOLD_UNITS_MONSTERS;
+      let card;
+      const r = Math.random();
+      if (r < 0.55) { card = { ...bronzePool[Math.floor(Math.random() * bronzePool.length)] }; }
+      else if (r < 0.85) { card = { ...goldPool[Math.floor(Math.random() * goldPool.length)] }; }
+      else { card = { ...SPELLS[Math.floor(Math.random() * SPELLS.length)] }; }
+
+      if (card.cost + enemyProvUsed > enemyProvPool) break;
+
+      assignPassive(card);
+      if (card.type === 'Unit') {
+        let arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
+        let slot = arr.findIndex(s => s === null);
+        if (slot === -1) { arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee; slot = arr.findIndex(s => s === null); }
+        if (slot !== -1) {
+          arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
+          enemyProvUsed += card.cost;
+          state.enemyDeckSize--;
+          cardsPlayed++;
+        } else break;
+      } else {
+        if (card.effect === 'damage_3' || card.effect === 'damage_6') {
+          let targetArr = state.playerMelee;
+          let tIdx = targetArr.findIndex(c => c !== null);
+          if (tIdx === -1) { targetArr = state.playerRanged; tIdx = targetArr.findIndex(c => c !== null); }
+          if (tIdx !== -1) {
+            const dmg = card.effect === 'damage_6' ? 6 : 3;
+            targetArr[tIdx].hp -= dmg;
+            if (targetArr[tIdx].hp <= 0) { state.playerGrave.push({...targetArr[tIdx], hp: targetArr[tIdx].maxHp}); targetArr[tIdx] = null; }
+            enemyProvUsed += card.cost;
+            state.enemyDeckSize--;
+            cardsPlayed++;
+          }
+        } else if (card.effect === 'divine_buff') {
+          let buffArr = state.enemyMelee;
+          let bIdx = buffArr.findIndex(c => c !== null);
+          if (bIdx === -1) { buffArr = state.enemyRanged; bIdx = buffArr.findIndex(c => c !== null); }
+          if (bIdx !== -1) {
+            buffArr[bIdx].atk += 2; buffArr[bIdx].hp += 2; buffArr[bIdx].maxHp += 2;
+            enemyProvUsed += card.cost;
+            state.enemyDeckSize--;
+            cardsPlayed++;
+          }
+        } else { break; }
+      }
+    }
+
+    if (state.deck.length && state.hand.length < 7) drawCard();
+    state.playerMelee.forEach(u => { if(u) u.hasAttacked = false; });
+    state.playerRanged.forEach(u => { if(u) u.hasAttacked = false; });
+
+    state.playerMelee.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
+    state.playerRanged.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
+    state.enemyMelee.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
+    state.enemyRanged.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
+
+    state.round++;
+    state.provPerTurn = Math.min(state.provPerTurn + 2, 10);
+    state.provPool = Math.min(state.provPool + 2, 20);
+    state.provUsed = 0;
+
+    clearInterval(state.enemyTimerInterval);
+    enemyTimerEl.textContent = '30s';
+    enemyTimerEl.classList.remove('critical-danger');
+
+    // Check if dice should trigger (before incrementing round)
+    const diceRound = state.round + 1;
+    
+    state.round++;
+    state.provPerTurn = Math.min(state.provPerTurn + 2, 10);
+    state.provPool = Math.min(state.provPool + 2, 20);
+    state.provUsed = 0;
+
+    clearInterval(state.enemyTimerInterval);
+    enemyTimerEl.textContent = '30s';
+    enemyTimerEl.classList.remove('critical-danger');
+
+    if (diceRound % 2 === 0 && diceRound >= 2) {
+      setTimeout(() => {
+        triggerDiceRoll();
+        setTimeout(() => {
+          renderAll(); startTimer(); triggerAutoOverlay('Your Turn'); checkAffordableCards();
+        }, 6000);
+      }, 500);
+    } else {
+      setTimeout(() => { renderAll(); startTimer(); triggerAutoOverlay('Your Turn'); checkAffordableCards(); }, 1000);
+    }
+  }
+
+  function renderAll() {
+    const availableProv = state.provPool - state.provUsed;
+    document.getElementById('enemyDeckPile').textContent = state.enemyDeckSize;
+    document.getElementById('playerDeckPile').textContent = state.deck.length;
+    document.getElementById('enemyGraveCount').textContent = state.enemyGrave.length;
+    document.getElementById('playerGraveCount').textContent = state.playerGrave.length;
+
+    for (let i = 0; i < 5; i++) {
+      document.getElementById(`playerMelee${i+1}`).innerHTML = renderCardHTML(state.playerMelee[i]);
+      document.getElementById(`playerRanged${i+1}`).innerHTML = renderCardHTML(state.playerRanged[i]);
+      document.getElementById(`enemyMelee${i+1}`).innerHTML = renderCardHTML(state.enemyMelee[i]);
+      document.getElementById(`enemyRanged${i+1}`).innerHTML = renderCardHTML(state.enemyRanged[i]);
+    }
+
+    document.getElementById('enemyGodSide').innerHTML = `
+      <div class="card god-card">
+        <strong style="font-size:1.2rem !important;">${state.enemyGodName}</strong>
+        <button class="ult" disabled style="opacity:${state.enemyUltAvailable ? '0.6' : '0.2'}; font-size:0.5rem; margin-top:4px;">
+          ${state.enemyUltAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}
+        </button>
+      </div>`;
+
+    document.getElementById('playerGodSide').innerHTML = `
+      <div class="card god-card">
+        <strong style="font-size:1.2rem !important;">${state.godName}</strong>
+        <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">⚡ Ultimate</button>
+      </div>`;
+
+    document.getElementById('enemyGodHpDisplay').textContent = isNaN(state.enemyGodHp) ? '100' : state.enemyGodHp;
+    document.getElementById('playerGodHpDisplay').textContent = isNaN(state.godHp) ? '100' : state.godHp;
+
+    document.getElementById('pillarEnemyProv').innerHTML = '🍗 ' + state.provPerTurn;
+    document.getElementById('pillarPlayerProv').innerHTML = '🍗 ' + availableProv;
+    document.getElementById('roundDisplay').textContent = state.round;
+    document.getElementById('diceInfo').textContent = 'Every 2 Rounds';
+
+    // Ult refresh button
+    // Ult refresh button - always visible
+    const playerWrapper = document.getElementById('playerGodWrapper');
+    const existingBtn = playerWrapper.querySelector('.ult-refresh-btn');
+    if (existingBtn) existingBtn.remove();
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'ult-refresh-btn';
+    refreshBtn.textContent = '🔄 10🍗';
+    refreshBtn.title = 'Spend 10 provisions to refresh Ultimate';
+    refreshBtn.disabled = state.ultAvailable || state.ultRefreshed || availableProv < 10;
+    refreshBtn.onclick = () => refreshUltimate();
+    playerWrapper.appendChild(refreshBtn);
+
+    const fanContainer = document.getElementById('handFanContainer');
+    fanContainer.innerHTML = '';
+    const totalCards = state.hand.length;
+    if (totalCards > 0) {
+      state.hand.forEach((card, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'fan-card-wrapper';
+        if (card._isNewDraw) { wrapper.classList.add('animate-draw'); card._isNewDraw = false; }
+        wrapper.dataset.idx = idx;
+        wrapper.style.zIndex = 50 + idx;
+        const isUnaffordable = card.cost > availableProv;
+        const borderClass = card.type === 'Spell' ? 'spell-red-border' : getBorderClass(card.cost);
+        let passiveInfo = card.passive && PASSIVES[card.passive] ? PASSIVES[card.passive] : null;
+        let passiveTypeClass = passiveInfo ? passiveInfo.type : '';
+        let passiveCssClass = getPassiveCssClass(card);
+        if (card.type === 'Spell') {
+          wrapper.innerHTML = `<div class="card spell-card ${borderClass} ${isUnaffordable ? 'unaffordable' : ''} ${passiveCssClass}"><div class="card-top-row"><span class="card-spell-icon">🔥</span><span class="card-prov-badge">🍗 ${card.cost}</span></div><div class="card-spell-desc-top">${card.desc}</div><div class="card-name-center">${card.name}</div></div>`;
+        } else {
+          wrapper.innerHTML = `<div class="card ${borderClass} ${isUnaffordable ? 'unaffordable' : ''} ${passiveCssClass}"><div class="card-top-row"><span class="card-atk-badge">${card.atk !== undefined ? '⚔️ ' + card.atk : ''}</span><span class="card-hp-badge">${card.hp !== undefined && !isNaN(card.hp) ? '❤️ ' + card.hp : '❤️ ?'}</span><span class="card-prov-badge">🍗 ${card.cost}</span></div><div class="card-name-center">${card.name}</div>${passiveInfo ? '<div class="card-passive-badge ' + passiveTypeClass + '">' + passiveInfo.icon + ' ' + passiveInfo.name + '</div>' : ''}</div>`;
+        }
+        fanContainer.appendChild(wrapper);
+      });
+    }
+
+    if (state.enemyGodHp <= 0 || state.godHp <= 0) { state.gameOver = true; if (state.timerInterval) clearInterval(state.timerInterval); if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval); triggerAutoOverlay(state.enemyGodHp <= 0 ? '🏆 Victory!' : '💀 Defeat'); }
+  }
+
+  function endTurn() {
+    if (state.gameOver || state.turn !== 'player') return;
+    clearInterval(state.timerInterval);
+    document.getElementById('logMessage').textContent = "🤖 Enemy turn...";
+    state.turn = 'enemy';
+    selectedAttacker = null;
+    document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
+    executeEnemyAITurn();
+    setTimeout(() => { state.turn = 'player'; }, 3000);
+  }
+
+  function exitToMenu() {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
+    state.turn = 'player'; state.gameOver = true;
+    document.getElementById('gameInterface').classList.remove('active');
+    document.getElementById('menuScreen').style.display = 'none';
+    document.getElementById('mainMenu').style.display = 'flex';
+    selectedAttacker = null;
+    document.getElementById('leftPanelOuter').style.display = 'none';
+    document.getElementById('rightPanelOuter').style.display = 'none';
+    document.getElementById('enemyTimer').textContent = '30s';
+  }
+
+  function showInfoTab(tab) {
+    const content = document.getElementById('infoTabContent');
+    const diceBtn = document.getElementById('tabDiceBtn');
+    const passBtn = document.getElementById('tabPassivesBtn');
+    diceBtn.classList.toggle('active', tab === 'dice');
+    passBtn.classList.toggle('active', tab === 'passives');
+
+    if (tab === 'dice') {
+      content.innerHTML = DICE_EVENTS.map(d => `
+        <div class="info-dice-item">
+          <span class="dice-emoji">${d.emoji}</span>
+          <div><strong>${d.name}</strong><br><span style="color:#8b949e;font-size:0.75rem;">${d.desc}</span></div>
+        </div>
+      `).join('');
+    } else {
+      const passivesList = Object.values(PASSIVES);
+      content.innerHTML = passivesList.map(p => `
+        <div class="info-passive-item ${p.type}">
+          <span class="passive-icon">${p.icon}</span>
+          <div><strong>${p.name}</strong><br><span style="color:#8b949e;font-size:0.7rem;">${p.desc}</span></div>
+          <span style="margin-left:auto;font-size:0.65rem;color:#7a828e;">${p.type}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
+  document.getElementById('btnChooseHeroes').addEventListener('click', () => { showGodSelection('heroes'); });
+  document.getElementById('btnChooseMonsters').addEventListener('click', () => { showGodSelection('monsters'); });
+  document.getElementById('btnMenu').addEventListener('click', exitToMenu);
+  document.getElementById('btnEndTurn').addEventListener('click', endTurn);
+  document.getElementById('btnSurrender').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.add('active'); });
+  document.getElementById('btnSurrenderYes').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.remove('active'); state.gameOver = true; if (state.timerInterval) clearInterval(state.timerInterval); if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval); exitToMenu(); });
+  document.getElementById('btnSurrenderNo').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.remove('active'); });
+  document.getElementById('surrenderOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+  document.getElementById('playerGraveBtn').addEventListener('click', () => showGraveyard('player'));
+  document.getElementById('enemyGraveBtn').addEventListener('click', () => showGraveyard('enemy'));
+  document.getElementById('graveyardOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
+  document.getElementById('rowSelectOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
+
+  document.getElementById('btnInfoPanel').addEventListener('click', () => {
+    document.getElementById('infoOverlay').classList.add('active');
+    showInfoTab('dice');
+  });
+  document.getElementById('infoOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+  document.getElementById('tabDiceBtn').addEventListener('click', () => showInfoTab('dice'));
+  document.getElementById('tabPassivesBtn').addEventListener('click', () => showInfoTab('passives'));
+
+  document.addEventListener('click', (e) => { if (!e.target.closest('.card') && !e.target.closest('button') && !e.target.closest('.overlay')) { spawnClickRipple(e.clientX, e.clientY); } });
+  window.addEventListener('resize', () => { if (state.gameOver) return; if (typeof renderAll === 'function' && document.getElementById('gameInterface').classList.contains('active')) { renderAll(); } });
+})();
+</script>
+</body>
+</html>
