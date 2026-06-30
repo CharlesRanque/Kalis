@@ -1,9 +1,0 @@
-1. also add Attack indicator on the enemy GOD/HP
-2. remove the entire battlefield while on main menu. There should only be 2 buttons there play pve and pvp arena.
-3. Good job on the attack indicator BUT it is only for dragging cards, include the clicking, click the card and click the enemy card. (Also include attack where you just click your card and click enemy card)
-4. adjust the fate dice for 2 turns each instead of 1 and make the text bigger.
-5. make the border colors of the cards to be a little bit darker bronze and gold and purple not so bright. Just in general change the bright colors to a little more darker version of it.
-6. There should only be a lightning icon on the topmost left for spell cards and topmost right is the provision number. (remove that lightning indicator)
-8. Remove the very small bg color on the icons on the cards.
-9. Add surrender button. then it will give option to surrender yes or no then if yes you will go back to main menu.
-10. make the attack icon a little bit smaller.
