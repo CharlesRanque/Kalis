@@ -1,11 +1,8 @@
 :root {
-  --overlay-shift-x: -250px;   /* positive = right, negative = left */
-  --overlay-shift-y: 0px;   /* positive = down, negative = up */
   --native-width: 1400px;
   --native-height: 900px;
   --left-panel-width: 110px;
   --right-panel-width: 110px;
-  --god-col-width: 200px;
   --battlefield-bg: #3b5230;
 }
 
@@ -37,7 +34,7 @@ body {
   flex-direction: row;
   align-items: stretch;
   background: #1b1e16;
-  position: relative;
+  position: relative;   /* anchor for ult-refresh-btn */
 }
 
 /* ========== LEFT PANEL ========== */
@@ -66,9 +63,13 @@ body {
   color: #f0e8d8;
   font-size: 1.1rem;
   margin: 0 auto;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 .deck-pile.enemy { background: #5c2e2e; border: 2px solid #8b4a3a; box-shadow: 0 4px 0 #3d1a1a; }
 .deck-pile.player { background: #2e4a2e; border: 2px solid #5a8a4a; box-shadow: 0 4px 0 #1a2a1a; }
+.deck-pile.player:hover { background: #3a5e3a; border-color: #7ab86a; box-shadow: 0 0 15px rgba(90, 138, 74, 0.4); }
+.deck-pile.enemy:hover { background: #6e3838; border-color: #a45a4a; }
 
 .grave-display {
   display: flex;
@@ -168,57 +169,91 @@ body {
   gap: 0.3rem;
 }
 
+/* ---------- Battlefield wrapper (anchor for absolute god block) ---------- */
 .battlefield-wrapper {
   flex: 1;
+  position: relative;               /* anchoring context */
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 1rem;
   justify-content: center;
-  padding-left: 0;
-  margin-right: 270px;
+  gap: 1rem;
+  left: -25px;
+  padding-left: 0px;              /* space for the absolutely positioned god block – adjust with .god-side-block left */
 }
 
-.ult-refresh-btn {
-  background: #1d1814;
-  border: 1px solid #9b7a3c;
-  color: #9b7a3c;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.7rem;
-  padding: 0.2rem 0.4rem;
-  font-weight: bold;
-  white-space: nowrap;
-  position: absolute;
-  left: 60px;
-  top: 130%;
-  transform: translateY(-50%);
-}
-.ult-refresh-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
+/* ---------- God block – absolutely positioned, freely movable ---------- */
 .god-side-block {
-  width: var(--god-col-width);
+  position: absolute;
+  left: 120px;
+  top: 180px;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
+  gap: 20px;
+  z-index: 10;
+  width: auto;
   flex-shrink: 0;
-  margin: 0;
 }
 
+/* ---------- God card wrappers – absolute inside the block, no flex interference ---------- */
 .god-card-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  justify-content: center;
-  position: relative;
-  padding-left: 45px;
+  position: relative;    /* anchor for HP displays */
+  display: block;
+  width: auto;
+  height: auto;
 }
 
+#enemyGodWrapper {
+  position: absolute;
+  left: 30px;
+  top: 50px;
+}
+
+#playerGodWrapper {
+  position: absolute;
+  left: 30px;
+  top: 215px;    /* 50px + 145px + 20px gap */
+}
+
+/* ---------- God card itself ---------- */
+.god-card {
+  background: #121a0f;
+  color: #b8b09a;
+  border: 2px solid #3a4a30;
+  border-radius: 6px;
+  text-align: center;
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  height: 145px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 0.2rem;
+  margin: 0;
+  overflow: hidden;
+}
+.god-card strong { 
+  font-size: 0.85rem !important;
+  white-space: nowrap;       /* Keep name on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* Add ... if name is too long */
+}
+.god-card button.ult {
+  background: linear-gradient(135deg,#9b7a3c,#7a5c28);
+  border: none; color: #1a1410; padding: 0.1rem 0.5rem;
+  font-size: 0.55rem; border-radius: 3px; cursor: pointer;
+  width: 100%; margin-top: 4px; font-weight: 600;
+}
+.god-card button.ult:disabled { opacity: 0.3; cursor: not-allowed; background: #2a2418; color: #7a6e5a; }
+
+/* ---------- HP displays – absolutely positioned, flush with god cards ---------- */
 .god-hp-display {
+  position: absolute;
   font-size: 1.4rem;
   font-weight: bold;
   padding: 0.3rem 0.6rem;
@@ -228,34 +263,22 @@ body {
   background: #141a10;
   border: 1px solid #2e3824;
   white-space: nowrap;
+  z-index: 5;
+  top: 50%;
+  transform: translateY(-50%);
 }
-.god-hp-display.enemy-hp { color: #c45444; }
-.god-hp-display.player-hp { color: #5a9a4a; }
 
-.god-card {
-  background: #121a0f;
-  color: #b8b09a;
-  border: 2px solid #3a4a30;
-  border-radius: 6px;
-  text-align: center;
-  width: 95px;
-  height: 145px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  font-size: 0.85rem;
-  padding: 0.2rem;
+.god-hp-display.enemy-hp {
+  color: #c45444;
+  left: -60px;
 }
-.god-card strong { font-size: 1rem !important; }
-.god-card button.ult {
-  background: linear-gradient(135deg,#9b7a3c,#7a5c28);
-  border: none; color: #1a1410; padding: 0.1rem 0.5rem;
-  font-size: 0.55rem; border-radius: 3px; cursor: pointer;
-  width: 100%; margin-top: 4px; font-weight: 600;
-}
-.god-card button.ult:disabled { opacity: 0.3; cursor: not-allowed; background: #2a2418; color: #7a6e5a; }
 
+.god-hp-display.player-hp {
+  color: #5a9a4a;
+  left: -60px;
+}
+
+/* ---------- Battlefield slots (unchanged) ---------- */
 .battlefield {
   flex: 1;
   display: flex;
@@ -286,11 +309,88 @@ body {
   transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s; cursor: grab; font-size: 0.7rem;
 }
 .card.spell-card { background: #d9ceb5; border: 3px solid #7a5c38; }
-.card.has-attacked { opacity: 0.5; cursor: not-allowed; filter: grayscale(30%); }
 .card.gold-border { border: 4px solid #9b7a3c !important; box-shadow: 0 0 8px rgba(155,122,60,0.35); }
 .card.bronze-border { border: 3px solid #6b4e2e !important; }
 .card.spell-red-border { border: 3px solid #8b4a3a !important; }
 .card.unaffordable { opacity: 1; cursor: not-allowed; filter: grayscale(70%) brightness(0.6); }
+
+/* ========== ATTACK DOT INDICATOR ========== */
+.attack-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  z-index: 5;
+  pointer-events: none;
+  transition: background-color 0.3s;
+}
+
+.attack-dot.can-attack {
+  background: #ff8800;
+  box-shadow: 0 0 4px rgba(51, 170, 85, 0.7), 0 0 8px rgba(51, 170, 85, 0.3);
+  animation: attack-dot-pulse 2s ease-in-out infinite;
+}
+
+.attack-dot.has-attacked-dot {
+  background: #666;
+  box-shadow: 0 0 2px rgba(100, 100, 100, 0.3);
+  animation: none;
+}
+
+/* ---------- Turn phase indicator – absolute, bottom centre of battlefield ---------- */
+.turn-phase-indicator {
+  position: absolute;
+  bottom: 300px;                     /* distance from bottom */
+  left: 85%;
+  transform: translateX(-50%);
+  background: #1a1410;
+  border: 1px solid #3a3028;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  text-align: center;
+  min-width: 100px;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.phase-round {
+  font-size: 0.7rem;
+  color: #8b8a7a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.3rem;
+}
+.phase-status {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+.phase-dice-info {
+  font-size: 0.6rem;
+  color: #9b8e7a;
+  font-style: italic;
+}
+
+/* ---------- Ult refresh button – absolute within #gameWrapper ---------- */
+.ult-refresh-btn {
+  position: absolute;
+  left: 280px;                      /* place wherever you want */
+  top: 470px;                       /* place wherever you want */
+  z-index: 50;
+  background: #1d1814;
+  border: 1px solid #9b7a3c;
+  color: #9b7a3c;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.ult-refresh-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ========== CARD SELECTION GLOW EFFECTS - REDUCED BRIGHTNESS ========== */
 .card-top-row { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; font-weight: bold; }
 .card-name-center { font-size: 0.7rem; font-weight: 700; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
 .card-passive-badge {
@@ -381,7 +481,7 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 
 /* ========== OVERLAYS ========== */
 .god-select-overlay, .row-select-overlay, .dice-overlay,
-.graveyard-overlay, .surrender-overlay, .info-overlay {
+.graveyard-overlay, .deck-viewer-overlay, .surrender-overlay, .info-overlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: rgba(0,0,0,0.85); display: none; justify-content: center;
   align-items: center; z-index: 1000;
@@ -389,7 +489,7 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 .active { display: flex !important; }
 
 .god-select-box, .row-select-box, .dice-box, .graveyard-box,
-.surrender-box, .info-box {
+.deck-viewer-box, .surrender-box, .info-box {
   background: #1b1e16;
   padding: 2rem;
   border-radius: 12px;
@@ -397,10 +497,9 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
   text-align: center;
   max-width: 90vw;
   max-height: 90vh;
-  transform: translate(var(--overlay-shift-x, 0px), var(--overlay-shift-y, 0px));
 }
 
-.god-select-box h2, .graveyard-box h2, .surrender-box h2, .dice-title { color: #d4c8a8; margin-bottom: 1.5rem; }
+.god-select-box h2, .graveyard-box h2, .deck-viewer-box h2, .surrender-box h2, .dice-title { color: #d4c8a8; margin-bottom: 1.5rem; }
 
 .god-choices { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
 .row-choices { display: flex; gap: 1.5rem; justify-content: center; }
@@ -413,10 +512,14 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 .god-choice-card:hover, .row-choice-btn:hover { border-color: #9b7a3c; transform: translateY(-3px); }
 .god-choice-card h3 { font-size: 1.4rem; color: #d4c8a8; margin-bottom: 0.5rem; }
 
-/* Dice overlay */
+/* Dice overlay - CENTERED PROPERLY */
 .dice-box {
   background: #1b1e16; padding: 2rem 3rem; border-radius: 12px;
   border: 2px solid #9b8e7a; text-align: center; box-shadow: 0 0 40px rgba(120, 100, 60, 0.3);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 .dice-title { font-size: 1.2rem; color: #8b8a7a; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; }
 .dice-result { font-size: 6rem; font-weight: bold; color: #b8b09a; margin: 0.5rem 0; transition: all 0.1s ease; }
@@ -432,9 +535,9 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 }
 .dice-spinning { animation: dice-roll 0.15s linear infinite; }
 
-/* Graveyard */
-.graveyard-box { min-width: 400px; max-width: 600px; max-height: 80vh; overflow-y: auto; }
-.graveyard-box h2 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; }
+/* Graveyard & Deck Viewer */
+.graveyard-box, .deck-viewer-box { min-width: 400px; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+.graveyard-box h2, .deck-viewer-box h2 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; }
 .grave-card-item {
   background: #1d1814; padding: 0.5rem 1rem; margin: 0.3rem 0; border-radius: 4px;
   display: flex; justify-content: space-between; align-items: center; color: #9b8e7a; font-size: 0.9rem;
@@ -454,8 +557,17 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 .surrender-btn.no { background: #1d1814; color: #9b8e7a; border: 1px solid #3a3028; }
 .surrender-btn.no:hover { background: #2a2218; }
 
-/* Info overlay */
-.info-box { min-width: 450px; max-width: 550px; max-height: 75vh; overflow-y: auto; }
+/* Info overlay - TRULY CENTERED */
+.info-box {
+  min-width: 450px;
+  max-width: 550px;
+  max-height: 75vh;
+  overflow-y: auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 .info-tabs { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
 .info-tab-btn {
   flex: 1; padding: 0.5rem; background: #1d1814; border: 1px solid #3a3028;
@@ -485,6 +597,37 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 }
 .close-btn:hover, button.menu-btn:hover { background: #3a3020; }
 
+/* REDUCED BRIGHTNESS GLOW */
+.card.selected-for-attack {
+  box-shadow: 0 0 8px rgba(100, 140, 60, 0.5), 0 0 16px rgba(100, 120, 40, 0.3) !important;
+  border-color: #8a9a5c !important;
+  transform: scale(1.03);
+  z-index: 200 !important;
+  animation: glow-pulse-subtle 2s ease-in-out infinite;
+}
+@keyframes glow-pulse-subtle {
+  0%, 100% { box-shadow: 0 0 8px rgba(100, 140, 60, 0.5), 0 0 16px rgba(100, 120, 40, 0.3); }
+  50% { box-shadow: 0 0 14px rgba(120, 160, 80, 0.6), 0 0 24px rgba(110, 140, 60, 0.4); }
+}
+.enemy-slot.targetable {
+  box-shadow: 0 0 10px rgba(180, 60, 40, 0.5), 0 0 20px rgba(160, 40, 20, 0.3) !important;
+  border-color: #cc4444 !important;
+  animation: enemy-target-glow-subtle 1.5s ease-in-out infinite;
+}
+@keyframes enemy-target-glow-subtle {
+  0%, 100% { box-shadow: 0 0 8px rgba(180, 60, 40, 0.4), 0 0 16px rgba(160, 40, 20, 0.25); }
+  50% { box-shadow: 0 0 16px rgba(200, 80, 60, 0.6), 0 0 28px rgba(180, 60, 40, 0.4); }
+}
+.player-slot.targetable {
+  box-shadow: 0 0 8px rgba(60, 140, 50, 0.5), 0 0 16px rgba(50, 120, 40, 0.3) !important;
+  border-color: #55aa44 !important;
+  animation: player-target-glow-subtle 1.5s ease-in-out infinite;
+}
+@keyframes player-target-glow-subtle {
+  0%, 100% { box-shadow: 0 0 8px rgba(60, 140, 50, 0.4), 0 0 16px rgba(50, 120, 40, 0.25); }
+  50% { box-shadow: 0 0 16px rgba(80, 180, 60, 0.6), 0 0 28px rgba(70, 150, 50, 0.4); }
+}
+
 /* ========== ANIMATIONS ========== */
 @keyframes danger-pulse { 0%,100%{background:#1d1814;border-color:#8b4a3a;transform:scale(1)}50%{background:#3d1a14;border-color:#c08070;transform:scale(1.05)} }
 @keyframes screenshake { 0%,100%{transform:translate(0,0)}10%,30%,50%,70%,90%{transform:translate(-4px,3px)}20%,40%,60%,80%{transform:translate(4px,-3px)} }
@@ -497,8 +640,24 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 @keyframes action-spark { 0%{transform:scale(0) rotate(0deg);opacity:1}50%{transform:scale(1.5) rotate(180deg);opacity:0.8}100%{transform:scale(0) rotate(360deg);opacity:0} }
 
 #arrowSvgLayer { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:150; display:none; }
-.attack-indicator { position:fixed; pointer-events:none; z-index:151; font-size:1.8rem; display:none; text-shadow: 0 0 20px #c08050, 0 0 40px #a06030; animation: attack-pulse 0.3s infinite ease-in-out; }
-@keyframes attack-pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.3)} }
+.attack-indicator { 
+  position:fixed; pointer-events:none; z-index:151; font-size:1.8rem; 
+  display:none; text-shadow: 0 0 20px #c08050, 0 0 40px #a06030; 
+  animation: attack-pulse 0.3s infinite ease-in-out; 
+}
+.attack-indicator.enemy-indicator {
+  text-shadow: 0 0 20px #ff6b35, 0 0 40px #cc4422;
+}
+@keyframes attack-dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(51, 170, 85, 0.7), 0 0 8px rgba(51, 170, 85, 0.3);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 6px rgba(51, 170, 85, 0.9), 0 0 12px rgba(51, 170, 85, 0.5);
+  }
+}
 .overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:999; opacity:0; pointer-events:none; transition:opacity 0.3s; }
 .overlay.active { opacity:1; pointer-events:auto; }
 .overlay-box { background:#1b1e16; padding:2rem 4rem; border-radius:8px; border:1px solid #3a3028; text-align:center; }

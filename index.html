@@ -13,13 +13,18 @@
     <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#58a6ff" />
     </marker>
+    <marker id="arrowhead-enemy" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ff6b35" />
+    </marker>
   </defs>
-  <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" stroke="#58a6ff" stroke-width="3" marker-end="url(#arrowhead)" stroke-linecap="round" />
 </svg>
 
 <div class="attack-indicator" id="attackIndicator">⚔️</div>
+<div class="attack-indicator enemy-indicator" id="enemyAttackIndicator">⚔️</div>
 
 <div class="game-wrapper" id="gameWrapper">
+  <!-- Ult refresh button moved here, now positioned relative to the whole game area -->
+  <button class="ult-refresh-btn" id="ultRefreshBtn" disabled>🔄 10🍗</button>
 
   <!-- LEFT PANEL -->
   <div class="left-panel-outer" id="leftPanelOuter" style="display:none;">
@@ -96,6 +101,14 @@
       </div>
     </div>
 
+    <div class="deck-viewer-overlay" id="deckViewerOverlay">
+      <div class="deck-viewer-box">
+        <h2 id="deckViewerTitle">Your Deck</h2>
+        <div id="deckViewerContent"></div>
+        <button class="close-btn" onclick="document.getElementById('deckViewerOverlay').classList.remove('active')">Close</button>
+      </div>
+    </div>
+
     <div class="surrender-overlay" id="surrenderOverlay">
       <div class="surrender-box">
         <h2>Surrender?</h2>
@@ -127,7 +140,6 @@
               <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">100</div>
             </div>
             <div class="god-card-wrapper" id="playerGodWrapper">
-              <button class="ult-refresh-btn" id="ultRefreshBtn" disabled>🔄 10🍗</button>
               <div id="playerGodSide"></div>
               <div class="god-hp-display player-hp" id="playerGodHpDisplay">100</div>
             </div>
@@ -163,6 +175,13 @@
               <div class="slot player-slot" id="playerRanged5" data-row="ranged" data-idx="4"></div>
             </div></div>
           </div>
+          
+          <!-- Turn Phase Indicator -->
+          <div class="turn-phase-indicator" id="turnPhaseIndicator">
+            <div class="phase-round">Round <span id="phaseRound">1</span></div>
+            <div class="phase-status" id="phaseStatus">⚔️ Player Turn</div>
+            <div class="phase-dice-info" id="phaseDiceInfo">Dice in 4 turns</div>
+          </div>
         </div>
 
         <div class="hand-fan-container" id="handFanContainer"></div>
@@ -170,7 +189,7 @@
         <div class="info-panel">
           <span id="logMessage">Drag cards to play or click to attack!</span>
           <span>Round: <span id="roundDisplay">1</span></span>
-          <span>Dice: <span id="diceInfo">Every 2 Rounds</span></span>
+          <span>Dice: <span id="diceInfo">Every 4 Turns</span></span>
           <button class="menu-btn" id="btnMenu">Exit</button>
         </div>
       </div>
@@ -225,9 +244,7 @@
     'Guard': { name: 'Guard', desc: 'Adjacent allies protected', type: 'defensive', icon: '🔰', cssClass: 'passive-guard' },
     'Regen 1': { name: 'Regen 1', desc: 'Heal 1 HP per turn', type: 'defensive', icon: '💚', cssClass: 'passive-regen' },
     'Pierce': { name: 'Pierce', desc: 'Ignore enemy Shield', type: 'offensive', icon: '🗡️', cssClass: '' },
-    'Double Strike': { name: 'Double Strike', desc: 'Attack twice per turn', type: 'offensive', icon: '⚔️⚔️', cssClass: 'passive-doublestrike' },
     'Lifesteal 1': { name: 'Lifesteal 1', desc: 'Heal 1 HP on kill', type: 'offensive', icon: '🩸', cssClass: 'passive-lifesteal' },
-    'Berserk': { name: 'Berserk', desc: '+3 ATK if below half HP', type: 'offensive', icon: '💢', cssClass: 'passive-berserk' },
     'Taunt': { name: 'Taunt', desc: 'Enemy must attack this first', type: 'utility', icon: '📢', cssClass: 'passive-taunt' },
   };
 
@@ -328,8 +345,8 @@
   ];
 
   let state = {};
-  let dragTracker = { active: false, type: null, origin: null, startX: 0, startY: 0 };
   let selectedAttacker = null;
+  let turnCounter = 0; // Tracks total turns for dice scheduling
 
   function shuffle(a) { for (let i=a.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
@@ -392,6 +409,7 @@
     if (state.timerInterval) clearInterval(state.timerInterval);
     if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
     selectedAttacker = null;
+    turnCounter = 0;
     const opposingFaction = chosenFaction === 'heroes' ? 'monsters' : 'heroes';
     const enemyGods = GODS[opposingFaction];
     const enemyGod = enemyGods[Math.floor(Math.random() * enemyGods.length)];
@@ -426,7 +444,10 @@
       enemyUltAvailable: true,
       ultRefreshed: false,
       timerInterval: null,
-      enemyTimerInterval: null
+      enemyTimerInterval: null,
+      diceActive: false,
+      currentPhase: 'player',
+      phaseNumber: 1
     };
     for (let i = 0; i < 5; i++) drawCard();
     const sampleEnemy = opposingFaction === 'heroes'
@@ -440,8 +461,10 @@
     document.getElementById('gameInterface').classList.add('active');
     document.getElementById('leftPanelOuter').style.display = 'flex';
     document.getElementById('rightPanelOuter').style.display = 'flex';
-    document.getElementById('diceInfo').textContent = 'Every 2 Rounds';
+    document.getElementById('diceInfo').textContent = 'Every 4 Turns';
     document.getElementById('enemyTimer').textContent = '30s';
+    
+    updatePhaseIndicator('player', state.round, 4 - (turnCounter % 4));
 
     applyScaling();
     renderAll();
@@ -472,6 +495,31 @@
       else timerElement.classList.remove('critical-danger');
       if (state.turnTimer <= 0 && state.turn === 'player' && !state.gameOver) endTurn();
     }, 1000);
+  }
+
+  function updatePhaseIndicator(phase, round, phaseNum) {
+    const phaseStatus = document.getElementById('phaseStatus');
+    const phaseRound = document.getElementById('phaseRound');
+    const phaseDiceInfo = document.getElementById('phaseDiceInfo');
+    
+    phaseRound.textContent = 'Phase ' + phaseNum;
+    
+    switch(phase) {
+      case 'player':
+        phaseStatus.textContent = '⚔️ Your Turn';
+        phaseStatus.style.color = '#7a9a60';
+        break;
+      case 'enemy':
+        phaseStatus.textContent = '👹 Enemy Turn';
+        phaseStatus.style.color = '#c08070';
+        break;
+      case 'dice':
+        phaseStatus.textContent = '🎲 Dice Fate';
+        phaseStatus.style.color = '#9b7a3c';
+        break;
+    }
+    
+    phaseDiceInfo.textContent = '';
   }
 
   function triggerAutoOverlay(title) {
@@ -511,11 +559,6 @@
     spawnActionSpark(rect.left + rect.width/2, rect.top, '💥');
   }
 
-  function animateCardSlash(element) {
-    element.classList.add('card-slash-anim');
-    setTimeout(() => element.classList.remove('card-slash-anim'), 500);
-  }
-
   function spawnClickRipple(x, y) {
     const ripple = document.createElement('div');
     ripple.className = 'click-ripple';
@@ -535,18 +578,105 @@
     setTimeout(() => spark.remove(), 500);
   }
 
+  function showAttackIndicator(fromSlot, toSlot, isEnemy) {
+    if (!fromSlot || !toSlot) return;
+    const fromRect = fromSlot.getBoundingClientRect();
+    const toRect = toSlot.getBoundingClientRect();
+    
+    const svgLayer = document.getElementById('arrowSvgLayer');
+    svgLayer.style.display = 'block';  // <-- make sure layer is visible
+    
+    const fromX = fromRect.left + fromRect.width / 2;
+    const fromY = fromRect.top + fromRect.height / 2;
+    const toX = toRect.left + toRect.width / 2;
+    const toY = toRect.top + toRect.height / 2;
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fromX);
+    line.setAttribute('y1', fromY);
+    line.setAttribute('x2', toX);
+    line.setAttribute('y2', toY);
+    line.setAttribute('stroke', isEnemy ? '#ff6b35' : '#58a6ff');
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('marker-end', isEnemy ? 'url(#arrowhead-enemy)' : 'url(#arrowhead)');
+    line.setAttribute('stroke-linecap', 'round');
+    svgLayer.appendChild(line);
+    
+    const indicator = isEnemy ? document.getElementById('enemyAttackIndicator') : document.getElementById('attackIndicator');
+    indicator.style.left = toX - 15 + 'px';
+    indicator.style.top = toY - 15 + 'px';
+    indicator.style.display = 'block';
+    
+    setTimeout(() => {
+      line.remove();
+      indicator.style.display = 'none';
+      // hide layer if no lines left
+      if (!svgLayer.querySelector('line')) {
+        svgLayer.style.display = 'none';
+      }
+    }, 800);
+  }
+
+  function addAttackDot(slotId, canAttack) {
+    // Remove existing dot
+    const existingDot = document.querySelector(`.attack-dot[data-slot="${slotId}"]`);
+    if (existingDot) existingDot.remove();
+    
+    const slot = document.getElementById(slotId);
+    if (!slot || slot.querySelector('.card') === null) return;
+    
+    const dot = document.createElement('div');
+    dot.className = 'attack-dot ' + (canAttack ? 'can-attack' : 'has-attacked-dot');
+    dot.dataset.slot = slotId;
+    dot.title = canAttack ? 'Can attack' : 'Already attacked';
+    slot.appendChild(dot);
+  }
+
+  function removeAllAttackDots() {
+    document.querySelectorAll('.attack-dot').forEach(d => d.remove());
+  }
+
+  function updateAllAttackDots() {
+    removeAllAttackDots();
+    
+    // Player cards
+    for (let i = 0; i < 5; i++) {
+      const meleeCard = state.playerMelee[i];
+      const rangedCard = state.playerRanged[i];
+      
+      if (meleeCard) {
+        addAttackDot(`playerMelee${i+1}`, !meleeCard.hasAttacked);
+      }
+      if (rangedCard) {
+        addAttackDot(`playerRanged${i+1}`, !rangedCard.hasAttacked);
+      }
+    }
+    
+    // Enemy cards
+    for (let i = 0; i < 5; i++) {
+      const meleeCard = state.enemyMelee[i];
+      const rangedCard = state.enemyRanged[i];
+      
+      if (meleeCard) {
+        addAttackDot(`enemyMelee${i+1}`, !meleeCard.hasAttacked);
+      }
+      if (rangedCard) {
+        addAttackDot(`enemyRanged${i+1}`, !rangedCard.hasAttacked);
+      }
+    }
+  }
+
   function hasEnemyUnits() { return state.enemyMelee.some(u => u !== null) || state.enemyRanged.some(u => u !== null); }
 
-  function checkAffordableCards() {
+function checkAffordableCards() {
     if (state.turn !== 'player' || state.gameOver) return;
     const availableProv = state.provPool - state.provUsed;
     const hasAffordable = state.hand.some(c => c.cost <= availableProv);
     renderAll();
     if (!hasAffordable && state.hand.length > 0) {
-      document.getElementById('logMessage').textContent = '⚠️ No affordable cards! Auto-ending turn...';
-      setTimeout(() => { if (state.turn === 'player' && !state.gameOver) endTurn(); }, 1500);
+      document.getElementById('logMessage').textContent = '⚠️ No affordable cards! Click End Turn to skip.';
     }
-  }
+}
 
   function showGraveyard(type) {
     const overlay = document.getElementById('graveyardOverlay');
@@ -572,7 +702,35 @@
     overlay.classList.add('active');
   }
 
+  function showDeck() {
+    const overlay = document.getElementById('deckViewerOverlay');
+    const content = document.getElementById('deckViewerContent');
+    const deck = state.deck;
+    if (deck.length === 0) {
+      content.innerHTML = '<p style="color:#8b949e;text-align:center;">No cards remaining in deck</p>';
+    } else {
+      const sortedDeck = [...deck].reverse();
+      content.innerHTML = sortedDeck.map((c, i) => `
+        <div class="grave-card-item">
+          <span><strong>#${deck.length - i}</strong> ${c.name} ${c.type === 'Spell' ? '(Spell)' : ''}</span>
+          <span class="grave-card-stats">
+            ${c.atk !== undefined ? '<span>⚔️ ' + c.atk + '</span>' : ''}
+            ${c.maxHp !== undefined ? '<span>❤️ ' + c.maxHp + '</span>' : ''}
+            <span>🍗 ${c.cost}</span>
+            ${c.passive ? '<span style="color:#d09a00;font-size:0.65rem;">' + (PASSIVES[c.passive]?.icon || '') + c.passive + '</span>' : ''}
+          </span>
+        </div>
+      `).join('');
+    }
+    overlay.classList.add('active');
+  }
+
   function triggerDiceRoll() {
+    if (state.diceActive) return;
+    state.diceActive = true;
+    state.currentPhase = 'dice';
+    updatePhaseIndicator('dice', state.round, 0);
+    
     const overlay = document.getElementById('diceOverlay');
     const resultEl = document.getElementById('diceResult');
     const effectNameEl = document.getElementById('diceEffectName');
@@ -594,6 +752,7 @@
         applyDiceEffect(roll);
         overlay.classList.remove('active');
         renderAll();
+        state.diceActive = false;
         spawnActionSpark(window.innerWidth/2, window.innerHeight/2, event.emoji);
       }, 3500);
     }, 1500);
@@ -707,92 +866,376 @@
 
   function setupPointerEngine() {
     const svgLayer = document.getElementById('arrowSvgLayer');
-    const arrowLine = document.getElementById('arrowLine');
-    const attackIndicator = document.getElementById('attackIndicator');
+    svgLayer.innerHTML = `
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#58a6ff" />
+        </marker>
+        <marker id="arrowhead-enemy" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#ff6b35" />
+        </marker>
+      </defs>
+    `;
+    svgLayer.style.display = 'none';
+    document.getElementById('attackIndicator').style.display = 'none';
+    document.getElementById('enemyAttackIndicator').style.display = 'none';
 
-    document.addEventListener('mousedown', (e) => {
-      spawnClickRipple(e.clientX, e.clientY);
-      if (state.gameOver || state.turn !== 'player') return;
+    // Drag state
+    let dragState = {
+      active: false,
+      line: null,
+      source: null,       // { row, idx, slotElement }
+      startX: 0,
+      startY: 0,
+      threshold: 5
+    };
 
-      const boardCard = e.target.closest('.player-slot .card');
-      if (boardCard && !boardCard.classList.contains('has-attacked')) {
-        const slot = boardCard.closest('.slot');
-        if (!slot || !slot.dataset.row || slot.dataset.idx === undefined) return;
-        selectedAttacker = { row: slot.dataset.row, idx: parseInt(slot.dataset.idx) };
-        document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
-        boardCard.classList.add('selected-for-attack');
-        document.getElementById('logMessage').textContent = '🎯 Card selected! Click an enemy to attack.';
-        spawnActionSpark(e.clientX, e.clientY, '🎯');
-        dragTracker = { active: true, type: 'combat', origin: { row: slot.dataset.row, idx: parseInt(slot.dataset.idx) }, startX: e.clientX, startY: e.clientY };
-        svgLayer.style.display = 'block';
-        updateArrow(e.clientX, e.clientY);
+    function resetDragState() {
+      if (dragState.line) {
+        dragState.line.remove();
+        dragState.line = null;
+      }
+      dragState.active = false;
+      dragState.source = null;
+      document.querySelectorAll('.enemy-slot.drag-target').forEach(s => s.classList.remove('drag-target'));
+      if (!svgLayer.querySelector('line')) {
+        svgLayer.style.display = 'none';
+      }
+    }
+
+    function updateDragLine(e) {
+      if (!dragState.line || !dragState.source) return;
+      const fromRect = dragState.source.slotElement.getBoundingClientRect();
+      const fromX = fromRect.left + fromRect.width / 2;
+      const fromY = fromRect.top + fromRect.height / 2;
+      dragState.line.setAttribute('x1', fromX);
+      dragState.line.setAttribute('y1', fromY);
+      dragState.line.setAttribute('x2', e.clientX);
+      dragState.line.setAttribute('y2', e.clientY);
+    }
+
+    function highlightDragTarget(e) {
+      // Remove previous highlights
+      document.querySelectorAll('.enemy-slot.drag-target').forEach(s => s.classList.remove('drag-target'));
+      const enemySlot = e.target.closest('.enemy-slot');
+      if (enemySlot) {
+        enemySlot.classList.add('drag-target');
+      }
+    }
+
+ document.addEventListener('mousedown', (e) => {
+  spawnClickRipple(e.clientX, e.clientY);
+  if (state.gameOver || state.turn !== 'player') {
+    if (state.turn === 'dice') {
+      document.getElementById('logMessage').textContent = '🎲 Dice Fate is resolving...';
+    }
+    return;
+  }
+
+  const enemySlot = e.target.closest('.enemy-slot');
+  const playerSlot = e.target.closest('.player-slot');
+  const godTarget = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
+  const boardCard = e.target.closest('.player-slot .card');
+  const handCard = e.target.closest('.fan-card-wrapper');
+
+    if (selectedAttacker && selectedAttacker.isHandCard) {
+    const handCardEl = document.querySelector(`.fan-card-wrapper[data-idx="${selectedAttacker.handIdx}"]`);
+    if (handCardEl) {
+      const rect = handCardEl.getBoundingClientRect();
+      dragState.startX = rect.left + rect.width / 2;
+      dragState.startY = rect.top + rect.height / 2;
+    }
+  }
+
+  // Prevent selecting enemy cards directly
+  if (e.target.closest('.enemy-slot .card') && !selectedAttacker) return;
+
+  // --- Potential drag start for friendly board cards ---
+  if (boardCard && !boardCard.classList.contains('has-attacked')) {
+    const slot = boardCard.closest('.player-slot');
+    if (slot && slot.dataset.row && slot.dataset.idx !== undefined) {
+      dragState.source = {
+        row: slot.dataset.row,
+        idx: parseInt(slot.dataset.idx),
+        slotElement: slot
+      };
+      dragState.startX = e.clientX;
+      dragState.startY = e.clientY;
+      dragState.active = false;
+      return;
+    }
+  }
+
+  // --- CLICK ON ENEMY SLOT ---
+  if (enemySlot) {
+    if (selectedAttacker) {
+      // Handle spell targeting enemy slot
+      if (selectedAttacker.isSpell) {
+        resolveDragAction(enemySlot);
         return;
       }
-
-      if (selectedAttacker && !selectedAttacker.isHandCard && (e.target.closest('.enemy-slot') || e.target.closest('#enemyGodHpDisplay') || e.target.closest('#enemyGodSide'))) {
-       const target = e.target.closest('.enemy-slot') || e.target.closest('#enemyGodHpDisplay') || e.target.closest('#enemyGodSide');
-        if (target) { resolveDragAction(target); selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); svgLayer.style.display = 'none'; attackIndicator.style.display = 'none'; return; }
+      // Handle board card attacking enemy slot
+      if (!selectedAttacker.isHandCard) {
+        resolveDragAction(enemySlot);
+        return;
       }
-      if (selectedAttacker && !selectedAttacker.isHandCard) { selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); document.getElementById('logMessage').textContent = 'Click a card to attack, or drag to play!'; }
+    }
+    return;
+  }
 
-      const handCard = e.target.closest('.fan-card-wrapper');
-      if (handCard) {
-        const idx = parseInt(handCard.dataset.idx);
-        const cardData = state.hand[idx];
-        if (cardData && !handCard.querySelector('.card.unaffordable')) {
-          if (cardData.type === 'Unit') {
-            document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
-            handCard.querySelector('.card').classList.add('selected-for-attack');
-            selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
-            document.getElementById('logMessage').textContent = '🎯 Card selected! Click an empty player slot to play.';
-            spawnActionSpark(e.clientX, e.clientY, '🎯');
-            return;
-          }
-          dragTracker = { active: true, type: 'spell', origin: { handIdx: idx, card: cardData }, startX: e.clientX, startY: e.clientY };
-          svgLayer.style.display = 'block';
-          updateArrow(e.clientX, e.clientY);
+  // --- CLICK ON PLAYER SLOT ---
+  if (playerSlot) {
+    if (selectedAttacker) {
+      // Handle spell targeting player slot (buffs, resurrect)
+      if (selectedAttacker.isSpell) {
+        resolveDragAction(playerSlot);
+        return;
+      }
+      // Handle unit card being played from hand to empty slot
+      if (selectedAttacker.isHandCard && !selectedAttacker.isSpell) {
+        if (playerSlot.innerHTML.trim() === '' || playerSlot.querySelector('.card') === null) {
+          playCardFromHandToSlot(playerSlot, selectedAttacker);
           return;
         }
       }
-      if (selectedAttacker && selectedAttacker.isHandCard && e.target.closest('.player-slot')) {
-        const targetSlot = e.target.closest('.player-slot');
-        if (targetSlot) { playCardFromHandToSlot(targetSlot, selectedAttacker); selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); return; }
-      }
+    }
+    return;
+  }
 
-      const handCardDrag = e.target.closest('.fan-card-wrapper');
-      if (handCardDrag && !selectedAttacker?.isHandCard) {
-        const idx = parseInt(handCardDrag.dataset.idx);
-        const cardData = state.hand[idx];
-        if (cardData && !handCardDrag.querySelector('.card.unaffordable')) {
-          dragTracker = { active: true, type: cardData.type === 'Spell' ? 'spell' : 'play-unit', origin: { handIdx: idx, card: cardData }, startX: e.clientX, startY: e.clientY };
-          svgLayer.style.display = 'block'; updateArrow(e.clientX, e.clientY);
+  // --- CLICK ON ENEMY GOD ---
+  if (godTarget) {
+    if (selectedAttacker) {
+      // Allow spells that target gods (like damage spells when no enemy units)
+      if (selectedAttacker.isSpell) {
+        resolveDragAction(godTarget);
+        return;
+      }
+      // Allow board cards to attack god
+      if (!selectedAttacker.isHandCard) {
+        resolveDragAction(godTarget);
+        clearSelection();
+        return;
+      }
+    }
+    return;
+  }
+
+  // --- CLICK ON HAND CARD ---
+  if (handCard) {
+    const idx = parseInt(handCard.dataset.idx);
+    const cardData = state.hand[idx];
+    if (cardData && !handCard.querySelector('.card.unaffordable')) {
+      // If clicking the same spell card that's already selected, deselect
+      if (selectedAttacker && selectedAttacker.isSpell && selectedAttacker.handIdx === idx) {
+        clearSelection();
+        document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
+        return;
+      }
+      // If clicking the same unit card that's already selected, deselect
+      if (selectedAttacker && selectedAttacker.isHandCard && !selectedAttacker.isSpell && selectedAttacker.handIdx === idx) {
+        clearSelection();
+        document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
+        return;
+      }
+      
+      clearSelection();
+      const cardEl = handCard.querySelector('.card');
+      cardEl.classList.add('selected-for-attack');
+      
+      if (cardData.type === 'Unit') {
+        selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
+        document.getElementById('logMessage').textContent = '🎯 Unit selected! Click an empty slot to play, or drag to play.';
+        highlightEmptyPlayerSlots();
+      } else if (cardData.type === 'Spell') {
+        selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true, isSpell: true };
+        document.getElementById('logMessage').textContent = '✨ Spell selected! Click or drag to a target to cast.';
+        highlightSpellTargets(cardData);
+      }
+      spawnActionSpark(e.clientX, e.clientY, cardData.type === 'Spell' ? '✨' : '🎯');
+      
+      // Set up drag start position for this hand card
+      const handCardEl = handCard;
+      if (handCardEl) {
+        const rect = handCardEl.getBoundingClientRect();
+        dragState.startX = rect.left + rect.width / 2;
+        dragState.startY = rect.top + rect.height / 2;
+      }
+    }
+    return;
+  }
+
+
+  // --- CLICK ON EMPTY SPACE – deselect ---
+  clearSelection();
+  if (state.turn === 'player' && !state.gameOver) {
+    document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  // Handle drag from hand card
+  if (selectedAttacker && selectedAttacker.isHandCard) {
+    if (!dragState.active) {
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+      if (Math.sqrt(dx*dx + dy*dy) < 5) return;
+      
+      // Start dragging
+      dragState.active = true;
+      svgLayer.style.display = 'block';
+      dragState.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      dragState.line.setAttribute('stroke', '#ff6b35');
+      dragState.line.setAttribute('stroke-width', '3');
+      dragState.line.setAttribute('marker-end', 'url(#arrowhead-enemy)');
+      dragState.line.setAttribute('stroke-linecap', 'round');
+      svgLayer.appendChild(dragState.line);
+    }
+    
+    // Draw line from hand card to cursor
+    if (dragState.line) {
+      dragState.line.setAttribute('x1', dragState.startX);
+      dragState.line.setAttribute('y1', dragState.startY);
+      dragState.line.setAttribute('x2', e.clientX);
+      dragState.line.setAttribute('y2', e.clientY);
+    }
+    
+    // Highlight targets under cursor
+    document.querySelectorAll('.enemy-slot.drag-target, .player-slot.drag-target').forEach(s => s.classList.remove('drag-target'));
+    const targetSlot = e.target.closest('.enemy-slot, .player-slot');
+    const targetGod = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
+    if (targetSlot) targetSlot.classList.add('drag-target');
+    if (targetGod) targetGod.classList.add('drag-target');
+    
+    return;
+  }
+
+  // Handle drag from board card
+  if (!dragState.source) return;
+
+  if (!dragState.active) {
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+    if (Math.sqrt(dx*dx + dy*dy) < dragState.threshold) return;
+
+    dragState.active = true;
+    clearSelection();
+    svgLayer.style.display = 'block';
+    dragState.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    dragState.line.setAttribute('stroke', '#ff6b35');
+    dragState.line.setAttribute('stroke-width', '3');
+    dragState.line.setAttribute('marker-end', 'url(#arrowhead-enemy)');
+    dragState.line.setAttribute('stroke-linecap', 'round');
+    svgLayer.appendChild(dragState.line);
+  }
+
+  updateDragLine(e);
+  highlightDragTarget(e);
+});
+
+document.addEventListener('mouseup', (e) => {
+  // Handle drag from hand card
+  if (dragState.active && selectedAttacker && selectedAttacker.isHandCard) {
+    const targetEnemySlot = e.target.closest('.enemy-slot');
+    const targetPlayerSlot = e.target.closest('.player-slot');
+    const targetGod = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
+    
+    if (selectedAttacker.isSpell) {
+      // Spell can target any valid target
+      if (targetEnemySlot) {
+        resolveDragAction(targetEnemySlot);
+      } else if (targetPlayerSlot) {
+        resolveDragAction(targetPlayerSlot);
+      } else if (targetGod) {
+        resolveDragAction(targetGod);
+      }
+    } else {
+      // Unit from hand goes to player slot
+      if (targetPlayerSlot) {
+        if (targetPlayerSlot.innerHTML.trim() === '' || targetPlayerSlot.querySelector('.card') === null) {
+          playCardFromHandToSlot(targetPlayerSlot, selectedAttacker);
         }
       }
-    });
+    }
+    resetDragState();
+    clearSelection();
+    return;
+  }
 
-    document.addEventListener('mousemove', (e) => {
-      if (!dragTracker.active) { attackIndicator.style.display = 'none'; return; }
-      updateArrow(e.clientX, e.clientY);
-      if (dragTracker.type === 'combat') {
-        const enemyUnder = e.target.closest('.enemy-slot, #enemyGodHpDisplay, #enemyGodSide, .god-hp-display, .god-card-wrapper');
-        if (enemyUnder) { const rect = enemyUnder.getBoundingClientRect(); attackIndicator.style.display = 'block'; attackIndicator.style.left = rect.left + rect.width / 2 - 18 + 'px'; attackIndicator.style.top = rect.top - 8 + 'px'; }
-        else { attackIndicator.style.display = 'none'; }
+  // Handle drag from board card
+  if (dragState.active) {
+    const targetEnemySlot = e.target.closest('.enemy-slot');
+    const targetGod = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
+    if (dragState.source) {
+      selectedAttacker = { row: dragState.source.row, idx: dragState.source.idx };
+      if (targetEnemySlot) {
+        resolveDragAction(targetEnemySlot);
+      } else if (targetGod) {
+        resolveDragAction(targetGod);
       }
-    });
+    }
+    resetDragState();
+    return;
+  }
 
-    document.addEventListener('mouseup', (e) => {
-      if (!dragTracker.active) return;
-      svgLayer.style.display = 'none'; attackIndicator.style.display = 'none';
-      const targetSlot = e.target.closest('.slot, .player-slot, #enemyGodHpDisplay, #enemyGodSide, .god-hp-display, .god-card-wrapper');
-      if (targetSlot) { resolveDragAction(targetSlot); selectedAttacker = null; document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack')); }
-      dragTracker.active = false;
-    });
+  // Not dragging – handle as a click on the source card (select it)
+  if (dragState.source) {
+    const source = dragState.source;
+    resetDragState();
 
-    function updateArrow(currentX, currentY) {
-      arrowLine.setAttribute('x1', dragTracker.startX);
-      arrowLine.setAttribute('y1', dragTracker.startY);
-      arrowLine.setAttribute('x2', currentX);
-      arrowLine.setAttribute('y2', currentY);
+    const attackerArr = source.row === 'melee' ? state.playerMelee : state.playerRanged;
+    const attacker = attackerArr[source.idx];
+    if (!attacker || attacker.hasAttacked) return;
+
+    if (selectedAttacker && !selectedAttacker.isHandCard &&
+        selectedAttacker.row === source.row &&
+        selectedAttacker.idx === source.idx) {
+      clearSelection();
+      return;
+    }
+
+    clearSelection();
+    const cardEl = source.slotElement.querySelector('.card');
+    if (cardEl) cardEl.classList.add('selected-for-attack');
+    selectedAttacker = { row: source.row, idx: source.idx };
+    document.getElementById('logMessage').textContent = '🎯 Card selected! Click an enemy to attack.';
+    highlightEnemyTargets();
+  }
+});
+  }
+    
+
+
+  function clearSelection() {
+    selectedAttacker = null;
+    document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
+    document.querySelectorAll('.targetable').forEach(s => s.classList.remove('targetable'));
+  }
+
+  function highlightEnemyTargets() {
+    document.querySelectorAll('.enemy-slot').forEach(slot => {
+      if (slot.innerHTML.trim() !== '') slot.classList.add('targetable');
+    });
+  }
+
+  function highlightEmptyPlayerSlots() {
+    document.querySelectorAll('.player-slot').forEach(slot => {
+      if (slot.innerHTML.trim() === '') slot.classList.add('targetable');
+    });
+  }
+
+  function highlightSpellTargets(cardData) {
+    if (cardData.effect === 'divine_buff') {
+      document.querySelectorAll('.player-slot').forEach(slot => {
+        if (slot.innerHTML.trim() !== '') slot.classList.add('targetable');
+      });
+    } else if (cardData.effect === 'resurrect_2') {
+      document.querySelectorAll('.player-slot').forEach(slot => slot.classList.add('targetable'));
+    } else if (cardData.effect === 'damage_all_2') {
+      document.querySelectorAll('.enemy-slot').forEach(slot => slot.classList.add('targetable'));
+    } else {
+      document.querySelectorAll('.enemy-slot').forEach(slot => {
+        if (slot.innerHTML.trim() !== '') slot.classList.add('targetable');
+      });
     }
   }
 
@@ -809,13 +1252,12 @@
     targetArr[tgtIdx] = { ...card, hasAttacked: false, playOrder: playerPlayOrderCounter++ };
     state.provUsed += card.cost;
     document.getElementById('logMessage').textContent = `Played ${card.name}${card.passive ? ' [' + card.passive + ']' : ''}`;
+    clearSelection();
     renderAll(); checkAffordableCards();
   }
 
   function getEffectiveAtk(card) {
-    let atk = card.atk;
-    if (card.passive === 'Berserk' && card.hp < card.maxHp / 2) atk += 3;
-    return atk;
+    return card.atk;
   }
 
   function getShieldValue(card) {
@@ -834,42 +1276,132 @@
     return null;
   }
 
+  function killCardAndSendToGrave(card, arr, idx, graveArr) {
+    if (!card) return;
+    card.hp = Math.max(0, card.hp);
+    graveArr.push({...card, hp: card.maxHp || card.hp});
+    arr[idx] = null;
+  }
+
   function resolveDragAction(target) {
     if (!target) return;
     const availableProv = state.provPool - state.provUsed;
     spawnActionSpark(target.getBoundingClientRect().left + target.getBoundingClientRect().width/2, target.getBoundingClientRect().top, '⚡');
 
-    if (dragTracker.type === 'combat' || (selectedAttacker && !selectedAttacker.isHandCard && target)) {
-      let src = dragTracker.type === 'combat' ? dragTracker.origin : selectedAttacker;
-      if (!src || !src.row || src.idx === undefined) return;
-      const attackerArr = (src.row === 'melee') ? state.playerMelee : state.playerRanged;
+    // === SPELL CASTING ===
+    if (selectedAttacker && selectedAttacker.isSpell) {
+      const { handIdx, card } = selectedAttacker;
+      if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
+      
+      const useSpell = () => { state.provUsed += card.cost; state.hand.splice(handIdx, 1); };
+      
+      if (card.effect === 'damage_3' && target.classList.contains('enemy-slot')) {
+        const arr = target.dataset.row === 'melee' ? state.enemyMelee : state.enemyRanged;
+        const idx = parseInt(target.dataset.idx);
+        if (arr[idx]) { 
+          useSpell(); 
+          arr[idx].hp -= 3; 
+          showFloatingDamage(target, 3); 
+          if (arr[idx].hp <= 0) { killCardAndSendToGrave(arr[idx], arr, idx, state.enemyGrave); }
+          executeShake(); 
+          document.getElementById('logMessage').textContent = '🔥 Spell dealt 3 damage!'; 
+        }
+      } else if (card.effect === 'divine_buff' && target.classList.contains('player-slot')) {
+        const arr = target.dataset.row === 'melee' ? state.playerMelee : state.playerRanged;
+        const idx = parseInt(target.dataset.idx);
+        if (arr[idx]) { useSpell(); arr[idx].atk += 2; arr[idx].hp += 2; arr[idx].maxHp += 2; document.getElementById('logMessage').textContent = `✨ Buffed ${arr[idx].name}!`; }
+      } else if (card.effect === 'damage_6' && target.classList.contains('enemy-slot')) {
+        const arr = target.dataset.row === 'melee' ? state.enemyMelee : state.enemyRanged;
+        const idx = parseInt(target.dataset.idx);
+        if (arr[idx]) { 
+          useSpell(); 
+          arr[idx].hp -= 6; 
+          showFloatingDamage(target, 6); 
+          if (arr[idx].hp <= 0) { killCardAndSendToGrave(arr[idx], arr, idx, state.enemyGrave); }
+          executeShake(); 
+          document.getElementById('logMessage').textContent = '🔥🔥 Heavenly Strike dealt 6 damage!'; 
+        }
+      } else if (card.effect === 'damage_all_2' && target.classList.contains('enemy-slot')) {
+        useSpell(); 
+        [state.enemyMelee, state.enemyRanged].forEach(arr => arr.forEach((c, i) => { 
+          if (c) { 
+            c.hp -= 2; 
+            if (c.hp <= 0) { killCardAndSendToGrave(c, arr, i, state.enemyGrave); } 
+          } 
+        })); 
+        executeHeavyShake(); 
+        document.getElementById('logMessage').textContent = '🌋 Cataclysm dealt 2 to all enemies!';
+      } else if (card.effect === 'destroy_strongest' && target.classList.contains('enemy-slot')) {
+        useSpell(); 
+        let strongest = null, sArr = null, sIdx = -1;
+        [{arr: state.enemyMelee}, {arr: state.enemyRanged}].forEach(({arr}) => arr.forEach((c, i) => { 
+          if (c && (!strongest || c.atk > strongest.atk)) { strongest = c; sArr = arr; sIdx = i; } 
+        }));
+        if (strongest) { killCardAndSendToGrave(strongest, sArr, sIdx, state.enemyGrave); executeHeavyShake(); document.getElementById('logMessage').textContent = `💀 Dark Ritual destroyed ${strongest.name}!`; }
+      } else if (card.effect === 'resurrect_2' && target.classList.contains('player-slot')) {
+        useSpell(); 
+        if (state.playerGrave.length > 0) { 
+          const rez = shuffle([...state.playerGrave]).slice(0, Math.min(2, state.playerGrave.length)); 
+          rez.forEach(card => { 
+            state.playerGrave.splice(state.playerGrave.indexOf(card), 1); 
+            for (let arr of [state.playerMelee, state.playerRanged]) { 
+              for (let j = 0; j < arr.length; j++) { 
+                if (!arr[j]) { 
+                  arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: playerPlayOrderCounter++ }; 
+                  return; 
+                } 
+              } 
+            } 
+            state.hand.push({...card}); 
+          }); 
+          document.getElementById('logMessage').textContent = '✨ Ancestral Call!'; 
+        }
+      }
+      clearSelection();
+      setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
+      return;
+    }
+
+    // === BOARD CARD ATTACK ===
+    if (selectedAttacker && !selectedAttacker.isHandCard) {
+      const src = selectedAttacker;
+      if (!src.row || src.idx === undefined) return;
+      const attackerArr = src.row === 'melee' ? state.playerMelee : state.playerRanged;
       const attacker = attackerArr[src.idx];
       if (!attacker || attacker.hasAttacked) return;
 
+      const attackerSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
+
+      // Attack enemy god
       if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
-        if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear all enemy units first!'; return; }
+        if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
         const effAtk = getEffectiveAtk(attacker);
         state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake();
         showFloatingDamage(target, effAtk, '#ff6b35');
-        document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk} damage!`;
+        if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+        document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
+        clearSelection();
         renderAll(); return;
       }
-      
+
+      // Attack enemy slot
       if (target.classList.contains('enemy-slot')) {
-        const tgtRow = target.dataset.row; const tgtIdx = parseInt(target.dataset.idx);
-        const enemyArr = (tgtRow === 'melee') ? state.enemyMelee : state.enemyRanged;
+        const tRow = target.dataset.row, tgtIdx = parseInt(target.dataset.idx);
+        const enemyArr = tRow === 'melee' ? state.enemyMelee : state.enemyRanged;
         let enemyCard = enemyArr[tgtIdx];
 
-        if (!enemyCard && hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear all enemy units first!'; return; }
+        if (!enemyCard && hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
         if (!enemyCard && !hasEnemyUnits()) {
           const effAtk = getEffectiveAtk(attacker);
           state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake();
           showFloatingDamage(target, effAtk, '#ff6b35');
-          document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk} damage!`;
+          if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+          document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
+          clearSelection();
           renderAll(); return;
         }
 
-        // TAUNT CHECK - shake only when wrong target is clicked
+        // Taunt check
         if (hasTauntOnBoard(state.enemyMelee, state.enemyRanged)) {
           let enemyHasTaunt = enemyCard && enemyCard.passive === 'Taunt' && enemyCard.hp > 0;
           if (!enemyHasTaunt) {
@@ -878,30 +1410,38 @@
               tauntCard.classList.add('shake-taunt');
               setTimeout(function() { tauntCard.classList.remove('shake-taunt'); }, 1200);
             });
+            document.querySelectorAll('.enemy-slot').forEach(function(slot) {
+              slot.classList.remove('targetable');
+            });
+            document.querySelectorAll('.enemy-slot').forEach(function(slot) {
+              const card = slot.querySelector('.card');
+              if (card && card.classList.contains('passive-taunt')) {
+                slot.classList.add('targetable');
+              }
+            });
             return;
           }
         }
 
         const targetDom = target.querySelector('.card');
-        const attackerSlotEl = document.querySelector(`.player-slot[data-row="${src.row}"][data-idx="${src.idx}"]`);
-        const attackerDom = attackerSlotEl?.querySelector('.card');
-        if (attackerDom) animateCardSlash(attackerDom);
-
         let effAtk = getEffectiveAtk(attacker);
-        let shieldVal = getShieldValue(enemyCard);
-        if (attacker.passive === 'Pierce') shieldVal = 0;
+        let shield = getShieldValue(enemyCard);
+        if (attacker.passive === 'Pierce') shield = 0;
 
-        if (shieldVal > 0) {
-          shieldVal--;
-          enemyCard.passive = shieldVal > 0 ? `Shield ${shieldVal}` : null;
-          document.getElementById('logMessage').textContent = `🛡️ ${enemyCard.name}'s shield absorbed the hit!`;
+        if (shield > 0) {
+          shield--;
+          enemyCard.passive = shield > 0 ? `Shield ${shield}` : null;
           attacker.hasAttacked = true;
-          targetDom?.classList.add('defend-flash'); executeShake(); renderAll(); return;
+          targetDom?.classList.add('defend-flash'); executeShake();
+          if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+          clearSelection();
+          renderAll(); return;
         }
 
-        let attacks = attacker.passive === 'Double Strike' ? 2 : 1;
-        for (let a = 0; a < attacks; a++) {
-          if (!enemyCard || enemyCard.hp <= 0) break;
+        // Show attack indicator
+        if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+
+        if (enemyCard && enemyCard.hp > 0) {
           if (effAtk >= enemyCard.hp) {
             document.getElementById('logMessage').textContent = `💥 ${attacker.name} destroyed ${enemyCard.name}!`;
             showFloatingDamage(target, enemyCard.hp);
@@ -913,67 +1453,25 @@
             if (enemyCard.passive && enemyCard.passive.startsWith('Thorns')) {
               const thornDmg = parseInt(enemyCard.passive.split(' ')[1]) || 1;
               attacker.hp -= thornDmg;
-              showFloatingDamage(attackerSlotEl || target, thornDmg, '#ff8800');
-              if (attacker.hp <= 0) { state.playerGrave.push({...attacker, hp: attacker.maxHp}); attackerArr[src.idx] = null; }
+              showFloatingDamage(attackerSlot || target, thornDmg, '#ff8800');
+              if (attacker.hp <= 0) { killCardAndSendToGrave(attacker, attackerArr, src.idx, state.playerGrave); }
             }
-            state.enemyGrave.push({...enemyCard, hp: enemyCard.maxHp});
-            enemyArr[tgtIdx] = null;
-            enemyCard = null;
+            killCardAndSendToGrave(enemyCard, enemyArr, tgtIdx, state.enemyGrave);
             targetDom?.classList.add('burst-vanish'); executeShake();
           } else {
             enemyCard.hp -= effAtk; showFloatingDamage(target, effAtk);
             if (enemyCard.passive && enemyCard.passive.startsWith('Thorns')) {
               const thornDmg = parseInt(enemyCard.passive.split(' ')[1]) || 1;
               attacker.hp -= thornDmg;
-              showFloatingDamage(attackerSlotEl || target, thornDmg, '#ff8800');
-              if (attacker.hp <= 0) { state.playerGrave.push({...attacker, hp: attacker.maxHp}); attackerArr[src.idx] = null; break; }
+              showFloatingDamage(attackerSlot || target, thornDmg, '#ff8800');
+              if (attacker.hp <= 0) { killCardAndSendToGrave(attacker, attackerArr, src.idx, state.playerGrave); }
             }
             targetDom?.classList.add('defend-flash'); executeShake();
           }
         }
         attacker.hasAttacked = true;
+        clearSelection();
         setTimeout(() => renderAll(), 400);
-      }
-    }
-
-    if (dragTracker.type === 'play-unit') {
-      const { handIdx, card } = dragTracker.origin;
-      if (target.classList.contains('player-slot')) {
-        if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
-        const tgtRow = target.dataset.row; const tgtIdx = parseInt(target.dataset.idx);
-        let targetArr = (tgtRow === 'melee') ? state.playerMelee : state.playerRanged;
-        if (targetArr[tgtIdx]) return;
-        state.hand.splice(handIdx, 1);
-        if (!card.passive && card.type !== 'Spell') assignPassive(card);
-        targetArr[tgtIdx] = { ...card, hasAttacked: false, playOrder: playerPlayOrderCounter++ };
-        state.provUsed += card.cost;
-        document.getElementById('logMessage').textContent = `Played ${card.name}${card.passive ? ' [' + card.passive + ']' : ''}`;
-        renderAll(); checkAffordableCards();
-      }
-    }
-
-    if (dragTracker.type === 'spell') {
-      const { handIdx, card } = dragTracker.origin;
-      if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
-      if (card.effect === 'damage_3' && target.classList.contains('enemy-slot')) {
-        const enemyArr = (target.dataset.row === 'melee') ? state.enemyMelee : state.enemyRanged; const idx = parseInt(target.dataset.idx);
-        if (enemyArr[idx]) { state.provUsed += card.cost; state.hand.splice(handIdx, 1); enemyArr[idx].hp -= 3; showFloatingDamage(target, 3); if (enemyArr[idx].hp <= 0) { state.enemyGrave.push({...enemyArr[idx], hp: enemyArr[idx].maxHp}); enemyArr[idx] = null; target.querySelector('.card')?.classList.add('burst-vanish'); } executeShake(); document.getElementById('logMessage').textContent = '🔥 Spell dealt 3 damage!'; setTimeout(() => { renderAll(); checkAffordableCards(); }, 400); }
-      } else if (card.effect === 'divine_buff' && target.classList.contains('player-slot')) {
-        const playerArr = (target.dataset.row === 'melee') ? state.playerMelee : state.playerRanged; const idx = parseInt(target.dataset.idx);
-        if (playerArr[idx]) { state.provUsed += card.cost; state.hand.splice(handIdx, 1); playerArr[idx].atk += 2; playerArr[idx].hp += 2; playerArr[idx].maxHp += 2; document.getElementById('logMessage').textContent = `✨ Buffed ${playerArr[idx].name}!`; renderAll(); checkAffordableCards(); }
-      } else if (card.effect === 'damage_6' && target.classList.contains('enemy-slot')) {
-        const enemyArr = (target.dataset.row === 'melee') ? state.enemyMelee : state.enemyRanged; const idx = parseInt(target.dataset.idx);
-        if (enemyArr[idx]) { state.provUsed += card.cost; state.hand.splice(handIdx, 1); enemyArr[idx].hp -= 6; showFloatingDamage(target, 6); if (enemyArr[idx].hp <= 0) { state.enemyGrave.push({...enemyArr[idx], hp: enemyArr[idx].maxHp}); enemyArr[idx] = null; target.querySelector('.card')?.classList.add('burst-vanish'); } executeShake(); document.getElementById('logMessage').textContent = '🔥🔥 Heavenly Strike dealt 6 damage!'; setTimeout(() => { renderAll(); checkAffordableCards(); }, 400); }
-      } else if (card.effect === 'damage_all_2' && target.classList.contains('enemy-slot')) {
-        state.provUsed += card.cost; state.hand.splice(handIdx, 1); [state.enemyMelee, state.enemyRanged].forEach(arr => { arr.forEach((c, i) => { if (c) { c.hp -= 2; if (c.hp <= 0) { state.enemyGrave.push({...c, hp: c.maxHp}); arr[i] = null; } } }); }); executeHeavyShake(); document.getElementById('logMessage').textContent = '🌋 Cataclysm dealt 2 damage to all enemies!'; setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
-      } else if (card.effect === 'destroy_strongest' && target.classList.contains('enemy-slot')) {
-        state.provUsed += card.cost; state.hand.splice(handIdx, 1); let strongest = null; let strongestArr = null; let strongestIdx = -1;
-        [{arr: state.enemyMelee}, {arr: state.enemyRanged}].forEach(({arr}) => { arr.forEach((c, i) => { if (c && (!strongest || c.atk > strongest.atk)) { strongest = c; strongestArr = arr; strongestIdx = i; } }); });
-        if (strongest) { state.enemyGrave.push({...strongest, hp: strongest.maxHp}); strongestArr[strongestIdx] = null; executeHeavyShake(); document.getElementById('logMessage').textContent = `💀 Dark Ritual destroyed ${strongest.name}!`; }
-        setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
-      } else if (card.effect === 'resurrect_2' && target.classList.contains('player-slot')) {
-        state.provUsed += card.cost; state.hand.splice(handIdx, 1); if (state.playerGrave.length > 0) { const resurrect = shuffle([...state.playerGrave]).slice(0, Math.min(2, state.playerGrave.length)); resurrect.forEach(card => { state.playerGrave.splice(state.playerGrave.indexOf(card), 1); for (let arr of [state.playerMelee, state.playerRanged]) { for (let j = 0; j < arr.length; j++) { if (!arr[j]) { arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: playerPlayOrderCounter++ }; return; } } } state.hand.push({ ...card }); }); document.getElementById('logMessage').textContent = '✨ Ancestral Call resurrected cards!'; }
-        setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
       }
     }
   }
@@ -1021,7 +1519,7 @@
         state.enemyMelee.forEach((c, i) => { if(c) allEnemyCards.push({card: c, arr: state.enemyMelee, idx: i, row: 'melee'}); });
         state.enemyRanged.forEach((c, i) => { if(c) allEnemyCards.push({card: c, arr: state.enemyRanged, idx: i, row: 'ranged'}); });
         const targets = shuffle(allEnemyCards).slice(0, Math.min(3, allEnemyCards.length));
-        targets.forEach((t, i) => { setTimeout(() => { const slotId = `enemy${t.row.charAt(0).toUpperCase() + t.row.slice(1)}${t.idx + 1}`; const slot = document.getElementById(slotId); const cardEl = slot?.querySelector('.card'); if (cardEl) { cardEl.classList.add('burst-vanish'); showFloatingDamage(slot, t.card.hp); } state.enemyGrave.push({...t.card, hp: t.card.maxHp}); t.arr[t.idx] = null; }, i * 150); });
+        targets.forEach((t, i) => { setTimeout(() => { const slotId = `enemy${t.row.charAt(0).toUpperCase() + t.row.slice(1)}${t.idx + 1}`; const slot = document.getElementById(slotId); const cardEl = slot?.querySelector('.card'); if (cardEl) { cardEl.classList.add('burst-vanish'); showFloatingDamage(slot, t.card.hp); } killCardAndSendToGrave(t.card, t.arr, t.idx, state.enemyGrave); }, i * 150); });
         setTimeout(() => { document.getElementById('logMessage').textContent = `💥 Bathala destroyed ${targets.length} enemy cards!`; renderAll(); }, targets.length * 150 + 200);
         break;
       case 'lamang_ult':
@@ -1035,7 +1533,7 @@
         renderAll(); break;
       case 'bakunawa_ult':
         const rowOverlay = document.getElementById('rowSelectOverlay'); rowOverlay.classList.add('active');
-        rowOverlay.querySelectorAll('.row-choice-btn').forEach(btn => { btn.onclick = () => { rowOverlay.classList.remove('active'); state.ultAvailable = false; const targetRow = btn.dataset.target; const enemyArr = targetRow === 'melee' ? state.enemyMelee : state.enemyRanged; let damagedCount = 0; enemyArr.forEach((c, idx) => { if (c) { c.hp -= 2; damagedCount++; const slotId = `enemy${targetRow.charAt(0).toUpperCase() + targetRow.slice(1)}${idx + 1}`; const slot = document.getElementById(slotId); if (slot) showFloatingDamage(slot, 2); if (c.hp <= 0) { setTimeout(() => { const cardEl = slot?.querySelector('.card'); cardEl?.classList.add('burst-vanish'); state.enemyGrave.push({...c, hp: c.maxHp}); enemyArr[idx] = null; }, idx * 100); } } }); executeHeavyShake(); document.getElementById('logMessage').textContent = `🌑 Bakunawa dealt 2 damage to ${damagedCount} enemy ${targetRow} cards!`; setTimeout(() => renderAll(), enemyArr.length * 100 + 200); }; });
+        rowOverlay.querySelectorAll('.row-choice-btn').forEach(btn => { btn.onclick = () => { rowOverlay.classList.remove('active'); state.ultAvailable = false; const targetRow = btn.dataset.target; const enemyArr = targetRow === 'melee' ? state.enemyMelee : state.enemyRanged; let damagedCount = 0; enemyArr.forEach((c, idx) => { if (c) { c.hp -= 2; damagedCount++; const slotId = `enemy${targetRow.charAt(0).toUpperCase() + targetRow.slice(1)}${idx + 1}`; const slot = document.getElementById(slotId); if (slot) showFloatingDamage(slot, 2); if (c.hp <= 0) { setTimeout(() => { const cardEl = slot?.querySelector('.card'); cardEl?.classList.add('burst-vanish'); killCardAndSendToGrave(c, enemyArr, idx, state.enemyGrave); }, idx * 100); } } }); executeHeavyShake(); document.getElementById('logMessage').textContent = `🌑 Bakunawa dealt 2 damage to ${damagedCount} enemy ${targetRow} cards!`; setTimeout(() => renderAll(), enemyArr.length * 100 + 200); }; });
         return;
       case 'engkanto_ult':
         state.ultAvailable = false;
@@ -1064,6 +1562,9 @@
   window.refreshUltimate = refreshUltimate;
 
   function executeEnemyAITurn() {
+    state.currentPhase = 'enemy';
+    updatePhaseIndicator('enemy', state.round, state.phaseNumber);
+    
     let enemyTime = 30;
     const enemyTimerEl = document.getElementById('enemyTimer');
     enemyTimerEl.textContent = enemyTime + 's';
@@ -1101,10 +1602,13 @@
         }
       }
 
+      const attackerSlot = document.getElementById(`enemy${attackerInfo.row.charAt(0).toUpperCase() + attackerInfo.row.slice(1)}${attackerInfo.idx + 1}`);
+
       if (targetArr && targetIdx !== undefined && targetArr[targetIdx]) {
         let target = targetArr[targetIdx];
+        const targetSlot = document.getElementById(`player${targetArr === state.playerMelee ? 'Melee' : 'Ranged'}${targetIdx + 1}`);
+        
         let effAtk = u.atk;
-        if (u.passive === 'Berserk' && u.hp < u.maxHp / 2) effAtk += 3;
         let shieldVal = getShieldValue(target);
         if (u.passive === 'Pierce') shieldVal = 0;
 
@@ -1112,44 +1616,45 @@
           shieldVal--;
           target.passive = shieldVal > 0 ? `Shield ${shieldVal}` : null;
         } else {
-          let attacks = u.passive === 'Double Strike' ? 2 : 1;
-          for (let a = 0; a < attacks; a++) {
-            if (!targetArr[targetIdx] || targetArr[targetIdx].hp <= 0) break;
+          if (targetArr[targetIdx] && targetArr[targetIdx].hp > 0) {
             target = targetArr[targetIdx];
+            // Show enemy attack indicator
+            if (attackerSlot && targetSlot) showAttackIndicator(attackerSlot, targetSlot, true);
+            
             if (effAtk >= target.hp) {
               if (target.passive && target.passive.startsWith('Thorns')) {
                 const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
                 u.hp -= thornDmg;
-                if (u.hp <= 0) { state.enemyGrave.push({...u, hp: u.maxHp}); attackerInfo.arr[attackerInfo.idx] = null; break; }
+                if (u.hp <= 0) { killCardAndSendToGrave(u, attackerInfo.arr, attackerInfo.idx, state.enemyGrave); }
               }
               if (u.passive && u.passive.startsWith('Lifesteal')) {
                 const healAmt = parseInt(u.passive.split(' ')[1]) || 1;
                 u.hp = Math.min(u.maxHp, u.hp + healAmt);
               }
-              state.playerGrave.push({...target, hp: target.maxHp});
-              targetArr[targetIdx] = null;
+              killCardAndSendToGrave(target, targetArr, targetIdx, state.playerGrave);
             } else {
               target.hp -= effAtk;
               if (target.hp <= 0) {
                 if (target.passive && target.passive.startsWith('Thorns')) {
                   const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
                   u.hp -= thornDmg;
-                  if (u.hp <= 0) { state.enemyGrave.push({...u, hp: u.maxHp}); attackerInfo.arr[attackerInfo.idx] = null; break; }
+                  if (u.hp <= 0) { killCardAndSendToGrave(u, attackerInfo.arr, attackerInfo.idx, state.enemyGrave); }
                 }
-                state.playerGrave.push({...target, hp: target.maxHp});
-                targetArr[targetIdx] = null;
+                killCardAndSendToGrave(target, targetArr, targetIdx, state.playerGrave);
               }
             }
           }
         }
+      
       } else {
         state.godHp -= u.atk;
         executeShake();
+        if (attackerSlot) showAttackIndicator(attackerSlot, document.getElementById('playerGodHpDisplay'), true);
       }
       if (attackerInfo.arr[attackerInfo.idx]) attackerInfo.arr[attackerInfo.idx].hasAttacked = true;
     });
 
-    if (state.godHp <= 0) { state.gameOver = true; renderAll(); triggerAutoOverlay('💀 Defeat'); clearInterval(state.enemyTimerInterval); enemyTimerEl.textContent = '30s'; return; }
+    if (state.godHp <= 0) { state.godHp = 0; state.gameOver = true; renderAll(); triggerAutoOverlay('💀 Defeat'); clearInterval(state.enemyTimerInterval); enemyTimerEl.textContent = '30s'; return; }
 
     let enemyProvPool = state.provPerTurn + 2;
     let enemyProvUsed = 0;
@@ -1186,7 +1691,7 @@
           if (tIdx !== -1) {
             const dmg = card.effect === 'damage_6' ? 6 : 3;
             targetArr[tIdx].hp -= dmg;
-            if (targetArr[tIdx].hp <= 0) { state.playerGrave.push({...targetArr[tIdx], hp: targetArr[tIdx].maxHp}); targetArr[tIdx] = null; }
+            if (targetArr[tIdx].hp <= 0) { killCardAndSendToGrave(targetArr[tIdx], targetArr, tIdx, state.playerGrave); }
             enemyProvUsed += card.cost;
             state.enemyDeckSize--;
             cardsPlayed++;
@@ -1223,17 +1728,44 @@
     enemyTimerEl.textContent = '30s';
     enemyTimerEl.classList.remove('critical-danger');
 
-    const diceRound = state.round;
+    turnCounter++;
 
-    if (diceRound % 2 === 0 && diceRound >= 2) {
+    // Dice triggers after every 2 enemy turns (4 atomic turns)
+    if (turnCounter % 2 === 0) {
+      // Dice phase – blocks all player actions
+      state.turn = 'dice';
+      state.currentPhase = 'dice';
+      state.phaseNumber++; // move to dice phase number (e.g., 2->3, 5->6)
+      updatePhaseIndicator('dice', state.round, state.phaseNumber);
+      renderAll();
+      
       setTimeout(() => {
         triggerDiceRoll();
         setTimeout(() => {
-          renderAll(); startTimer(); triggerAutoOverlay('Your Turn'); checkAffordableCards();
+          // After dice, start next cycle
+          state.phaseNumber++; // next player phase (e.g., 3->4, 6->7)
+          state.turn = 'player';
+          state.currentPhase = 'player';
+          turnCounter = 0; // reset for next cycle
+          updatePhaseIndicator('player', state.round, state.phaseNumber);
+          renderAll(); 
+          startTimer(); 
+          triggerAutoOverlay('Your Turn'); 
+          checkAffordableCards();
         }, 6000);
       }, 500);
     } else {
-      setTimeout(() => { renderAll(); startTimer(); triggerAutoOverlay('Your Turn'); checkAffordableCards(); }, 1000);
+      // Normal – next player turn, increment phase number
+      state.phaseNumber++;
+      setTimeout(() => { 
+        state.turn = 'player';
+        state.currentPhase = 'player';
+        updatePhaseIndicator('player', state.round, state.phaseNumber);
+        renderAll(); 
+        startTimer(); 
+        triggerAutoOverlay('Your Turn'); 
+        checkAffordableCards(); 
+      }, 1000);
     }
   }
 
@@ -1263,13 +1795,13 @@
         <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}</button>
       </div>`;
 
-    document.getElementById('enemyGodHpDisplay').textContent = isNaN(state.enemyGodHp) ? '100' : state.enemyGodHp;
-    document.getElementById('playerGodHpDisplay').textContent = isNaN(state.godHp) ? '100' : state.godHp;
+    document.getElementById('enemyGodHpDisplay').textContent = isNaN(state.enemyGodHp) ? '100' : Math.max(0, state.enemyGodHp);
+    document.getElementById('playerGodHpDisplay').textContent = isNaN(state.godHp) ? '100' : Math.max(0, state.godHp);
 
     document.getElementById('pillarEnemyProv').innerHTML = '🍗 ' + state.provPerTurn;
     document.getElementById('pillarPlayerProv').innerHTML = '🍗 ' + availableProv;
     document.getElementById('roundDisplay').textContent = state.round;
-    document.getElementById('diceInfo').textContent = 'Every 2 Rounds';
+    document.getElementById('diceInfo').textContent = 'Every 4 Turns';
 
     const ultRefreshBtn = document.getElementById('ultRefreshBtn');
     if (ultRefreshBtn) {
@@ -1301,6 +1833,14 @@
       });
     }
 
+    // Update attack dots
+    updateAllAttackDots();
+    
+    // Update phase indicator
+    if (state.currentPhase) {
+      updatePhaseIndicator(state.currentPhase, state.round, 4 - (turnCounter % 4));
+    }
+
     if (state.enemyGodHp <= 0 && !state.gameOver) { 
       state.enemyGodHp = 0;
       state.gameOver = true; 
@@ -1318,14 +1858,20 @@
   }
 
   function endTurn() {
-    if (state.gameOver || state.turn !== 'player') return;
+    if (state.gameOver || state.turn !== 'player') {
+      if (state.turn === 'dice') {
+        document.getElementById('logMessage').textContent = '🎲 Cannot end turn during Dice Fate!';
+      }
+      return;
+    }
     clearInterval(state.timerInterval);
     document.getElementById('logMessage').textContent = "🤖 Enemy turn...";
     state.turn = 'enemy';
+    state.currentPhase = 'enemy';
+    updatePhaseIndicator('enemy', state.round, 4 - ((turnCounter + 1) % 4));
     selectedAttacker = null;
     document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
     executeEnemyAITurn();
-    setTimeout(() => { state.turn = 'player'; }, 3000);
   }
 
   function exitToMenu() {
@@ -1379,7 +1925,9 @@
   document.getElementById('surrenderOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
   document.getElementById('playerGraveBtn').addEventListener('click', () => showGraveyard('player'));
   document.getElementById('enemyGraveBtn').addEventListener('click', () => showGraveyard('enemy'));
+  document.getElementById('playerDeckPile').addEventListener('click', () => showDeck());
   document.getElementById('graveyardOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
+  document.getElementById('deckViewerOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
   document.getElementById('rowSelectOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
 
   document.getElementById('btnInfoPanel').addEventListener('click', () => {
