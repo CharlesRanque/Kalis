@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>God's Gambit: Mythos</title>
   <link rel="stylesheet" href="style.css">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
 
@@ -23,16 +26,34 @@
 <div class="attack-indicator enemy-indicator" id="enemyAttackIndicator">⚔️</div>
 
 <div class="game-wrapper" id="gameWrapper">
-  <!-- Ult refresh button moved here, now positioned relative to the whole game area -->
-  <button class="ult-refresh-btn" id="ultRefreshBtn" disabled>🔄 10🍗</button>
 
   <!-- LEFT PANEL -->
   <div class="left-panel-outer" id="leftPanelOuter" style="display:none;">
     <div class="deck-pile enemy" id="enemyDeckPile">30</div>
     <div class="grave-display" id="enemyGraveBtn">💀 <span id="enemyGraveCount">0</span></div>
-    <div style="flex-grow: 1;"></div>
-    <button class="info-btn" id="btnInfoPanel" title="Dice & Passive Info">ℹ️</button>
-    <div style="flex-grow: 1;"></div>
+
+    <!-- Enemy god + HP -->
+    <div class="god-card-wrapper" id="enemyGodWrapper">
+      <div id="enemyGodSide"></div>
+      <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">100</div>
+    </div>
+
+    <!-- Turn phase indicator (moved here) -->
+    <div class="turn-phase-indicator" id="turnPhaseIndicator">
+      <div class="phase-round">Round <span id="phaseRound">1</span></div>
+      <div class="phase-status" id="phaseStatus">⚔️ Player Turn</div>
+      <div class="phase-dice-info" id="phaseDiceInfo">Dice in 4 turns</div>
+    </div>
+
+    <!-- Player god + HP -->
+    <div class="god-card-wrapper" id="playerGodWrapper">
+      <div id="playerGodSide"></div>
+      <div class="god-hp-display player-hp" id="playerGodHpDisplay">100</div>
+    </div>
+
+    <!-- Ult refresh button -->
+    <button class="ult-refresh-btn" id="ultRefreshBtn" disabled style="display:none;">🔄 10🍗</button>
+
     <div class="grave-display" id="playerGraveBtn">💀 <span id="playerGraveCount">0</span></div>
     <div class="deck-pile player" id="playerDeckPile">25</div>
   </div>
@@ -134,17 +155,6 @@
     <div class="game-interface" id="gameInterface">
       <div class="main-board-area">
         <div class="battlefield-wrapper">
-          <div class="god-side-block" id="godSideBlock">
-            <div class="god-card-wrapper" id="enemyGodWrapper">
-              <div id="enemyGodSide"></div>
-              <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">100</div>
-            </div>
-            <div class="god-card-wrapper" id="playerGodWrapper">
-              <div id="playerGodSide"></div>
-              <div class="god-hp-display player-hp" id="playerGodHpDisplay">100</div>
-            </div>
-          </div>
-
           <div class="battlefield">
             <div class="row"><div class="row-label">🏹</div><div class="slots-container">
               <div class="slot enemy-slot" id="enemyRanged1" data-row="ranged" data-idx="0"></div>
@@ -175,13 +185,6 @@
               <div class="slot player-slot" id="playerRanged5" data-row="ranged" data-idx="4"></div>
             </div></div>
           </div>
-          
-          <!-- Turn Phase Indicator -->
-          <div class="turn-phase-indicator" id="turnPhaseIndicator">
-            <div class="phase-round">Round <span id="phaseRound">1</span></div>
-            <div class="phase-status" id="phaseStatus">⚔️ Player Turn</div>
-            <div class="phase-dice-info" id="phaseDiceInfo">Dice in 4 turns</div>
-          </div>
         </div>
 
         <div class="hand-fan-container" id="handFanContainer"></div>
@@ -196,29 +199,34 @@
     </div>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="right-panel-outer" id="rightPanelOuter" style="display:none;">
-    <div class="right-panel-main">
-      <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
-      <div class="pillar-label">Enemy Prov</div>
-      <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
-      <button class="circular-end-turn" id="btnEndTurn">⏭️ End</button>
-      <div class="pillar-label">Your Prov</div>
-      <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
-      <div class="timer-pill" id="turnTimer">30s</div>
-    </div>
-    <button class="circular-surrender" id="btnSurrender">🏳️</button>
+<!-- RIGHT PANEL -->
+<div class="right-panel-outer" id="rightPanelOuter" style="display:none;">
+
+  <div class="right-panel-top">
+    <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
+    <div class="pillar-label">Enemy Prov</div>
+    <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
   </div>
 
-</div>
-
-<div class="overlay" id="overlay">
-  <div class="overlay-box">
-    <h2 id="overlayTitle">YOUR TURN</h2>
+  <div class="right-panel-middle">
+    <button class="circular-attack-btn" id="btnAttack">Attack</button>
+    <button class="circular-end-turn" id="btnEndTurn">END TURN</button>
   </div>
+
+  <div class="right-panel-bottom">
+    <div class="pillar-label">Your Prov</div>
+    <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
+    <div class="timer-pill" id="turnTimer">30s</div>
+  </div>
+  <button onclick="document.documentElement.requestFullscreen()" style="position:fixed;bottom:100px;right:10px;z-index:9999;background:#1d1814;color:#d4c8a8;border:1px solid #3a3028;border-radius:4px;padding:8px 12px;font-size:0.8rem;cursor:pointer;">⛶ Fullscreen</button>
+  <button class="info-btn right-info-btn" id="btnInfoPanel" title="Dice & Passive Info">Info</button>
+  <button class="circular-surrender" id="btnSurrender">🏳️</button>
 </div>
 
+<!-- ==================== YOUR FULL GAME SCRIPT ==================== -->
 <script>
+
+
 (function() {
   function applyScaling() {
     var wrapper = document.getElementById('gameWrapper');
@@ -336,15 +344,22 @@
   };
 
   const DICE_EVENTS = [
-    { name: "Reaper's Toll", desc: 'Oldest unit on each side dies', emoji: '💀' },
-    { name: 'Shifting Sands', desc: 'Random unit on each side switches rows', emoji: '🔄' },
-    { name: 'Crossfire', desc: 'Random enemy ranged & melee fight', emoji: '💥' },
-    { name: 'Blood Price', desc: 'Both Gods take 2 damage', emoji: '🩸' },
-    { name: 'Lingering Soul', desc: 'Each player returns 1 card from graveyard (need 2+ each)', emoji: '👻' },
-    { name: 'Static Shock', desc: 'Random unit on each side takes 2 damage', emoji: '⚡' }
+    { name: "Die Old Man", desc: 'Oldest unit on each side dies', emoji: '💀' },
+    { name: 'Swap Units', desc: 'Random unit on each side switches rows', emoji: '🔄' },
+    { name: 'Duel', desc: 'Random enemy ranged & melee fight', emoji: '💥' },
+    { name: 'God Bleeds', desc: 'Both Gods take 2 damage', emoji: '🩸' },
+    { name: 'Resurrection', desc: 'Each player returns 1 card from graveyard (need 2+ each)', emoji: '👻' },
+    { name: 'Smite', desc: 'Random unit on each side takes 2 damage', emoji: '⚡' }
   ];
 
-  let state = {};
+  let state = {
+  attackToken: 'player',
+  phase: 'development',
+  roundPhase: 'player',
+  attackerDeclared: false,
+  playerAttackers: [],
+  enemyBlockers: {}
+};
   let selectedAttacker = null;
   let turnCounter = 0; // Tracks total turns for dice scheduling
 
@@ -447,7 +462,13 @@
       enemyTimerInterval: null,
       diceActive: false,
       currentPhase: 'player',
-      phaseNumber: 1
+      phaseNumber: 1,
+      attackToken: 'player',        // 'player' or 'enemy' - who can attack
+      phase: 'development',         // 'development', 'attack', 'block', 'resolution'
+      roundPhase: 'player',         // 'player', 'enemy', 'roundEnd'
+      attackerDeclared: false,
+      playerAttackers: [],          // units declared to attack this round
+      enemyBlockers: {},  
     };
     for (let i = 0; i < 5; i++) drawCard();
     const sampleEnemy = opposingFaction === 'heroes'
@@ -497,38 +518,278 @@
     }, 1000);
   }
 
-  function updatePhaseIndicator(phase, round, phaseNum) {
-    const phaseStatus = document.getElementById('phaseStatus');
-    const phaseRound = document.getElementById('phaseRound');
-    const phaseDiceInfo = document.getElementById('phaseDiceInfo');
-    
-    phaseRound.textContent = 'Phase ' + phaseNum;
-    
-    switch(phase) {
-      case 'player':
-        phaseStatus.textContent = '⚔️ Your Turn';
-        phaseStatus.style.color = '#7a9a60';
-        break;
-      case 'enemy':
-        phaseStatus.textContent = '👹 Enemy Turn';
-        phaseStatus.style.color = '#c08070';
-        break;
-      case 'dice':
-        phaseStatus.textContent = '🎲 Dice Fate';
-        phaseStatus.style.color = '#9b7a3c';
-        break;
-    }
-    
-    phaseDiceInfo.textContent = '';
+function updatePhaseIndicator(phase, round, subPhase) {
+  const phaseStatus = document.getElementById('phaseStatus');
+  const phaseRound = document.getElementById('phaseRound');
+  const phaseDiceInfo = document.getElementById('phaseDiceInfo');
+  
+  phaseRound.textContent = 'Round ' + round;
+  
+  switch(phase) {
+    case 'player_develop':
+      phaseStatus.textContent = '🟢 Your Turn - Play Cards';
+      phaseStatus.style.color = '#7a9a60';
+      phaseDiceInfo.textContent = state.attackToken === 'player' ? '⚔️ Click Attack when ready' : '🛡️ Defense phase';
+      break;
+    case 'player_attack':
+      phaseStatus.textContent = '⚔️ Declare Attackers!';
+      phaseStatus.style.color = '#ff8800';
+      phaseDiceInfo.textContent = 'Drag units to declare attacks';
+      break;
+    case 'enemy_block':
+      phaseStatus.textContent = '🛡️ Enemy Blocking...';
+      phaseStatus.style.color = '#c08070';
+      phaseDiceInfo.textContent = 'Enemy assigning blockers';
+      break;
+    case 'enemy_develop':
+      phaseStatus.textContent = '👹 Enemy Turn';
+      phaseStatus.style.color = '#c08070';
+      phaseDiceInfo.textContent = 'Enemy playing cards';
+      break;
+    case 'round_end':
+      phaseStatus.textContent = '🎲 Round End';
+      phaseStatus.style.color = '#9b7a3c';
+      phaseDiceInfo.textContent = 'Fate resolves...';
+      break;
+  }
+}
+
+function startNewRound() {
+  state.roundPhase = 'player';
+  state.phase = 'development';
+  state.playerAttackers = [];
+  state.enemyBlockers = {};
+  state.attackerDeclared = false;
+  
+  // Draw
+  if (state.deck.length && state.hand.length < 7) drawCard();
+  
+  // Regenerate
+  state.playerMelee.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
+  state.playerRanged.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
+  state.enemyMelee.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
+  state.enemyRanged.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
+  
+  updatePhaseIndicator('player_develop', state.round);
+  document.getElementById('phaseDiceInfo').textContent = state.attackToken === 'player' ? '⚔️ Attack Token' : '🛡️ No Token';
+  
+  renderAll();
+  startTimer();
+  checkAffordableCards();
+}
+
+
+// Modified enemy AI turn
+function executeEnemyAITurn() {
+  state.roundPhase = 'enemy';
+  state.phase = 'development';
+  updatePhaseIndicator('enemy_develop', state.round);
+  
+  let enemyTime = 30;
+  const enemyTimerEl = document.getElementById('enemyTimer');
+  enemyTimerEl.textContent = enemyTime + 's';
+  enemyTimerEl.classList.remove('critical-danger');
+  if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
+  state.enemyTimerInterval = setInterval(() => {
+    enemyTime--;
+    enemyTimerEl.textContent = enemyTime + 's';
+    if (enemyTime <= 10) enemyTimerEl.classList.add('critical-danger');
+    else enemyTimerEl.classList.remove('critical-danger');
+    if (enemyTime <= 0) clearInterval(state.enemyTimerInterval);
+  }, 1000);
+
+  // Build list of cards to play
+  let enemyProvPool = state.provPerTurn + 2;
+  let enemyProvUsed = 0;
+  const cardsToPlay = [];
+
+  while (cardsToPlay.length < 3 && state.enemyDeckSize > 0) {
+    const bronzePool = state.enemyFaction === 'heroes' ? BRONZE_UNITS_HEROES : BRONZE_UNITS_MONSTERS;
+    const goldPool = state.enemyFaction === 'heroes' ? GOLD_UNITS_HEROES : GOLD_UNITS_MONSTERS;
+    let card;
+    const r = Math.random();
+    if (r < 0.55) { card = { ...bronzePool[Math.floor(Math.random() * bronzePool.length)] }; }
+    else if (r < 0.85) { card = { ...goldPool[Math.floor(Math.random() * goldPool.length)] }; }
+    else { card = { ...SPELLS[Math.floor(Math.random() * SPELLS.length)] }; }
+
+    if (card.cost + enemyProvUsed > enemyProvPool) break;
+    assignPassive(card);
+    cardsToPlay.push(card);
+    enemyProvUsed += card.cost;
+    state.enemyDeckSize--;
   }
 
-  function triggerAutoOverlay(title) {
-    const overlay = document.getElementById('overlay');
-    document.getElementById('overlayTitle').textContent = title;
-    overlay.classList.add('active');
-    setTimeout(() => overlay.classList.remove('active'), 1000);
-    spawnActionSpark(window.innerWidth/2, window.innerHeight/2, '✨');
+  // Play cards one by one with delay
+  let cardIndex = 0;
+  function playNextCard() {
+    if (cardIndex >= cardsToPlay.length) {
+      renderAll();
+      // After playing all cards, attack or end round
+      if (state.attackToken === 'enemy') {
+        setTimeout(() => enemyAttack(), 800);
+      } else {
+        setTimeout(() => endRound(), 800);
+      }
+      return;
+    }
+
+    const card = cardsToPlay[cardIndex];
+    if (card.type === 'Unit') {
+      let arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
+      let slot = arr.findIndex(s => s === null);
+      if (slot === -1) { arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee; slot = arr.findIndex(s => s === null); }
+      if (slot !== -1) {
+        arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
+        document.getElementById('logMessage').textContent = `👹 Enemy played ${card.name}`;
+      }
+    }
+    renderAll();
+    cardIndex++;
+    setTimeout(() => playNextCard(), 900);
   }
+
+  playNextCard();
+}
+
+function enemyAttack() {
+  const allEnemyAttackers = [];
+  state.enemyMelee.forEach((u, idx) => { if (u && !u.hasAttacked) allEnemyAttackers.push({ card: u, arr: state.enemyMelee, idx, row: 'melee' }); });
+  state.enemyRanged.forEach((u, idx) => { if (u && !u.hasAttacked) allEnemyAttackers.push({ card: u, arr: state.enemyRanged, idx, row: 'ranged' }); });
+
+  let attackIndex = 0;
+  
+  function executeNextAttack() {
+    if (attackIndex >= allEnemyAttackers.length) {
+      if (state.godHp <= 0) { 
+        state.godHp = 0; state.gameOver = true; renderAll(); 
+        triggerAutoOverlay('💀 Defeat'); 
+        clearInterval(state.enemyTimerInterval); 
+        document.getElementById('enemyTimer').textContent = '30s'; 
+        return; 
+      }
+      renderAll();
+      setTimeout(() => endRound(), 800);
+      return;
+    }
+
+    const attackerInfo = allEnemyAttackers[attackIndex];
+    let u = attackerInfo.card;
+    let tauntTarget = findTauntTarget(state.playerMelee, state.playerRanged);
+    let targetArr, targetIdx;
+
+    if (tauntTarget) {
+      targetArr = tauntTarget.arr;
+      targetIdx = tauntTarget.idx;
+    } else {
+      let allTargets = [];
+      state.playerMelee.forEach((c, i) => { if (c) allTargets.push({ card: c, arr: state.playerMelee, idx: i }); });
+      state.playerRanged.forEach((c, i) => { if (c) allTargets.push({ card: c, arr: state.playerRanged, idx: i }); });
+      allTargets.sort((a, b) => a.card.hp - b.card.hp);
+      if (allTargets.length > 0) {
+        const best = allTargets[0];
+        targetArr = best.arr;
+        targetIdx = best.idx;
+      }
+    }
+
+    const attackerSlot = document.getElementById(`enemy${attackerInfo.row.charAt(0).toUpperCase() + attackerInfo.row.slice(1)}${attackerInfo.idx + 1}`);
+
+    if (targetArr && targetIdx !== undefined && targetArr[targetIdx]) {
+      let target = targetArr[targetIdx];
+      const targetSlot = document.getElementById(`player${targetArr === state.playerMelee ? 'Melee' : 'Ranged'}${targetIdx + 1}`);
+      
+      let effAtk = u.atk;
+      let shieldVal = getShieldValue(target);
+      if (u.passive === 'Pierce') shieldVal = 0;
+
+      if (shieldVal > 0) {
+        shieldVal--;
+        target.passive = shieldVal > 0 ? `Shield ${shieldVal}` : null;
+      } else {
+        if (attackerSlot && targetSlot) showAttackIndicator(attackerSlot, targetSlot, true);
+        
+        if (effAtk >= target.hp) {
+          if (target.passive && target.passive.startsWith('Thorns')) {
+            const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
+            u.hp -= thornDmg;
+            if (u.hp <= 0) { killCardAndSendToGrave(u, attackerInfo.arr, attackerInfo.idx, state.enemyGrave); }
+          }
+          if (u.passive && u.passive.startsWith('Lifesteal')) {
+            const healAmt = parseInt(u.passive.split(' ')[1]) || 1;
+            u.hp = Math.min(u.maxHp, u.hp + healAmt);
+          }
+          killCardAndSendToGrave(target, targetArr, targetIdx, state.playerGrave);
+        } else {
+          target.hp -= effAtk;
+          if (target.hp <= 0) {
+            if (target.passive && target.passive.startsWith('Thorns')) {
+              const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
+              u.hp -= thornDmg;
+              if (u.hp <= 0) { killCardAndSendToGrave(u, attackerInfo.arr, attackerInfo.idx, state.enemyGrave); }
+            }
+            killCardAndSendToGrave(target, targetArr, targetIdx, state.playerGrave);
+          }
+        }
+      }
+    } else {
+      state.godHp -= u.atk;
+      executeShake();
+      if (attackerSlot) showAttackIndicator(attackerSlot, document.getElementById('playerGodHpDisplay'), true);
+    }
+    if (attackerInfo.arr[attackerInfo.idx]) attackerInfo.arr[attackerInfo.idx].hasAttacked = true;
+
+    renderAll();
+    attackIndex++;
+    setTimeout(() => executeNextAttack(), 1000);
+  }
+
+  executeNextAttack();
+}
+
+function endRound() {
+  state.roundPhase = 'roundEnd';
+  updatePhaseIndicator('round_end', state.round);
+  
+  clearInterval(state.enemyTimerInterval);
+  var enemyTimerEl = document.getElementById('enemyTimer');
+  enemyTimerEl.textContent = '30s';
+  enemyTimerEl.classList.remove('critical-danger');
+  
+  turnCounter++;
+  state.round++;
+  state.provPerTurn = Math.min(state.provPerTurn + 2, 10);
+  state.provPool = Math.min(state.provPool + 2, 20);
+  state.provUsed = 0;
+  
+  state.attackToken = state.attackToken === 'player' ? 'enemy' : 'player';
+  
+  if (turnCounter % 2 === 0) {
+    triggerDiceRoll();
+    setTimeout(() => {
+      state.turn = 'player';
+      startNewRound();
+      triggerAutoOverlay(state.attackToken === 'player' ? '⚔️ Attack Token!' : '🛡️ Defend!');
+    }, 6000);
+  } else {
+    setTimeout(() => {
+      state.turn = 'player';
+      startNewRound();
+      triggerAutoOverlay(state.attackToken === 'player' ? '⚔️ Attack Token!' : '🛡️ Defend!');
+    }, 1500);
+  }
+}
+
+// Replace endTurn
+
+function triggerAutoOverlay(title) {
+    var overlay = document.getElementById('overlay');
+    var overlayTitle = document.getElementById('overlayTitle');
+    if (!overlay || !overlayTitle) return;    // ← ADD THIS LINE
+    overlayTitle.textContent = title;
+    overlay.classList.add('active');
+    setTimeout(function() { overlay.classList.remove('active'); }, 1000);
+    spawnActionSpark(window.innerWidth/2, window.innerHeight/2, '✨');
+}
 
   function executeShake() {
     const stage = document.getElementById('stageBlock');
@@ -729,7 +990,7 @@ function checkAffordableCards() {
     if (state.diceActive) return;
     state.diceActive = true;
     state.currentPhase = 'dice';
-    updatePhaseIndicator('dice', state.round, 0);
+    updatePhaseIndicator('round_end', state.round, 0);
     
     const overlay = document.getElementById('diceOverlay');
     const resultEl = document.getElementById('diceResult');
@@ -1561,214 +1822,6 @@ document.addEventListener('mouseup', (e) => {
   }
   window.refreshUltimate = refreshUltimate;
 
-  function executeEnemyAITurn() {
-    state.currentPhase = 'enemy';
-    updatePhaseIndicator('enemy', state.round, state.phaseNumber);
-    
-    let enemyTime = 30;
-    const enemyTimerEl = document.getElementById('enemyTimer');
-    enemyTimerEl.textContent = enemyTime + 's';
-    enemyTimerEl.classList.remove('critical-danger');
-    if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
-    state.enemyTimerInterval = setInterval(() => {
-      enemyTime--;
-      enemyTimerEl.textContent = enemyTime + 's';
-      if (enemyTime <= 10) enemyTimerEl.classList.add('critical-danger');
-      else enemyTimerEl.classList.remove('critical-danger');
-      if (enemyTime <= 0) clearInterval(state.enemyTimerInterval);
-    }, 1000);
-
-    const allEnemyAttackers = [];
-    state.enemyMelee.forEach((u, idx) => { if (u && !u.hasAttacked) allEnemyAttackers.push({ card: u, arr: state.enemyMelee, idx, row: 'melee' }); });
-    state.enemyRanged.forEach((u, idx) => { if (u && !u.hasAttacked) allEnemyAttackers.push({ card: u, arr: state.enemyRanged, idx, row: 'ranged' }); });
-
-    allEnemyAttackers.forEach(attackerInfo => {
-      let u = attackerInfo.card;
-      let tauntTarget = findTauntTarget(state.playerMelee, state.playerRanged);
-      let targetArr, targetIdx;
-
-      if (tauntTarget) {
-        targetArr = tauntTarget.arr;
-        targetIdx = tauntTarget.idx;
-      } else {
-        let allTargets = [];
-        state.playerMelee.forEach((c, i) => { if (c) allTargets.push({ card: c, arr: state.playerMelee, idx: i }); });
-        state.playerRanged.forEach((c, i) => { if (c) allTargets.push({ card: c, arr: state.playerRanged, idx: i }); });
-        allTargets.sort((a, b) => a.card.hp - b.card.hp);
-        if (allTargets.length > 0) {
-          const best = allTargets[0];
-          targetArr = best.arr;
-          targetIdx = best.idx;
-        }
-      }
-
-      const attackerSlot = document.getElementById(`enemy${attackerInfo.row.charAt(0).toUpperCase() + attackerInfo.row.slice(1)}${attackerInfo.idx + 1}`);
-
-      if (targetArr && targetIdx !== undefined && targetArr[targetIdx]) {
-        let target = targetArr[targetIdx];
-        const targetSlot = document.getElementById(`player${targetArr === state.playerMelee ? 'Melee' : 'Ranged'}${targetIdx + 1}`);
-        
-        let effAtk = u.atk;
-        let shieldVal = getShieldValue(target);
-        if (u.passive === 'Pierce') shieldVal = 0;
-
-        if (shieldVal > 0) {
-          shieldVal--;
-          target.passive = shieldVal > 0 ? `Shield ${shieldVal}` : null;
-        } else {
-          if (targetArr[targetIdx] && targetArr[targetIdx].hp > 0) {
-            target = targetArr[targetIdx];
-            // Show enemy attack indicator
-            if (attackerSlot && targetSlot) showAttackIndicator(attackerSlot, targetSlot, true);
-            
-            if (effAtk >= target.hp) {
-              if (target.passive && target.passive.startsWith('Thorns')) {
-                const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
-                u.hp -= thornDmg;
-                if (u.hp <= 0) { killCardAndSendToGrave(u, attackerInfo.arr, attackerInfo.idx, state.enemyGrave); }
-              }
-              if (u.passive && u.passive.startsWith('Lifesteal')) {
-                const healAmt = parseInt(u.passive.split(' ')[1]) || 1;
-                u.hp = Math.min(u.maxHp, u.hp + healAmt);
-              }
-              killCardAndSendToGrave(target, targetArr, targetIdx, state.playerGrave);
-            } else {
-              target.hp -= effAtk;
-              if (target.hp <= 0) {
-                if (target.passive && target.passive.startsWith('Thorns')) {
-                  const thornDmg = parseInt(target.passive.split(' ')[1]) || 1;
-                  u.hp -= thornDmg;
-                  if (u.hp <= 0) { killCardAndSendToGrave(u, attackerInfo.arr, attackerInfo.idx, state.enemyGrave); }
-                }
-                killCardAndSendToGrave(target, targetArr, targetIdx, state.playerGrave);
-              }
-            }
-          }
-        }
-      
-      } else {
-        state.godHp -= u.atk;
-        executeShake();
-        if (attackerSlot) showAttackIndicator(attackerSlot, document.getElementById('playerGodHpDisplay'), true);
-      }
-      if (attackerInfo.arr[attackerInfo.idx]) attackerInfo.arr[attackerInfo.idx].hasAttacked = true;
-    });
-
-    if (state.godHp <= 0) { state.godHp = 0; state.gameOver = true; renderAll(); triggerAutoOverlay('💀 Defeat'); clearInterval(state.enemyTimerInterval); enemyTimerEl.textContent = '30s'; return; }
-
-    let enemyProvPool = state.provPerTurn + 2;
-    let enemyProvUsed = 0;
-    let cardsPlayed = 0;
-    const maxCards = Math.min(3, enemyProvPool);
-
-    while (cardsPlayed < maxCards && state.enemyDeckSize > 0) {
-      const bronzePool = state.enemyFaction === 'heroes' ? BRONZE_UNITS_HEROES : BRONZE_UNITS_MONSTERS;
-      const goldPool = state.enemyFaction === 'heroes' ? GOLD_UNITS_HEROES : GOLD_UNITS_MONSTERS;
-      let card;
-      const r = Math.random();
-      if (r < 0.55) { card = { ...bronzePool[Math.floor(Math.random() * bronzePool.length)] }; }
-      else if (r < 0.85) { card = { ...goldPool[Math.floor(Math.random() * goldPool.length)] }; }
-      else { card = { ...SPELLS[Math.floor(Math.random() * SPELLS.length)] }; }
-
-      if (card.cost + enemyProvUsed > enemyProvPool) break;
-
-      assignPassive(card);
-      if (card.type === 'Unit') {
-        let arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
-        let slot = arr.findIndex(s => s === null);
-        if (slot === -1) { arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee; slot = arr.findIndex(s => s === null); }
-        if (slot !== -1) {
-          arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
-          enemyProvUsed += card.cost;
-          state.enemyDeckSize--;
-          cardsPlayed++;
-        } else break;
-      } else {
-        if (card.effect === 'damage_3' || card.effect === 'damage_6') {
-          let targetArr = state.playerMelee;
-          let tIdx = targetArr.findIndex(c => c !== null);
-          if (tIdx === -1) { targetArr = state.playerRanged; tIdx = targetArr.findIndex(c => c !== null); }
-          if (tIdx !== -1) {
-            const dmg = card.effect === 'damage_6' ? 6 : 3;
-            targetArr[tIdx].hp -= dmg;
-            if (targetArr[tIdx].hp <= 0) { killCardAndSendToGrave(targetArr[tIdx], targetArr, tIdx, state.playerGrave); }
-            enemyProvUsed += card.cost;
-            state.enemyDeckSize--;
-            cardsPlayed++;
-          }
-        } else if (card.effect === 'divine_buff') {
-          let buffArr = state.enemyMelee;
-          let bIdx = buffArr.findIndex(c => c !== null);
-          if (bIdx === -1) { buffArr = state.enemyRanged; bIdx = buffArr.findIndex(c => c !== null); }
-          if (bIdx !== -1) {
-            buffArr[bIdx].atk += 2; buffArr[bIdx].hp += 2; buffArr[bIdx].maxHp += 2;
-            enemyProvUsed += card.cost;
-            state.enemyDeckSize--;
-            cardsPlayed++;
-          }
-        } else { break; }
-      }
-    }
-
-    if (state.deck.length && state.hand.length < 7) drawCard();
-    state.playerMelee.forEach(u => { if(u) u.hasAttacked = false; });
-    state.playerRanged.forEach(u => { if(u) u.hasAttacked = false; });
-
-    state.playerMelee.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
-    state.playerRanged.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
-    state.enemyMelee.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
-    state.enemyRanged.forEach(u => { if (u && u.passive === 'Regen 1') { u.hp = Math.min(u.maxHp, u.hp + 1); } });
-
-    state.round++;
-    state.provPerTurn = Math.min(state.provPerTurn + 2, 10);
-    state.provPool = Math.min(state.provPool + 2, 20);
-    state.provUsed = 0;
-
-    clearInterval(state.enemyTimerInterval);
-    enemyTimerEl.textContent = '30s';
-    enemyTimerEl.classList.remove('critical-danger');
-
-    turnCounter++;
-
-    // Dice triggers after every 2 enemy turns (4 atomic turns)
-    if (turnCounter % 2 === 0) {
-      // Dice phase – blocks all player actions
-      state.turn = 'dice';
-      state.currentPhase = 'dice';
-      state.phaseNumber++; // move to dice phase number (e.g., 2->3, 5->6)
-      updatePhaseIndicator('dice', state.round, state.phaseNumber);
-      renderAll();
-      
-      setTimeout(() => {
-        triggerDiceRoll();
-        setTimeout(() => {
-          // After dice, start next cycle
-          state.phaseNumber++; // next player phase (e.g., 3->4, 6->7)
-          state.turn = 'player';
-          state.currentPhase = 'player';
-          turnCounter = 0; // reset for next cycle
-          updatePhaseIndicator('player', state.round, state.phaseNumber);
-          renderAll(); 
-          startTimer(); 
-          triggerAutoOverlay('Your Turn'); 
-          checkAffordableCards();
-        }, 6000);
-      }, 500);
-    } else {
-      // Normal – next player turn, increment phase number
-      state.phaseNumber++;
-      setTimeout(() => { 
-        state.turn = 'player';
-        state.currentPhase = 'player';
-        updatePhaseIndicator('player', state.round, state.phaseNumber);
-        renderAll(); 
-        startTimer(); 
-        triggerAutoOverlay('Your Turn'); 
-        checkAffordableCards(); 
-      }, 1000);
-    }
-  }
-
   function renderAll() {
     const availableProv = state.provPool - state.provUsed;
     document.getElementById('enemyDeckPile').textContent = state.enemyDeckSize;
@@ -1795,8 +1848,8 @@ document.addEventListener('mouseup', (e) => {
         <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}</button>
       </div>`;
 
-    document.getElementById('enemyGodHpDisplay').textContent = isNaN(state.enemyGodHp) ? '100' : Math.max(0, state.enemyGodHp);
-    document.getElementById('playerGodHpDisplay').textContent = isNaN(state.godHp) ? '100' : Math.max(0, state.godHp);
+document.getElementById('enemyGodHpDisplay').textContent = 'HP: ' + (isNaN(state.enemyGodHp) ? '100' : Math.max(0, state.enemyGodHp));
+document.getElementById('playerGodHpDisplay').textContent = 'HP: ' + (isNaN(state.godHp) ? '100' : Math.max(0, state.godHp));
 
     document.getElementById('pillarEnemyProv').innerHTML = '🍗 ' + state.provPerTurn;
     document.getElementById('pillarPlayerProv').innerHTML = '🍗 ' + availableProv;
@@ -1808,6 +1861,28 @@ document.addEventListener('mouseup', (e) => {
       ultRefreshBtn.disabled = state.ultAvailable || state.ultRefreshed || availableProv < 10;
       ultRefreshBtn.onclick = function() { refreshUltimate(); };
     }
+
+        // Show/hide attack button
+const btnEndTurn = document.getElementById('btnEndTurn');
+const btnAttack = document.getElementById('btnAttack');
+if (btnAttack) {
+  btnAttack.style.display = 'block';
+  btnAttack.style.pointerEvents = 'none';
+  btnAttack.style.cursor = 'default';
+  if (state.turn === 'player') {
+    btnAttack.textContent = '⚔️ Attack';
+    btnAttack.style.background = '#3d1a14';
+    btnAttack.style.borderColor = '#ff6b35';
+    btnAttack.style.color = '#ff6b35';
+  } else {
+    btnAttack.textContent = '🛡️ Defend';
+    btnAttack.style.background = '#141a2e';
+    btnAttack.style.borderColor = '#4a6a8a';
+    btnAttack.style.color = '#7a9ac0';
+  }
+
+
+}
 
     const fanContainer = document.getElementById('handFanContainer');
     fanContainer.innerHTML = '';
@@ -1857,7 +1932,7 @@ document.addEventListener('mouseup', (e) => {
     }
   }
 
-  function endTurn() {
+function endTurn() {
     if (state.gameOver || state.turn !== 'player') {
       if (state.turn === 'dice') {
         document.getElementById('logMessage').textContent = '🎲 Cannot end turn during Dice Fate!';
@@ -1867,12 +1942,10 @@ document.addEventListener('mouseup', (e) => {
     clearInterval(state.timerInterval);
     document.getElementById('logMessage').textContent = "🤖 Enemy turn...";
     state.turn = 'enemy';
-    state.currentPhase = 'enemy';
-    updatePhaseIndicator('enemy', state.round, 4 - ((turnCounter + 1) % 4));
     selectedAttacker = null;
     document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
     executeEnemyAITurn();
-  }
+}
 
   function exitToMenu() {
     if (state.timerInterval) clearInterval(state.timerInterval);
@@ -1914,11 +1987,12 @@ document.addEventListener('mouseup', (e) => {
     }
   }
 
-  document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
+    document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
   document.getElementById('btnChooseHeroes').addEventListener('click', () => { showGodSelection('heroes'); });
   document.getElementById('btnChooseMonsters').addEventListener('click', () => { showGodSelection('monsters'); });
   document.getElementById('btnMenu').addEventListener('click', exitToMenu);
   document.getElementById('btnEndTurn').addEventListener('click', endTurn);
+
   document.getElementById('btnSurrender').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.add('active'); });
   document.getElementById('btnSurrenderYes').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.remove('active'); state.gameOver = true; if (state.timerInterval) clearInterval(state.timerInterval); if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval); exitToMenu(); });
   document.getElementById('btnSurrenderNo').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.remove('active'); });
@@ -1929,7 +2003,6 @@ document.addEventListener('mouseup', (e) => {
   document.getElementById('graveyardOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
   document.getElementById('deckViewerOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
   document.getElementById('rowSelectOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
-
   document.getElementById('btnInfoPanel').addEventListener('click', () => {
     document.getElementById('infoOverlay').classList.add('active');
     showInfoTab('dice');
@@ -1937,12 +2010,11 @@ document.addEventListener('mouseup', (e) => {
   document.getElementById('infoOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
   document.getElementById('tabDiceBtn').addEventListener('click', () => showInfoTab('dice'));
   document.getElementById('tabPassivesBtn').addEventListener('click', () => showInfoTab('passives'));
-
   document.addEventListener('click', (e) => { if (!e.target.closest('.card') && !e.target.closest('button') && !e.target.closest('.overlay')) { spawnClickRipple(e.clientX, e.clientY); } });
   window.addEventListener('resize', () => { applyScaling(); if (!state.gameOver && document.getElementById('gameInterface').classList.contains('active')) { renderAll(); } });
-
   applyScaling();
 })();
+
 </script>
 </body>
 </html>
