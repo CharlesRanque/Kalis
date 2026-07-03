@@ -1224,6 +1224,15 @@ function checkAffordableCards() {
       }
     }
 
+    function getTargetSlotFromPoint(x, y) {
+  // Temporarily hide the SVG layer and any dragging card so they don’t block the hit-test
+  var svgLayer = document.getElementById('arrowSvgLayer');
+  svgLayer.style.display = 'none';
+  var el = document.elementFromPoint(x, y);
+  svgLayer.style.display = 'block';   // restore (it’s needed for the next drag)
+  return el;
+}
+
     function updateDragLine(e) {
       if (!dragState.line || !dragState.source) return;
       const fromRect = dragState.source.slotElement.getBoundingClientRect();
@@ -1244,7 +1253,7 @@ function checkAffordableCards() {
       }
     }
 
- document.addEventListener('mousedown', (e) => {
+document.addEventListener('pointerdown', (e) => {
   spawnClickRipple(e.clientX, e.clientY);
   if (state.gameOver || state.turn !== 'player') {
     if (state.turn === 'dice') {
@@ -1259,7 +1268,7 @@ function checkAffordableCards() {
   const boardCard = e.target.closest('.player-slot .card');
   const handCard = e.target.closest('.fan-card-wrapper');
 
-    if (selectedAttacker && selectedAttacker.isHandCard) {
+  if (selectedAttacker && selectedAttacker.isHandCard) {
     const handCardEl = document.querySelector(`.fan-card-wrapper[data-idx="${selectedAttacker.handIdx}"]`);
     if (handCardEl) {
       const rect = handCardEl.getBoundingClientRect();
@@ -1290,12 +1299,10 @@ function checkAffordableCards() {
   // --- CLICK ON ENEMY SLOT ---
   if (enemySlot) {
     if (selectedAttacker) {
-      // Handle spell targeting enemy slot
       if (selectedAttacker.isSpell) {
         resolveDragAction(enemySlot);
         return;
       }
-      // Handle board card attacking enemy slot
       if (!selectedAttacker.isHandCard) {
         resolveDragAction(enemySlot);
         return;
@@ -1307,12 +1314,10 @@ function checkAffordableCards() {
   // --- CLICK ON PLAYER SLOT ---
   if (playerSlot) {
     if (selectedAttacker) {
-      // Handle spell targeting player slot (buffs, resurrect)
       if (selectedAttacker.isSpell) {
         resolveDragAction(playerSlot);
         return;
       }
-      // Handle unit card being played from hand to empty slot
       if (selectedAttacker.isHandCard && !selectedAttacker.isSpell) {
         if (playerSlot.innerHTML.trim() === '' || playerSlot.querySelector('.card') === null) {
           playCardFromHandToSlot(playerSlot, selectedAttacker);
@@ -1326,12 +1331,10 @@ function checkAffordableCards() {
   // --- CLICK ON ENEMY GOD ---
   if (godTarget) {
     if (selectedAttacker) {
-      // Allow spells that target gods (like damage spells when no enemy units)
       if (selectedAttacker.isSpell) {
         resolveDragAction(godTarget);
         return;
       }
-      // Allow board cards to attack god
       if (!selectedAttacker.isHandCard) {
         resolveDragAction(godTarget);
         clearSelection();
@@ -1346,23 +1349,21 @@ function checkAffordableCards() {
     const idx = parseInt(handCard.dataset.idx);
     const cardData = state.hand[idx];
     if (cardData && !handCard.querySelector('.card.unaffordable')) {
-      // If clicking the same spell card that's already selected, deselect
       if (selectedAttacker && selectedAttacker.isSpell && selectedAttacker.handIdx === idx) {
         clearSelection();
         document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
         return;
       }
-      // If clicking the same unit card that's already selected, deselect
       if (selectedAttacker && selectedAttacker.isHandCard && !selectedAttacker.isSpell && selectedAttacker.handIdx === idx) {
         clearSelection();
         document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
         return;
       }
-      
+
       clearSelection();
       const cardEl = handCard.querySelector('.card');
       cardEl.classList.add('selected-for-attack');
-      
+
       if (cardData.type === 'Unit') {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
         document.getElementById('logMessage').textContent = '🎯 Unit selected! Click an empty slot to play, or drag to play.';
@@ -1372,9 +1373,7 @@ function checkAffordableCards() {
         document.getElementById('logMessage').textContent = '✨ Spell selected! Click or drag to a target to cast.';
         highlightSpellTargets(cardData);
       }
-      spawnActionSpark(e.clientX, e.clientY, cardData.type === 'Spell' ? '' : '🎯');
-      
-      // Set up drag start position for this hand card
+
       const handCardEl = handCard;
       if (handCardEl) {
         const rect = handCardEl.getBoundingClientRect();
@@ -1385,31 +1384,28 @@ function checkAffordableCards() {
     return;
   }
 
-
   // --- CLICK ON EMPTY SPACE – deselect ---
   clearSelection();
   if (state.turn === 'player' && !state.gameOver) {
     document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
   }
-});
+}, {passive: false});
 
-document.addEventListener('mousemove', (e) => {
+document.addEventListener('pointermove', (e) => {
   // Handle drag from hand card
   if (selectedAttacker && selectedAttacker.isHandCard) {
-    // Get current card position
     const handCardEl = document.querySelector(`.fan-card-wrapper[data-idx="${selectedAttacker.handIdx}"]`);
     if (!handCardEl) return;
-    
+
     const rect = handCardEl.getBoundingClientRect();
     const cardCenterX = rect.left + rect.width / 2;
     const cardCenterY = rect.top + rect.height / 2;
-    
+
     if (!dragState.active) {
       const dx = e.clientX - cardCenterX;
       const dy = e.clientY - cardCenterY;
       if (Math.sqrt(dx*dx + dy*dy) < 5) return;
-      
-      // Start dragging
+
       dragState.active = true;
       svgLayer.style.display = 'block';
       dragState.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1419,22 +1415,20 @@ document.addEventListener('mousemove', (e) => {
       dragState.line.setAttribute('stroke-linecap', 'round');
       svgLayer.appendChild(dragState.line);
     }
-    
-    // Draw line from card center to cursor
+
     if (dragState.line) {
       dragState.line.setAttribute('x1', cardCenterX);
       dragState.line.setAttribute('y1', cardCenterY);
       dragState.line.setAttribute('x2', e.clientX);
       dragState.line.setAttribute('y2', e.clientY);
     }
-    
-    // Highlight targets under cursor
+
     document.querySelectorAll('.enemy-slot.drag-target, .player-slot.drag-target').forEach(s => s.classList.remove('drag-target'));
     const targetSlot = e.target.closest('.enemy-slot, .player-slot');
     const targetGod = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
     if (targetSlot) targetSlot.classList.add('drag-target');
     if (targetGod) targetGod.classList.add('drag-target');
-    
+
     return;
   }
 
@@ -1459,17 +1453,22 @@ document.addEventListener('mousemove', (e) => {
 
   updateDragLine(e);
   highlightDragTarget(e);
-});
+}, {passive: false});
 
-document.addEventListener('mouseup', (e) => {
+document.addEventListener('pointerup', (e) => {
   // Handle drag from hand card
+// Handle drag from hand card
   if (dragState.active && selectedAttacker && selectedAttacker.isHandCard) {
-    const targetEnemySlot = e.target.closest('.enemy-slot');
-    const targetPlayerSlot = e.target.closest('.player-slot');
-    const targetGod = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
+      const handCardEl = document.querySelector(`.fan-card-wrapper[data-idx="${selectedAttacker.handIdx}"]`);
+    if (handCardEl) handCardEl.style.pointerEvents = 'none';
+    var elem = getTargetSlotFromPoint(e.clientX, e.clientY);
+     if (handCardEl) handCardEl.style.pointerEvents = '';   
+    const targetEnemySlot = elem ? elem.closest('.enemy-slot') : null;
+    const targetPlayerSlot = elem ? elem.closest('.player-slot') : null;
+    const targetGod = elem ? elem.closest('#enemyGodHpDisplay, #enemyGodSide') : null;
     
+
     if (selectedAttacker.isSpell) {
-      // Spell can target any valid target
       if (targetEnemySlot) {
         resolveDragAction(targetEnemySlot);
       } else if (targetPlayerSlot) {
@@ -1477,11 +1476,9 @@ document.addEventListener('mouseup', (e) => {
       } else if (targetGod) {
         resolveDragAction(targetGod);
       } else {
-        // Clicked on empty space - cancel
         clearSelection();
       }
     } else {
-      // Unit from hand goes to player slot
       if (targetPlayerSlot) {
         if (targetPlayerSlot.innerHTML.trim() === '' || targetPlayerSlot.querySelector('.card') === null) {
           playCardFromHandToSlot(targetPlayerSlot, selectedAttacker);
@@ -1489,7 +1486,6 @@ document.addEventListener('mouseup', (e) => {
           clearSelection();
         }
       } else {
-        // Dragged to empty space - cancel
         clearSelection();
       }
     }
@@ -1498,20 +1494,36 @@ document.addEventListener('mouseup', (e) => {
   }
 
   // Handle drag from board card
-  if (dragState.active) {
-    const targetEnemySlot = e.target.closest('.enemy-slot');
-    const targetGod = e.target.closest('#enemyGodHpDisplay, #enemyGodSide');
+// Handle drag from board card
+if (dragState.active) {
+    // If there's a source board card, temporarily make it click‑transparent
+    if (dragState.source && dragState.source.slotElement) {
+        const boardCard = dragState.source.slotElement.querySelector('.card');
+        if (boardCard) boardCard.style.pointerEvents = 'none';
+    }
+    
+    const elem = getTargetSlotFromPoint(e.clientX, e.clientY);
+    
+    // Restore pointer events on the board card
+    if (dragState.source && dragState.source.slotElement) {
+        const boardCard = dragState.source.slotElement.querySelector('.card');
+        if (boardCard) boardCard.style.pointerEvents = '';
+    }
+    
+    const targetEnemySlot = elem ? elem.closest('.enemy-slot') : null;
+    const targetGod = elem ? elem.closest('#enemyGodHpDisplay, #enemyGodSide') : null;
+    
     if (dragState.source) {
-      selectedAttacker = { row: dragState.source.row, idx: dragState.source.idx };
-      if (targetEnemySlot) {
-        resolveDragAction(targetEnemySlot);
-      } else if (targetGod) {
-        resolveDragAction(targetGod);
-      }
+        selectedAttacker = { row: dragState.source.row, idx: dragState.source.idx };
+        if (targetEnemySlot) {
+            resolveDragAction(targetEnemySlot);
+        } else if (targetGod) {
+            resolveDragAction(targetGod);
+        }
     }
     resetDragState();
     return;
-  }
+}
 
   // Not dragging – handle as a click on the source card (select it)
   if (dragState.source) {
@@ -1536,7 +1548,7 @@ document.addEventListener('mouseup', (e) => {
     document.getElementById('logMessage').textContent = '🎯 Card selected! Click an enemy to attack.';
     highlightEnemyTargets();
   }
-});
+}, {passive: false});
   }
     
 
