@@ -911,6 +911,9 @@ button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
 .overlay-box { background:#1b1e16; padding:2rem 4rem; border-radius:8px; border:1px solid #3a3028; text-align:center; }
 .overlay-box h2 { font-size:2rem; color:#d4c8a8; }
 
-
-
+.fan-card-wrapper,
+.player-slot,
+.player-slot .card {
+  touch-action: none;
+}
 
