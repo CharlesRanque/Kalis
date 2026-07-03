@@ -153,6 +153,14 @@
       </div>
     </div>
 
+        <div class="curse-info-overlay" id="curseInfoOverlay">
+      <div class="curse-info-box">
+        <h2>Anito's Curse</h2>
+        <div id="curseInfoContent"></div>
+        <button class="close-btn" onclick="document.getElementById('curseInfoOverlay').classList.remove('active')">Close</button>
+      </div>
+    </div>
+
     <div class="info-overlay" id="infoOverlay">
       <div class="info-box">
         <div class="info-tabs">
@@ -215,13 +223,17 @@
 <div class="right-panel-outer" id="rightPanelOuter" style="display:none;">
 
   <div class="right-panel-top">
+    <div class="anito-curse-indicator" id="anitoCurseDisplay">
+    Anito's Curse: 
+
+    None
+    </div>
     <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
     <div class="pillar-label">Enemy Prov</div>
     <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
   </div>
 
   <div class="right-panel-middle">
-    <button class="circular-attack-btn" id="btnAttack">Attack</button>
     <button class="circular-end-turn" id="btnEndTurn">END TURN</button>
   </div>
 
@@ -371,6 +383,20 @@
     { name: 'Smite', desc: 'Random unit on each side takes 2 damage', emoji: '⚡' }
   ];
 
+  const CURSE_DETAILS = {
+  sudden_death:    { name: 'Sudden Death',    desc: 'Both Gods start with only 50 HP. Games end fast!', icon: '💀' },
+  gift_of_gods:    { name: 'Gift of the Gods', desc: 'Both players start with 5 extra provisions.', icon: '🎁' },
+  spellbound:      { name: 'Spellbound',       desc: 'Spell cards are replaced with random bronze units.', icon: '🚫' },
+  glass_cannon:    { name: 'Glass Cannon',     desc: 'All units gain +2 ATK but -2 HP (minimum 1 HP).', icon: '💥' },
+  fortress:        { name: 'Fortress',         desc: 'All units gain +2 HP but -1 ATK (minimum 0 ATK).', icon: '🏰' },
+  blood_frenzy:    { name: 'Blood Frenzy',     desc: 'When a unit dies, its controller draws a card.', icon: '🩸' },
+  mirror_match:    { name: 'Mirror Match',     desc: 'Both players use the same faction (Heroes or Monsters).', icon: '🪞' },
+  row_lockdown:    { name: 'Row Lockdown',     desc: 'Only one random row can be played each turn.', icon: '🔒' },
+  double_trouble:  { name: 'Double Trouble',   desc: 'All provision costs are reduced by 1 (minimum 1).', icon: '👥' },
+  divine_gambit:   { name: 'Divine Gambit',     desc: 'Ult refresh costs 0 provision, but deals 5 damage to your own God each time.', icon: '🎲' },
+  none:            { name: 'No Curse',         desc: 'The gods are calm today. Standard rules apply.', icon: '✨' }
+};
+
   let state = {
   attackToken: 'player',
   phase: 'development',
@@ -383,6 +409,25 @@
   let turnCounter = 0; // Tracks total turns for dice scheduling
 
   function shuffle(a) { for (let i=a.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  function showCurseInfo() {
+  const overlay = document.getElementById('curseInfoOverlay');
+  const content = document.getElementById('curseInfoContent');
+  if (!overlay || !content) return;
+
+  const curseId = state.wildModifier || 'none';
+  const details = CURSE_DETAILS[curseId] || CURSE_DETAILS.none;
+
+  content.innerHTML = `
+    <div class="curse-icon">${details.icon}</div>
+    <h3>${details.name}</h3>
+    <p>${details.desc}</p>
+  `;
+
+  overlay.classList.add('active');
+}
+
+  
 
   function buildDeck(faction) {
     const bronzeUnits = faction === 'heroes' ? BRONZE_UNITS_HEROES : BRONZE_UNITS_MONSTERS;
@@ -489,9 +534,10 @@ function showEnemySmite() {
     const opposingFaction = chosenFaction === 'heroes' ? 'monsters' : 'heroes';
     const enemyGods = GODS[opposingFaction];
     const enemyGod = enemyGods[Math.floor(Math.random() * enemyGods.length)];
+    const firstPlayer = Math.random() < 0.5 ? 'player' : 'enemy';
     playerPlayOrderCounter = 0;
     enemyPlayOrderCounter = 0;
-    state = {
+     state = {
       faction: chosenFaction,
       enemyFaction: opposingFaction,
       godName: godName,
@@ -513,7 +559,6 @@ function showEnemySmite() {
       provPool: 1,
       provPerTurn: 1,
       round: 1,
-      turn: 'player',
       gameOver: false,
       turnTimer: 30,
       ultAvailable: true,
@@ -524,19 +569,35 @@ function showEnemySmite() {
       diceActive: false,
       currentPhase: 'player',
       phaseNumber: 1,
-      attackToken: 'player',        // 'player' or 'enemy' - who can attack
-      phase: 'development',         // 'development', 'attack', 'block', 'resolution'
-      roundPhase: 'player',         // 'player', 'enemy', 'roundEnd'
+      phase: 'development',
+      roundPhase: 'player',
       attackerDeclared: false,
-      playerAttackers: [],          // units declared to attack this round
-      enemyBlockers: {},  
+      playerAttackers: [],
+      enemyBlockers: {},
+      turn: firstPlayer,
+      attackToken: firstPlayer
     };
+
+
+
+    // inside resetGame(), after state = { ... } is defined
+
+const WILD_MODIFIERS = [
+  { id: 'sudden_death', name: 'Sudden Death' },
+  { id: 'gift_of_gods', name: 'Gift of the Gods' },
+  { id: 'spellbound', name: 'Spellbound' },
+  { id: 'glass_cannon', name: 'Glass Cannon' },
+  { id: 'fortress', name: 'Fortress' },
+  { id: 'blood_frenzy', name: 'Blood Frenzy' },
+  { id: 'mirror_match', name: 'Mirror Match' },
+  { id: 'row_lockdown', name: 'Row Lockdown' },
+  { id: 'double_trouble', name: 'Double Trouble' },
+];
+
+const randomMod = WILD_MODIFIERS[Math.floor(Math.random() * WILD_MODIFIERS.length)];
+state.wildModifier = randomMod.id;   // store the ID for logic, or store the name if you prefer
+
     for (let i = 0; i < 5; i++) drawCard();
-    const sampleEnemy = opposingFaction === 'heroes'
-      ? { ...BRONZE_UNITS_HEROES[0], id: 'en1_init', hasAttacked: false, playOrder: enemyPlayOrderCounter++, passive: 'Guard' }
-      : { ...BRONZE_UNITS_MONSTERS[3], id: 'en1_init', hasAttacked: false, playOrder: enemyPlayOrderCounter++, passive: 'Thorns 1' };
-    if (!sampleEnemy.passive) assignPassive(sampleEnemy);
-    state.enemyMelee[2] = sampleEnemy;
 
     document.getElementById('menuScreen').style.display = 'none';
     document.getElementById('mainMenu').style.display = 'none';
@@ -545,15 +606,27 @@ function showEnemySmite() {
     document.getElementById('rightPanelOuter').style.display = 'flex';
     document.getElementById('diceInfo').textContent = 'Every 4 Turns';
     document.getElementById('enemyTimer').textContent = '30s';
+    document.getElementById('anitoCurseDisplay').addEventListener('click', showCurseInfo);
     
     updatePhaseIndicator('player', state.round, 4 - (turnCounter % 4));
-
     applyScaling();
     renderAll();
     startTimer();
     triggerAutoOverlay('Match Started');
     setupPointerEngine();
     checkAffordableCards();
+    
+    if (state.turn === 'player') {
+  // Player won the coin flip → start their turn normally
+  startTimer();
+  document.getElementById('logMessage').textContent = 'Your turn! Play a card.';
+} else {
+  // Enemy won the coin flip → immediately execute their first turn
+  document.getElementById('logMessage').textContent = 'Enemy starts first!';
+  executeEnemyAITurn();
+}
+
+
   }
 
   function drawCard() {
@@ -584,35 +657,36 @@ function updatePhaseIndicator(phase, round, subPhase) {
   const phaseRound = document.getElementById('phaseRound');
   const phaseDiceInfo = document.getElementById('phaseDiceInfo');
   
-  phaseRound.textContent = 'Round ' + round;
+  // Clear the old separate elements (or you can hide them via CSS)
+  phaseRound.textContent = '';
+  phaseDiceInfo.textContent = '';
   
+  let statusText = `Round ${round}<br><br>`;   // "Round 1" + blank line
+
   switch(phase) {
     case 'player_develop':
-      phaseStatus.textContent = '🟢 Your Turn - Play Cards';
+      statusText += `🟢 Your Turn<br><br>⚔️ ${state.attackToken === 'player' ? 'Attack!' : '🛡️ Defend!'}`;
       phaseStatus.style.color = '#7a9a60';
-      phaseDiceInfo.textContent = state.attackToken === 'player' ? '⚔️ Click Attack when ready' : '🛡️ Defense phase';
       break;
     case 'player_attack':
-      phaseStatus.textContent = '⚔️ Declare Attackers!';
+      statusText += '⚔️ Attack!<br><br>Drag to attack';
       phaseStatus.style.color = '#ff8800';
-      phaseDiceInfo.textContent = 'Drag units to declare attacks';
       break;
     case 'enemy_block':
-      phaseStatus.textContent = '🛡️ Enemy Blocking...';
+      statusText += '🛡️ Enemy Blocks<br><br>Defending…';
       phaseStatus.style.color = '#c08070';
-      phaseDiceInfo.textContent = 'Enemy assigning blockers';
       break;
     case 'enemy_develop':
-      phaseStatus.textContent = '👹 Enemy Turn';
+      statusText += '👹 Enemy Turn<br><br>Playing cards';
       phaseStatus.style.color = '#c08070';
-      phaseDiceInfo.textContent = 'Enemy playing cards';
       break;
     case 'round_end':
-      phaseStatus.textContent = '🎲 Round End';
+      statusText += '🎲 Dice Fate<br><br>All about luck';
       phaseStatus.style.color = '#9b7a3c';
-      phaseDiceInfo.textContent = 'Fate resolves...';
       break;
   }
+  
+  phaseStatus.innerHTML = statusText;
 }
 
 function startNewRound() {
@@ -686,11 +760,24 @@ function executeEnemyAITurn() {
     if (cardIndex >= cardsToPlay.length) {
       renderAll();
       // After playing all cards, attack or end round
+  // After playing all cards, maybe use ultimate
+  if (state.enemyUltAvailable && Math.random() < 0.3) {  // 30% chance each turn it's available
+    enemyUseUltimate();
+    setTimeout(() => {
+      renderAll();
       if (state.attackToken === 'enemy') {
-        setTimeout(() => enemyAttack(), 800);
+        enemyAttack();
       } else {
-        setTimeout(() => endRound(), 800);
+        endRound();
       }
+    }, 1500); // give a little pause after ult
+  } else {
+    if (state.attackToken === 'enemy') {
+      setTimeout(() => enemyAttack(), 800);
+    } else {
+      setTimeout(() => endRound(), 800);
+    }
+  }
       return;
     }
 
@@ -800,7 +887,7 @@ function enemyAttack() {
         }
       }
     } else {
-      state.godHp -= u.atk;
+      state.godHp -= u.atk; setTimeout(() => bleedGodCard('playerGodSide'), 50);
       executeShake();
       if (attackerSlot) showAttackIndicator(attackerSlot, document.getElementById('playerGodHpDisplay'), true);
     }
@@ -925,8 +1012,8 @@ function showFloatingDamage(element, damage, color) {
 
     
     const indicator = isEnemy ? document.getElementById('enemyAttackIndicator') : document.getElementById('attackIndicator');
-    indicator.style.left = toX - 15 + 'px';
-    indicator.style.top = toY - 15 + 'px';
+    indicator.style.left = toX + 'px';
+    indicator.style.top = toY + 'px';
     indicator.style.display = 'block';
     
     setTimeout(() => {
@@ -995,9 +1082,23 @@ function checkAffordableCards() {
     const availableProv = state.provPool - state.provUsed;
     const hasAffordable = state.hand.some(c => c.cost <= availableProv);
     renderAll();
+
+    const btnEndTurn = document.getElementById('btnEndTurn');
+
     if (!hasAffordable && state.hand.length > 0) {
       document.getElementById('logMessage').textContent = '⚠️ No affordable cards! Click End Turn to skip.';
+      if (btnEndTurn) {
+        btnEndTurn.classList.add('highlight-endturn');
+        // Remove the highlight after 3 seconds
+        setTimeout(() => {
+          if (btnEndTurn) btnEndTurn.classList.remove('highlight-endturn');
+        }, 3000);
+      }
+    } else {
+      // Remove highlight if we now have affordable cards or hand is empty
+      if (btnEndTurn) btnEndTurn.classList.remove('highlight-endturn');
     }
+    
 }
 
   function showGraveyard(type) {
@@ -1143,13 +1244,17 @@ function checkAffordableCards() {
           renderAll();
         }
       })(); break;
-      case 4: setTimeout(() => {
-        state.godHp = Math.max(0, state.godHp - 2);
-        state.enemyGodHp = Math.max(0, state.enemyGodHp - 2);
-        executeShake();
+     case 4: setTimeout(() => {
+      state.godHp = Math.max(0, state.godHp - 2);
+      state.enemyGodHp = Math.max(0, state.enemyGodHp - 2);
+      setTimeout(() => bleedGodCard('playerGodSide'), 10);
+      setTimeout(() => bleedGodCard('enemyGodSide'), 10);
+      executeShake();
         document.getElementById('logMessage').textContent = '🩸 Blood Price: Both Gods lost 2 HP!';
         renderAll();
       }, 800); break;
+
+
       case 5: setTimeout(() => {
         if (state.playerGrave.length >= 2 && state.enemyGrave.length >= 2) {
           const pCard = state.playerGrave.splice(Math.floor(Math.random() * state.playerGrave.length), 1)[0];
@@ -1600,6 +1705,8 @@ if (dragState.active) {
     targetArr[tgtIdx] = { ...card, hasAttacked: false, playOrder: playerPlayOrderCounter++ };
     state.provUsed += card.cost;
     document.getElementById('logMessage').textContent = `Played ${card.name}${card.passive ? ' [' + card.passive + ']' : ''}`;
+    const btnEndTurn = document.getElementById('btnEndTurn');
+    if (btnEndTurn) btnEndTurn.classList.remove('highlight-endturn');
     clearSelection();
     renderAll(); checkAffordableCards();
   }
@@ -1630,6 +1737,32 @@ if (dragState.active) {
     graveArr.push({...card, hp: card.maxHp || card.hp});
     arr[idx] = null;
   }
+
+function bleedGodCard(godSideId) {
+  const container = document.getElementById(godSideId);
+  if (!container) return;
+
+  // Create a red flash overlay
+  const flash = document.createElement('div');
+  flash.style.cssText = `
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255, 0, 0, 0.6);
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 99;
+    animation: god-bleed-flash 1.5s ease-out forwards;
+  `;
+
+  container.style.position = 'relative'; // ensure the container can hold the absolute overlay
+  container.appendChild(flash);
+
+  // Remove the overlay after the animation ends
+  setTimeout(() => {
+    if (flash.parentNode) flash.remove();
+  }, 500);
+}
 
 function resolveDragAction(target) {
     if (!target) return;
@@ -1723,7 +1856,7 @@ function resolveDragAction(target) {
       if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
         if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
         const effAtk = getEffectiveAtk(attacker);
-        state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake();
+        state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake() ; setTimeout(() => bleedGodCard('enemyGodSide'), 50);
         showFloatingDamage(target, effAtk, '#ff6b35');
         if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
         document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
@@ -1747,7 +1880,7 @@ function resolveDragAction(target) {
         if (!enemyCard && hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
         if (!enemyCard && !hasEnemyUnits()) {
           const effAtk = getEffectiveAtk(attacker);
-          state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake();
+          state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake() ; setTimeout(() => bleedGodCard('enemyGodSide'), 10);
           showFloatingDamage(target, effAtk, '#ff6b35');
           if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
           document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
@@ -1922,7 +2055,97 @@ function resolveDragAction(target) {
   }
   window.refreshUltimate = refreshUltimate;
 
+
+  function enemyUseUltimate() {
+  if (!state.enemyUltAvailable) return;
+
+  // Choose a target row for Bakunawa (random), others have no row choice
+  const targetRow = Math.random() < 0.5 ? 'melee' : 'ranged';
+
+  // Show the enemy using ultimate on the UI (optional shake / screen effect)
+  const enemyGodSlot = document.getElementById('enemyGodSide').querySelector('.card');
+  if (enemyGodSlot) enemyGodSlot.classList.add('god-ult-animation');
+  setTimeout(() => { if (enemyGodSlot) enemyGodSlot.classList.remove('god-ult-animation'); }, 800);
+
+  executeHeavyShake();
+
+  switch (state.enemyGodEffect) {
+    case 'bathala_ult':
+      state.enemyUltAvailable = false;
+      let allPlayerUnits = [];
+      state.playerMelee.forEach((c, i) => { if (c) allPlayerUnits.push({ card: c, arr: state.playerMelee, idx: i, row: 'melee' }); });
+      state.playerRanged.forEach((c, i) => { if (c) allPlayerUnits.push({ card: c, arr: state.playerRanged, idx: i, row: 'ranged' }); });
+      const targets = shuffle(allPlayerUnits).slice(0, Math.min(3, allPlayerUnits.length));
+      targets.forEach((t, i) => {
+        setTimeout(() => {
+          killCardAndSendToGrave(t.card, t.arr, t.idx, state.playerGrave);
+        }, i * 150);
+      });
+      document.getElementById('logMessage').textContent = `💥 Enemy ${state.enemyGodName} destroyed ${targets.length} cards!`;
+      break;
+
+    case 'lamang_ult':
+      state.enemyUltAvailable = false;
+      if (state.enemyGrave.length > 0) {
+        const resurrect = shuffle([...state.enemyGrave]).slice(0, Math.min(2, state.enemyGrave.length));
+        resurrect.forEach(card => {
+          state.enemyGrave.splice(state.enemyGrave.indexOf(card), 1);
+          let placed = false;
+          for (let arr of [state.enemyMelee, state.enemyRanged]) {
+            for (let j = 0; j < arr.length; j++) {
+              if (!arr[j] && card.type === 'Unit') {
+                arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: enemyPlayOrderCounter++ };
+                placed = true;
+                break;
+              }
+            }
+            if (placed) break;
+          }
+          if (!placed) state.enemyDeckSize++; // put back in deck if board full
+        });
+        document.getElementById('logMessage').textContent = `👻 Enemy ${state.enemyGodName} resurrected units!`;
+      } else {
+        document.getElementById('logMessage').textContent = `Enemy ${state.enemyGodName} had nothing to resurrect.`;
+        state.enemyUltAvailable = true; // refund
+      }
+      break;
+
+    case 'bakunawa_ult':
+      state.enemyUltAvailable = false;
+      const enemyArr = targetRow === 'melee' ? state.playerMelee : state.playerRanged;
+      enemyArr.forEach((c, idx) => {
+        if (c) {
+          c.hp -= 2;
+          if (c.hp <= 0) killCardAndSendToGrave(c, enemyArr, idx, state.playerGrave);
+        }
+      });
+      document.getElementById('logMessage').textContent = `🌑 Enemy Bakunawa dealt 2 damage to your ${targetRow} row!`;
+      break;
+
+    case 'engkanto_ult':
+      state.enemyUltAvailable = false;
+      let allEnemyCards = [];
+      state.enemyMelee.forEach((c, i) => { if (c) allEnemyCards.push(c); });
+      state.enemyRanged.forEach((c, i) => { if (c) allEnemyCards.push(c); });
+      const buffs = shuffle(allEnemyCards).slice(0, Math.min(3, allEnemyCards.length));
+      buffs.forEach(card => {
+        card.hp += 3;
+        card.maxHp += 3;
+      });
+      document.getElementById('logMessage').textContent = `✨ Enemy Engkanto buffed ${buffs.length} cards with +3 HP!`;
+      break;
+  }
+
+  renderAll();
+}
   function renderAll() {
+
+const curseDisplay = document.getElementById('anitoCurseDisplay');
+if (curseDisplay) {
+  const details = CURSE_DETAILS[state.wildModifier];
+  curseDisplay.innerHTML = `Anito Curse:<br><br>${details.name}`;
+}
+
     const availableProv = state.provPool - state.provUsed;
     document.getElementById('enemyDeckPile').textContent = state.enemyDeckSize;
     document.getElementById('playerDeckPile').textContent = state.deck.length;
@@ -1936,11 +2159,13 @@ function resolveDragAction(target) {
       document.getElementById(`enemyRanged${i+1}`).innerHTML = renderCardHTML(state.enemyRanged[i]);
     }
 
-    document.getElementById('enemyGodSide').innerHTML = `
-      <div class="card god-card">
-        <strong>${state.enemyGodName}</strong>
-        <button class="ult" disabled>${state.enemyUltAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}</button>
-      </div>`;
+document.getElementById('enemyGodSide').innerHTML = `
+  <div class="card god-card">
+    <strong>${state.enemyGodName}</strong>
+    <button class="ult" ${state.enemyUltAvailable ? '' : 'disabled'}>
+      ${state.enemyUltAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}
+    </button>
+  </div>`;
 
     document.getElementById('playerGodSide').innerHTML = `
       <div class="card god-card">
