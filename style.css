@@ -1,0 +1,916 @@
+:root {
+  --native-width: 1400px;
+  --native-height: 900px;
+  --left-panel-width: 110px;
+  --right-panel-width: 110px;
+  --battlefield-bg: #211f18;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  user-select: none;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+
+body {
+  background-color: #1b1e16;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #b8b09a;
+}
+
+.game-wrapper {
+  width: var(--native-width);
+  height: var(--native-height);
+  transform-origin: center center;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  background-color: #1b1e16;   /* solid fallback, no image */
+  position: relative;
+}
+
+/* ========== LEFT PANEL ========== */
+.left-panel-outer {
+  width: var(--left-panel-width);
+  height: 100%;
+  background: #1a1410;
+  border-right: 1px solid #2e2418;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0.3rem;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.deck-pile {
+  width: 65px;
+  height: 100px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #f0e8d8;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.deck-pile.enemy { background: #5c2e2e; border: 2px solid #8b4a3a; box-shadow: 0 4px 0 #3d1a1a; }
+.deck-pile.player { background: #2e4a2e; border: 2px solid #5a8a4a; box-shadow: 0 4px 0 #1a2a1a; }
+.deck-pile.player:hover { background: #3a5e3a; border-color: #7ab86a; box-shadow: 0 0 15px rgba(90, 138, 74, 0.4); }
+.deck-pile.enemy:hover { background: #6e3838; border-color: #a45a4a; }
+
+.grave-display {
+
+  background: #141916; /* Deep, murky green-black */
+  color: #a3c2a0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  width: 65%;
+  height: 100px;
+  border-radius: 8px;
+  border: 1px solid #2d3830;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.grave-display:hover { background: #2a1a14; border-color: #7a9a60; }
+.grave-display span { font-weight: 700; color: #e0e0e0; font-size: 0.8rem; }
+
+/* ---------- God card wrappers ---------- */
+.god-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ---------- God card itself ---------- */
+.god-card {
+  /* Rich, warm cream-to-gold gradient */
+  background: linear-gradient(180deg, #fff9eb 0%, #e6d3b3 100%);
+  color: #1a1410; /* Crisp, dark charcoal for baseline visibility */
+  /* Polished divine gold border */
+  border: 2px solid #c2a154;
+  border-radius: 6px;
+  text-align: center;
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
+  height: 60px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.2rem;
+  margin: 0;
+  overflow: hidden;
+  box-shadow: 0 3px 0 #8c7033, 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.god-card strong { 
+  font-size: 0.75rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Dark, sharp, and dominant over the cream background */
+  color: #1a1410; 
+  letter-spacing: 0.5px;
+  font-weight: 800;
+}
+
+.god-card button.ult {
+  /* Deep solar amber background for the button */
+  background: #b54f07;
+  border: 1px solid #853700;
+  /* Pure white text that cleanly pops against the deep amber */
+  color: #ffffff;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.52rem;
+  border-radius: 3px;
+  cursor: pointer;
+  width: 100%;
+  height: 38px;
+  margin-top: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  /* Subtle drop shadow behind text to ensure crisp lines at 0.5rem */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.god-card button.ult:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed; 
+  /* Dulls down to a readable, inert stone brown when empty */
+  background: #736257;
+  border-color: #54463d;
+  color: #f0e6d0;
+}
+
+/* ---------- HP displays ---------- */
+.god-hp-display {
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 50px;
+  background: #141a10;
+  border: 1px solid #2e3824;
+  white-space: nowrap;
+}
+.god-hp-display.enemy-hp { color: #c45444; }
+.god-hp-display.player-hp { color: #5a9a4a; }
+
+/* ---------- Turn phase indicator (in left panel) ---------- */
+.left-panel-outer .turn-phase-indicator {
+  background: #1a1410;
+  border: 1px solid #3a3028;
+  border-radius: 6px;
+  padding: 0.4rem 0.3rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  width: 100%;
+  margin: 0.3rem 0;
+}
+.phase-round {
+  font-size: 0.6rem;
+  color: #8b8a7a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.2rem;
+}
+.phase-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+.phase-dice-info {
+  font-size: 0.55rem;
+  color: #9b8e7a;
+  font-style: italic;
+}
+
+/* ---------- Ult refresh button ---------- */
+.ult-refresh-btn {
+  background: #1d1814;
+  border: 1px solid #9b7a3c;
+  color: #9b7a3c;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.55rem;
+  padding: 0.15rem 0.3rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.ult-refresh-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ========== CENTER GAME AREA ========== */
+.game-container {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  background: #1b1e16;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-menu,
+.menu-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 2rem;
+}
+.main-menu h1,
+.menu-screen h1 {
+  font-size: 3.5rem;
+  font-weight: 300;
+  letter-spacing: 6px;
+  color: #d4c8a8;
+  text-shadow: 0 0 20px rgba(155, 122, 60, 0.3);
+}
+.menu-buttons { display: flex; flex-direction: column; gap: 1rem; width: 300px; }
+.menu-btn-main {
+  padding: 1rem 2rem; font-size: 1.2rem; font-weight: 600; border-radius: 8px;
+  cursor: pointer; transition: all 0.3s ease; border: 2px solid #3a3028;
+  background: #1d1814; color: #b8b09a; text-align: center; letter-spacing: 2px;
+}
+.menu-btn-main.pve-btn {
+  background: linear-gradient(135deg, #4a6e3a, #5a8a4a); border-color: #4a6e3a;
+  font-size: 1.4rem; padding: 1.2rem 2rem;
+}
+.menu-btn-main.pve-btn:hover { box-shadow: 0 0 30px rgba(74, 110, 58, 0.5); transform: translateY(-3px); }
+.menu-btn-main.pvp-btn { opacity: 0.5; cursor: default; }
+.coming-soon-badge { font-size: 0.7rem; color: #9b7a3c; display: block; letter-spacing: 1px; }
+
+.faction-select-container { display: flex; gap: 2rem; max-width: 800px; width: 100%; }
+.faction-card {
+  flex: 1; background: #1d1814; border: 2px solid #3a3028; border-radius: 8px;
+  padding: 2rem; cursor: pointer; transition: all 0.25s ease;
+}
+.faction-card:hover { transform: translateY(-5px); }
+.faction-card h3 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #c8b898; }
+.faction-card p { font-size: 1rem; color: #8b8a7a; line-height: 1.4; }
+
+/* ========== GAME INTERFACE ========== */
+.game-interface {
+  display: none;
+  background-image: url('WOODBG.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+.game-interface.active {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.main-board-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* ---------- Battlefield wrapper ---------- */
+.battlefield-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Battlefield slots ---------- */
+.battlefield {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  max-width: 600px;
+  border-radius: 8px;
+  padding: 0.5rem;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  left: -28px;
+}
+
+.row { display: flex; align-items: center; gap: 0.4rem; background: transparent; border-radius: 6px; padding: 0.2rem 0; }
+.row-label { width: 45px; font-weight: 600; color: #b8b09a; font-size: 1.2rem; text-align: center; }
+.slots-container { display: flex; gap: 0.4rem; justify-content: center; }
+.slot {
+  background: #141a10; border-radius: 6px; width: 95px; height: 145px;
+  border: 1px solid #2e3824; display: flex; align-items: center; justify-content: center;
+  position: relative; box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+}
+
+.card {
+  background: #e8ddc4; color: #1a1410; border-radius: 6px; padding: 0.2rem 0.4rem;
+  text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column;
+  justify-content: flex-start; align-items: center; border: 2px solid #6b4e2e;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s; cursor: grab; font-size: 0.7rem;
+}
+.card.spell-card { background: #d9ceb5; border: 3px solid #7a5c38; }
+.card.gold-border { border: 4px solid #9b7a3c !important; box-shadow: 0 0 8px rgba(155,122,60,0.35); }
+.card.bronze-border { border: 3px solid #6b4e2e !important; }
+.card.spell-red-border { border: 3px solid #8b4a3a !important; }
+.card.unaffordable { opacity: 1; cursor: not-allowed; filter: grayscale(70%) brightness(0.6); }
+
+/* ========== ATTACK DOT INDICATOR ========== */
+.attack-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 5;
+  pointer-events: none;
+  transition: background-color 0.3s;
+}
+.attack-dot.can-attack {
+  background: #b54f07; /* Flat, rich solar amber/orange */
+  box-shadow: none;
+  animation: none;
+}
+.attack-dot.has-attacked-dot {
+  background: #666;
+  box-shadow: 0 0 2px rgba(100, 100, 100, 0.3);
+  animation: none;
+}
+
+
+
+
+/* ========== RIGHT PANEL ========== */
+.right-panel-outer {
+  width: var(--right-panel-width);
+  height: 100%;
+  background: #1a1410;
+  border-left: 1px solid #2e2418;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.8rem 0.3rem;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+
+.right-panel-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0.5rem;
+  margin-top: 170px;         /* move enemy up/down freely */
+}
+
+.right-panel-middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0.6rem;
+  margin-top: auto;         /* pushes buttons to center */
+  margin-bottom: auto;      /* pushes buttons to center */
+}
+
+.right-panel-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0.5rem;
+  margin-bottom: 230px;      /* move your prov up/down freely */
+}
+/* Timer pills */
+.timer-pill {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f0e8d8;
+  background: #1d1814;
+  padding: 4px 16px;
+  border-radius: 4px;
+  border: 1px solid #3a3028;
+}
+.timer-pill.enemy-timer { color: #c08070; border-color: #8b4a3a; }
+.timer-pill.critical-danger { animation: danger-pulse 0.6s infinite ease-in-out; color: #c08070; }
+
+/* Provision labels & values */
+.pillar-label {
+  font-size: 0.6rem;
+  color: #9b8e7a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.pillar-provision-block {
+  text-align: center;
+  padding: 0.1rem;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+.pillar-provision-block.enemy-val { color: #c08070; }
+.pillar-provision-block.player-val { color: #7a9a60; }
+
+/* Circular buttons */
+button.circular-end-turn {
+  width: 65px; height: 65px;
+  border-radius: 50%;
+  background: #1d1814;
+  border: 3px solid #5e5045;
+  color: #d4c8a8;
+  font-weight: bold;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+button.circular-end-turn:hover { background: #2a2218; border-color: #9b7a3c; }
+
+button.circular-attack-btn {
+  width: 65px; 
+  height: 65px;
+  border-radius: 50%;
+  background: transparent;
+  border: 0px solid #4a3e2e;
+  color: #8b8a7a;
+  font-weight: 600;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  cursor: default;
+  pointer-events: none;
+  transition: none;
+  letter-spacing: 0.5px;
+}
+
+button.circular-attack-btn.player-turn {
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
+button.circular-attack-btn.enemy-turn {
+  border-color: #4496ff;
+  color: #4496ff;
+}
+
+/* Info button – compact rectangle */
+.right-info-btn {
+  width: 100%;
+  height: 28px;
+  padding: 0 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #c8b898;
+  background: linear-gradient(180deg, #2a2218 0%, #1d1814 100%);
+  border: 1px solid #4a3e2e;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+    position: relative;
+  top: -100px;
+  
+}
+
+.right-info-btn::before {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #9b7a3c;
+}
+
+.right-info-btn:hover {
+  background: linear-gradient(180deg, #3a3020 0%, #2a2218 100%);
+  border-color: #9b7a3c;
+  color: #d4c8a8;
+  box-shadow: 0 0 10px rgba(155, 122, 60, 0.25);
+}
+
+/* Surrender button */
+button.circular-surrender {
+  width: 55px; height: 55px;
+  border-radius: 50%;
+  background: #2e1814;
+  border: 2px solid #8b4a3a;
+  color: #c08070;
+  font-weight: bold;
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.3rem;
+}
+button.circular-surrender:hover { background: #3d1a14; border-color: #a45a4a; }
+
+/* ========== OVERLAYS ========== */
+.god-select-overlay, .row-select-overlay, .dice-overlay,
+.graveyard-overlay, .deck-viewer-overlay, .surrender-overlay, .info-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.active { display: flex !important; }
+
+.god-select-box, .row-select-box, .dice-box, .graveyard-box,
+.deck-viewer-box, .surrender-box, .info-box {
+  background: #1b1e16;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #3a3028;
+  text-align: center;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.god-select-box h2, .graveyard-box h2, .deck-viewer-box h2, .surrender-box h2, .dice-title { color: #d4c8a8; margin-bottom: 1.5rem; }
+
+.god-choices { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
+.row-choices { display: flex; gap: 1.5rem; justify-content: center; }
+
+.god-choice-card, .row-choice-btn {
+  background: #1d1814; border: 2px solid #3a3028; border-radius: 8px;
+  padding: 1.5rem; cursor: pointer; color: #d4c8a8; transition: all 0.25s;
+  min-width: 200px; max-width: 300px;
+}
+.god-choice-card:hover, .row-choice-btn:hover { border-color: #9b7a3c; transform: translateY(-3px); }
+.god-choice-card h3 { font-size: 1.4rem; color: #d4c8a8; margin-bottom: 0.5rem; }
+
+.dice-box {
+  position: absolute;
+  background: #1b1e16; padding: 2rem 3rem; border-radius: 12px;
+  border: 2px solid #9b8e7a; text-align: center; box-shadow: 0 0 40px rgba(120, 100, 60, 0.3);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.dice-title { font-size: 1.2rem; color: #8b8a7a; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; }
+.dice-result { font-size: 6rem; font-weight: bold; color: #b8b09a; margin: 0.5rem 0; transition: all 0.1s ease; }
+.dice-effect-name { font-size: 1rem; color: #9b8e7a; margin-top: 0.5rem; font-weight: 600; }
+.dice-effect-desc { font-size: 1.5rem; font-weight: 700; color: #b8a878; margin-top: 0.3rem; }
+
+@keyframes dice-roll {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.2); }
+  50% { transform: rotate(180deg) scale(0.9); }
+  75% { transform: rotate(270deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.dice-spinning { animation: dice-roll 0.15s linear infinite; }
+
+.graveyard-box, .deck-viewer-box { min-width: 400px; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+.graveyard-box h2, .deck-viewer-box h2 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; }
+.grave-card-item {
+  background: #1d1814; padding: 0.5rem 1rem; margin: 0.3rem 0; border-radius: 4px;
+  display: flex; justify-content: space-between; align-items: center; color: #9b8e7a; font-size: 0.9rem;
+}
+.grave-card-stats { display: flex; gap: 1rem; font-size: 0.8rem; }
+
+.surrender-box { border: 2px solid #8b4a3a; box-shadow: 0 0 30px rgba(139, 74, 58, 0.2); }
+.surrender-box h2 { font-size: 1.8rem; color: #c08070; margin-bottom: 0.5rem; }
+.surrender-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+.surrender-btn {
+  padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer;
+  font-weight: 600; font-size: 0.9rem; border: none; transition: all 0.2s;
+}
+.surrender-btn.yes { background: #8b4a3a; color: #f0e0d0; }
+.surrender-btn.yes:hover { background: #a45a4a; }
+.surrender-btn.no { background: #1d1814; color: #9b8e7a; border: 1px solid #3a3028; }
+.surrender-btn.no:hover { background: #2a2218; }
+
+.info-box {
+  min-width: 450px;
+  max-width: 550px;
+  max-height: 75vh;
+  overflow-y: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.info-tabs { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
+.info-tab-btn {
+  flex: 1; padding: 0.5rem; background: #1d1814; border: 1px solid #3a3028;
+  color: #9b8e7a; cursor: pointer; border-radius: 4px; font-size: 0.8rem; transition: all 0.2s;
+}
+.info-tab-btn:hover { background: #2a2218; }
+.info-tab-btn.active { background: #2a2218; border-color: #9b7a3c; color: #d4c8a8; }
+.info-dice-item {
+  background: #1d1814; padding: 0.6rem 1rem; margin: 0.3rem 0; border-radius: 4px;
+  display: flex; align-items: center; gap: 0.8rem; color: #b8b09a; font-size: 0.85rem;
+  border-left: 3px solid #9b8e7a;
+}
+.info-dice-item .dice-emoji { font-size: 1.5rem; }
+.info-passive-item {
+  background: #1d1814; padding: 0.6rem 1rem; margin: 0.3rem 0; border-radius: 4px;
+  display: flex; align-items: center; gap: 0.8rem; color: #b8b09a; font-size: 0.8rem;
+}
+.info-passive-item.defensive { border-left: 3px solid #5a8a4a; }
+.info-passive-item.offensive { border-left: 3px solid #8b4a3a; }
+.info-passive-item.utility { border-left: 3px solid #9b7a3c; }
+.info-passive-item .passive-icon { font-size: 1.2rem; }
+
+.close-btn, button.menu-btn {
+  background: #2a2218; border: 1px solid #4a3e2e; color: #d4c8a8;
+  padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+  margin-top: 1rem; display: block; width: auto;
+}
+.close-btn:hover, button.menu-btn:hover { background: #3a3020; }
+
+/* ========== CARD SELECTION GLOW EFFECTS ========== */
+.card-top-row { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; font-weight: bold; }
+.card-name-center { font-size: 0.7rem; font-weight: 700; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.card-passive-badge {
+  position: absolute; bottom: 4px; left: 2px; right: 2px; font-size: 0.55rem;
+  font-weight: 700; text-align: center; overflow: hidden; white-space: nowrap;
+}
+.card-passive-badge.defensive { background: rgba(74,110,58,0.15); border: 1px solid rgba(74,110,58,0.3); }
+.card-passive-badge.offensive { background: rgba(139,74,58,0.12); border: 1px solid rgba(139,74,58,0.25); }
+.card-passive-badge.utility { background: rgba(155,122,60,0.12); border: 1px solid rgba(155,122,60,0.25); }
+
+.card.passive-taunt {
+  box-shadow: 0 0 12px rgba(200, 140, 30, 0.7), 0 0 24px rgba(180, 120, 20, 0.5) !important;
+  border-color: #ff8c00 !important;
+}
+
+@keyframes taunt-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+.card.passive-taunt.shake-taunt {
+  animation: taunt-shake 0.4s ease-in-out 3;
+}
+
+.hand-fan-container {
+  position: relative; width: 100%; height: 160px; display: flex; justify-content: center;
+  align-items: flex-end; gap: 0.4rem; z-index: 100; pointer-events: none;
+  margin-top: 0.3rem; border: 1px dashed #2e2418; border-radius: 6px;
+}
+.fan-card-wrapper { position: relative; width: 95px; height: 145px; pointer-events: auto; }
+.fan-card-wrapper:hover { transform: translateY(-30px) scale(1.12) !important; z-index: 999 !important; }
+
+.info-panel {
+  display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;
+  color: #8b8a7a; border-top: 1px solid #2a2418; padding-top: 0.4rem; margin-top: 0.3rem;
+}
+
+.card.selected-for-attack {
+  box-shadow: 0 0 8px rgba(100, 140, 60, 0.5), 0 0 16px rgba(100, 120, 40, 0.3) !important;
+  border-color: #8a9a5c !important;
+  transform: scale(1.03);
+  z-index: 200 !important;
+  animation: glow-pulse-subtle 2s ease-in-out infinite;
+}
+@keyframes glow-pulse-subtle {
+  0%, 100% { box-shadow: 0 0 8px rgba(100, 140, 60, 0.5), 0 0 16px rgba(100, 120, 40, 0.3); }
+  50% { box-shadow: 0 0 14px rgba(120, 160, 80, 0.6), 0 0 24px rgba(110, 140, 60, 0.4); }
+}
+.enemy-slot.targetable {
+  box-shadow: 0 0 10px rgba(180, 60, 40, 0.5), 0 0 20px rgba(160, 40, 20, 0.3) !important;
+  border-color: #cc4444 !important;
+  animation: enemy-target-glow-subtle 1.5s ease-in-out infinite;
+}
+@keyframes enemy-target-glow-subtle {
+  0%, 100% { box-shadow: 0 0 8px rgba(180, 60, 40, 0.4), 0 0 16px rgba(160, 40, 20, 0.25); }
+  50% { box-shadow: 0 0 16px rgba(200, 80, 60, 0.6), 0 0 28px rgba(180, 60, 40, 0.4); }
+}
+.player-slot.targetable {
+  box-shadow: 0 0 8px rgba(60, 140, 50, 0.5), 0 0 16px rgba(50, 120, 40, 0.3) !important;
+  border-color: #55aa44 !important;
+  animation: player-target-glow-subtle 1.5s ease-in-out infinite;
+}
+@keyframes player-target-glow-subtle {
+  0%, 100% { box-shadow: 0 0 8px rgba(60, 140, 50, 0.4), 0 0 16px rgba(50, 120, 40, 0.25); }
+  50% { box-shadow: 0 0 16px rgba(80, 180, 60, 0.6), 0 0 28px rgba(70, 150, 50, 0.4); }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes danger-pulse { 0%,100%{background:#1d1814;border-color:#8b4a3a;transform:scale(1)}50%{background:#3d1a14;border-color:#c08070;transform:scale(1.05)} }
+@keyframes screenshake { 0%,100%{transform:translate(0,0)}10%,30%,50%,70%,90%{transform:translate(-4px,3px)}20%,40%,60%,80%{transform:translate(4px,-3px)} }
+.shake-effect { animation:screenshake 0.4s ease-in-out; }
+@keyframes heavy-shake { 0%,100%{transform:translate(0,0)}10%,30%,50%,70%,90%{transform:translate(-8px,5px)}20%,40%,60%,80%{transform:translate(8px,-5px)} }
+.heavy-shake-effect { animation:heavy-shake 0.6s ease-in-out; }
+.floating-damage { position:absolute; font-weight:bold; font-size:1.2rem; color:#c08050; pointer-events:none; z-index:200; animation: damage-numbers 1s ease-out forwards; }
+@keyframes damage-numbers { 0%{transform:translateY(0);opacity:1}100%{transform:translateY(-30px);opacity:0} }
+.action-spark { position:fixed; pointer-events:none; z-index:301; font-size:1.5rem; animation: action-spark 0.5s ease-out forwards; }
+@keyframes action-spark { 0%{transform:scale(0) rotate(0deg);opacity:1}50%{transform:scale(1.5) rotate(180deg);opacity:0.8}100%{transform:scale(0) rotate(360deg);opacity:0} }
+
+#arrowSvgLayer { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:150; display:none; }
+
+
+/* ========== SMITE / THUNDER ATTACK INDICATOR ========== */
+/* ========== SMITE / THUNDER ATTACK INDICATOR (No Icons) ========== */
+
+.attack-indicator { 
+    position: fixed;
+    pointer-events: none;
+    z-index: 151;
+    display: none;
+    width: 120px;
+    height: 180px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Lightning flash background */
+.attack-indicator::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, 
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 220, 50, 0.4) 20%,
+        rgba(255, 150, 0, 0.2) 40%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    animation: flashBurst 1.2s ease-out forwards;
+    z-index: 1;
+}
+
+/* Enemy flash - different color */
+.attack-indicator.enemy-indicator::after {
+    background: radial-gradient(circle, 
+        rgba(200, 240, 255, 0.9) 0%,
+        rgba(68, 200, 255, 0.4) 20%,
+        rgba(0, 100, 255, 0.2) 40%,
+        transparent 70%
+    );
+}
+
+/* Flash burst animation */
+@keyframes flashBurst {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    5% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+    15% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0.8;
+    }
+    30% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0.1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+    }
+}
+
+
+
+/* Branch animation */
+@keyframes branchStrike {
+    0% {
+        opacity: 0;
+        transform: scaleY(0);
+    }
+    15% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    40% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: scaleY(1);
+    }
+}
+
+/* Glow ring */
+.attack-indicator .glow-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 220, 68, 0.8);
+    border-radius: 50%;
+    animation: ringExpand 1.2s ease-out forwards;
+    z-index: 0;
+    box-shadow: 0 0 30px rgba(255, 220, 68, 0.3);
+}
+
+.enemy-indicator .glow-ring {
+    border-color: rgba(68, 220, 255, 0.8);
+    box-shadow: 0 0 30px rgba(68, 220, 255, 0.3);
+}
+
+@keyframes ringExpand {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    10% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0.8;
+    }
+    30% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0.5;
+    }
+    60% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0.2;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* Screen shake effect */
+.attack-indicator.active {
+    display: flex !important;
+    animation: screenShake 0.6s ease-in-out;
+}
+
+@keyframes screenShake {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    10% { transform: translate(-50%, -50%) rotate(-1.5deg) translateX(-5px); }
+    20% { transform: translate(-50%, -50%) rotate(1.5deg) translateX(5px); }
+    30% { transform: translate(-50%, -50%) rotate(-0.5deg) translateX(-3px); }
+    40% { transform: translate(-50%, -50%) rotate(0.5deg) translateX(3px); }
+    50% { transform: translate(-50%, -50%) rotate(0deg) translateX(0); }
+}
+
+
+
+@keyframes attack-dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(51, 170, 85, 0.7), 0 0 8px rgba(51, 170, 85, 0.3);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 6px rgba(51, 170, 85, 0.9), 0 0 12px rgba(51, 170, 85, 0.5);
+  }
+}
+.overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:999; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+.overlay.active { opacity:1; pointer-events:auto; }
+.overlay-box { background:#1b1e16; padding:2rem 4rem; border-radius:8px; border:1px solid #3a3028; text-align:center; }
+.overlay-box h2 { font-size:2rem; color:#d4c8a8; }
+
+
+
+
