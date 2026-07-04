@@ -2244,7 +2244,7 @@ function renderAll() {
         <div class="god-content">
           <div id="playerGodSide" class="card god-card">
             <strong>${state.godName}</strong>
-            <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}</button>
+            <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? 'Ult Ready' : 'Ult Used'}</button>
           </div>
           <div class="god-hp-display player-hp" id="playerGodHpDisplay">HP: ${Math.max(0, state.godHp)}</div>
         </div>
@@ -2263,7 +2263,7 @@ function renderAll() {
           <div id="enemyGodSide" class="card god-card">
             <strong>${state.enemyGodName}</strong>
             <button class="ult" ${state.enemyUltAvailable ? '' : 'disabled'}>
-              ${state.enemyUltAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}
+              ${state.enemyUltAvailable ? 'Ult Ready' : 'Ult Used'}
             </button>
           </div>
           <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">HP: ${Math.max(0, state.enemyGodHp)}</div>
