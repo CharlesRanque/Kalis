@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>God's Gambit: Mythos</title>
+  <title>God's Gambit: Mythos – Overlay Edition</title>
   <link rel="stylesheet" href="style.css">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
 
@@ -21,7 +18,6 @@
     </marker>
   </defs>
 </svg>
-
 
 <div class="attack-indicator" id="attackIndicator">
     <div class="bolt-1"></div>
@@ -37,214 +33,208 @@
     <div class="glow-ring"></div>
 </div>
 
-<div class="game-wrapper" id="gameWrapper">
-
-  <!-- LEFT PANEL -->
-  <div class="left-panel-outer" id="leftPanelOuter" style="display:none;">
+<!-- LEFT PANEL (fixed) -->
+<div class="left-panel-outer" id="leftPanelOuter" style="display:none;">
+  <!-- Enemy deck + graveyard grouped -->
+  <div class="deck-grave-group">
     <div class="deck-pile enemy" id="enemyDeckPile">30</div>
-    <div class="grave-display" id="enemyGraveBtn">💀 <span id="enemyGraveCount">0</span></div>
+    <div class="grave-display" id="enemyGraveBtn">Graveyard<span id="enemyGraveCount">0</span></div>
+  </div>
 
-    <!-- Enemy god + HP -->
-    <div class="god-card-wrapper" id="enemyGodWrapper">
-      <div id="enemyGodSide"></div>
-      <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">100</div>
-    </div>
+  <div class="turn-phase-indicator" id="turnPhaseIndicator">
+    <div class="phase-round"><span id="phaseRound">1</span></div>
+    <div class="phase-status" id="phaseStatus">⚔️ Player Turn</div>
+    <div class="phase-dice-info" id="phaseDiceInfo">Dice in 4 turns</div>
+  </div>
 
-    <!-- Turn phase indicator (moved here) -->
-    <div class="turn-phase-indicator" id="turnPhaseIndicator">
-      <div class="phase-round"><span id="phaseRound">1</span></div>
-      <div class="phase-status" id="phaseStatus">⚔️ Player Turn</div>
-      <div class="phase-dice-info" id="phaseDiceInfo">Dice in 4 turns</div>
-    </div>
-
-    <!-- Player god + HP -->
-    <div class="god-card-wrapper" id="playerGodWrapper">
-      <div id="playerGodSide"></div>
-      <div class="god-hp-display player-hp" id="playerGodHpDisplay">100</div>
-    </div>
-
-    <!-- Ult refresh button -->
-    <button class="ult-refresh-btn" id="ultRefreshBtn" disabled style="display:none;">🔄 10🍗</button>
-
-    <div class="grave-display" id="playerGraveBtn">💀 <span id="playerGraveCount">0</span></div>
+  <!-- Player graveyard + deck grouped -->
+  <div class="deck-grave-group">
+    <div class="grave-display" id="playerGraveBtn">Graveyard<span id="playerGraveCount">0</span></div>
     <div class="deck-pile player" id="playerDeckPile">25</div>
   </div>
 
-  <!-- CENTER GAME AREA -->
-  <div class="game-container" id="stageBlock">
+  <!-- Ult refresh button (hidden by default) -->
+  <button class="ult-refresh-btn" id="ultRefreshBtn" disabled style="display:none;">🔄 10🍗</button>
+</div>
 
-    <div class="main-menu" id="mainMenu" style="display:flex;">
-      <h1>GOD'S GAMBIT</h1>
-      <div class="menu-subtitle">Philippine Mythological Warfare</div>
-      <div class="menu-buttons">
-        <div class="menu-btn-main pve-btn" id="btnPVE">⚔️ PLAY PVE</div>
-        <div class="menu-btn-main pvp-btn">
-          🏆 PVP ARENA
-          <span class="coming-soon-badge">— Coming Soon —</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="menu-screen" id="menuScreen" style="display:none;">
-      <h1>GOD'S GAMBIT</h1>
-      <div class="menu-subtitle">Choose Your Faction</div>
-      <div class="faction-select-container">
-        <div class="faction-card heroes" id="btnChooseHeroes">
-          <h3>✨ Heroes & Warriors</h3>
-          <p>Command legendary protectors like Lam-ang, Lapulapu, and Bantugan alongside ancient blessings to defend the realms.</p>
-        </div>
-        <div class="faction-card monsters" id="btnChooseMonsters">
-          <h3>👹 Mythical Monsters</h3>
-          <p>Unleash the cataclysmic wrath of the Bakunawa, Minokawa, Kapre, and dynamic curses to tear down your opposition.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="god-select-overlay" id="godSelectOverlay">
-      <div class="god-select-box">
-        <h2 id="godSelectTitle">Choose Your God</h2>
-        <div class="god-choices" id="godChoicesContainer"></div>
-      </div>
-    </div>
-
-    <div class="row-select-overlay" id="rowSelectOverlay">
-      <div class="row-select-box">
-        <h2>🐉 Bakunawa: Choose Target Row</h2>
-        <div class="row-choices">
-          <div class="row-choice-btn" data-target="melee">⚔️ Enemy Melee</div>
-          <div class="row-choice-btn" data-target="ranged">🏹 Enemy Ranged</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dice-overlay" id="diceOverlay">
-      <div class="dice-box">
-        <div class="dice-title">🎲 Fate Dice</div>
-        <div class="dice-result" id="diceResult">?</div>
-        <div class="dice-effect-name" id="diceEffectName"></div>
-        <div class="dice-effect-desc" id="diceEffectDesc"></div>
-      </div>
-    </div>
-
-    <div class="graveyard-overlay" id="graveyardOverlay">
-      <div class="graveyard-box">
-        <h2 id="graveyardTitle">Graveyard</h2>
-        <div id="graveyardContent"></div>
-        <button class="close-btn" onclick="document.getElementById('graveyardOverlay').classList.remove('active')">Close</button>
-      </div>
-    </div>
-
-    <div class="deck-viewer-overlay" id="deckViewerOverlay">
-      <div class="deck-viewer-box">
-        <h2 id="deckViewerTitle">Your Deck</h2>
-        <div id="deckViewerContent"></div>
-        <button class="close-btn" onclick="document.getElementById('deckViewerOverlay').classList.remove('active')">Close</button>
-      </div>
-    </div>
-
-    <div class="surrender-overlay" id="surrenderOverlay">
-      <div class="surrender-box">
-        <h2>Surrender?</h2>
-        <p style="color:#8b949e;margin-bottom:1.5rem;">Are you sure you want to concede?</p>
-        <div class="surrender-buttons">
-          <button class="surrender-btn yes" id="btnSurrenderYes">Yes, Surrender</button>
-          <button class="surrender-btn no" id="btnSurrenderNo">No, Keep Fighting</button>
-        </div>
-      </div>
-    </div>
-
-        <div class="curse-info-overlay" id="curseInfoOverlay">
-      <div class="curse-info-box">
-        <h2>Anito's Curse</h2>
-        <div id="curseInfoContent"></div>
-        <button class="close-btn" onclick="document.getElementById('curseInfoOverlay').classList.remove('active')">Close</button>
-      </div>
-    </div>
-
-    <div class="info-overlay" id="infoOverlay">
-      <div class="info-box">
-        <div class="info-tabs">
-          <button class="info-tab-btn active" id="tabDiceBtn">🎲 Dice Effects</button>
-          <button class="info-tab-btn" id="tabPassivesBtn">🛡️ Passives</button>
-        </div>
-        <div id="infoTabContent"></div>
-        <button class="close-btn" onclick="document.getElementById('infoOverlay').classList.remove('active')">Close</button>
-      </div>
-    </div>
-
-    <div class="game-interface" id="gameInterface">
-      <div class="main-board-area">
-        <div class="battlefield-wrapper">
-          <div class="battlefield">
-            <div class="row"><div class="row-label"></div><div class="slots-container">
-              <div class="slot enemy-slot" id="enemyRanged1" data-row="ranged" data-idx="0"></div>
-              <div class="slot enemy-slot" id="enemyRanged2" data-row="ranged" data-idx="1"></div>
-              <div class="slot enemy-slot" id="enemyRanged3" data-row="ranged" data-idx="2"></div>
-              <div class="slot enemy-slot" id="enemyRanged4" data-row="ranged" data-idx="3"></div>
-              <div class="slot enemy-slot" id="enemyRanged5" data-row="ranged" data-idx="4"></div>
-            </div></div>
-            <div class="row"><div class="row-label"></div><div class="slots-container">
-              <div class="slot enemy-slot" id="enemyMelee1" data-row="melee" data-idx="0"></div>
-              <div class="slot enemy-slot" id="enemyMelee2" data-row="melee" data-idx="1"></div>
-              <div class="slot enemy-slot" id="enemyMelee3" data-row="melee" data-idx="2"></div>
-              <div class="slot enemy-slot" id="enemyMelee4" data-row="melee" data-idx="3"></div>
-              <div class="slot enemy-slot" id="enemyMelee5" data-row="melee" data-idx="4"></div>
-            </div></div>
-            <div class="row"><div class="row-label"></div><div class="slots-container">
-              <div class="slot player-slot" id="playerMelee1" data-row="melee" data-idx="0"></div>
-              <div class="slot player-slot" id="playerMelee2" data-row="melee" data-idx="1"></div>
-              <div class="slot player-slot" id="playerMelee3" data-row="melee" data-idx="2"></div>
-              <div class="slot player-slot" id="playerMelee4" data-row="melee" data-idx="3"></div>
-              <div class="slot player-slot" id="playerMelee5" data-row="melee" data-idx="4"></div>
-            </div></div>
-            <div class="row"><div class="row-label"></div><div class="slots-container">
-              <div class="slot player-slot" id="playerRanged1" data-row="ranged" data-idx="0"></div>
-              <div class="slot player-slot" id="playerRanged2" data-row="ranged" data-idx="1"></div>
-              <div class="slot player-slot" id="playerRanged3" data-row="ranged" data-idx="2"></div>
-              <div class="slot player-slot" id="playerRanged4" data-row="ranged" data-idx="3"></div>
-              <div class="slot player-slot" id="playerRanged5" data-row="ranged" data-idx="4"></div>
-            </div></div>
-          </div>
-        </div>
-
-        <div class="hand-fan-container" id="handFanContainer"></div>
-
-        <div class="info-panel">
-          <span id="logMessage">Drag cards to play or click to attack!</span>
-          <span>Round: <span id="roundDisplay">1</span></span>
-          <span>Dice: <span id="diceInfo">Every 4 Turns</span></span>
-          <button class="menu-btn" id="btnMenu">Exit</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-<!-- RIGHT PANEL -->
+<!-- RIGHT PANEL (fixed) – restructured -->
 <div class="right-panel-outer" id="rightPanelOuter" style="display:none;">
-
+  <!-- TOP: Anito curse only -->
   <div class="right-panel-top">
-    <div class="anito-curse-indicator" id="anitoCurseDisplay">
-    Anito's Curse: 
-
-    None
-    </div>
-    <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
-    <div class="pillar-label">Enemy Prov</div>
-    <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
+    <div class="anito-curse-indicator" id="anitoCurseDisplay">Anito's Curse: None</div>
   </div>
 
+  <!-- MIDDLE: Enemy Prov, End Turn, Your Prov grouped together -->
   <div class="right-panel-middle">
-    <button class="circular-end-turn" id="btnEndTurn">END TURN</button>
+    <div class="center-group">
+      <div class="prov-group">
+        <div class="pillar-label">Enemy Prov</div>
+        <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
+        <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
+      </div>
+      <button class="circular-end-turn" id="btnEndTurn">END TURN</button>
+      <div class="prov-group">
+        <div class="pillar-label">Your Prov</div>
+        <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
+        <div class="timer-pill" id="turnTimer">30s</div>
+      </div>
+    </div>
   </div>
 
+  <!-- BOTTOM: Info and Surrender buttons only -->
   <div class="right-panel-bottom">
-    <div class="pillar-label">Your Prov</div>
-    <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
-    <div class="timer-pill" id="turnTimer">30s</div>
+    <button class="right-info-btn" id="btnInfoPanel" title="Dice & Passive Info">Info</button>
+    <button class="circular-surrender" id="btnSurrender">🏳️</button>
   </div>
-  <button onclick="document.documentElement.requestFullscreen()" style="position:fixed;bottom:100px;right:10px;z-index:9999;background:#1d1814;color:#d4c8a8;border:1px solid #3a3028;border-radius:4px;padding:8px 12px;font-size:0.8rem;cursor:pointer;">⛶ Fullscreen</button>
-  <button class="info-btn right-info-btn" id="btnInfoPanel" title="Dice & Passive Info">Info</button>
-  <button class="circular-surrender" id="btnSurrender">🏳️</button>
+</div>
+<!-- GAME AREA (between panels) -->
+<div class="game-area">
+  <div class="main-menu" id="mainMenu" style="display:flex;">
+    <h1>GOD'S GAMBIT</h1>
+    <div class="menu-subtitle">Philippine Mythological Warfare</div>
+    <div class="menu-buttons">
+      <div class="menu-btn-main pve-btn" id="btnPVE">⚔️ PLAY PVE</div>
+      <div class="menu-btn-main pvp-btn">
+        🏆 PVP ARENA
+        <span class="coming-soon-badge">— Coming Soon —</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="menu-screen" id="menuScreen" style="display:none;">
+    <h1>GOD'S GAMBIT</h1>
+    <div class="menu-subtitle">Choose Your Faction</div>
+    <div class="faction-select-container">
+      <div class="faction-card heroes" id="btnChooseHeroes">
+        <h3>✨ Heroes & Warriors</h3>
+        <p>Command legendary protectors like Lam-ang, Lapulapu, and Bantugan alongside ancient blessings to defend the realms.</p>
+      </div>
+      <div class="faction-card monsters" id="btnChooseMonsters">
+        <h3>👹 Mythical Monsters</h3>
+        <p>Unleash the cataclysmic wrath of the Bakunawa, Minokawa, Kapre, and dynamic curses to tear down your opposition.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="god-select-overlay" id="godSelectOverlay">
+    <div class="god-select-box">
+      <h2 id="godSelectTitle">Choose Your God</h2>
+      <div class="god-choices" id="godChoicesContainer"></div>
+    </div>
+  </div>
+
+  <div class="row-select-overlay" id="rowSelectOverlay">
+    <div class="row-select-box">
+      <h2>🐉 Bakunawa: Choose Target Row</h2>
+      <div class="row-choices">
+        <div class="row-choice-btn" data-target="melee">⚔️ Enemy Melee</div>
+        <div class="row-choice-btn" data-target="ranged">🏹 Enemy Ranged</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dice-overlay" id="diceOverlay">
+    <div class="dice-box">
+      <div class="dice-title">🎲 Fate Dice</div>
+      <div class="dice-result" id="diceResult">?</div>
+      <div class="dice-effect-name" id="diceEffectName"></div>
+      <div class="dice-effect-desc" id="diceEffectDesc"></div>
+    </div>
+  </div>
+
+  <div class="graveyard-overlay" id="graveyardOverlay">
+    <div class="graveyard-box">
+      <h2 id="graveyardTitle">Graveyard</h2>
+      <div id="graveyardContent"></div>
+      <button class="close-btn" onclick="document.getElementById('graveyardOverlay').classList.remove('active')">Close</button>
+    </div>
+  </div>
+
+  <div class="deck-viewer-overlay" id="deckViewerOverlay">
+    <div class="deck-viewer-box">
+      <h2 id="deckViewerTitle">Your Deck</h2>
+      <div id="deckViewerContent"></div>
+      <button class="close-btn" onclick="document.getElementById('deckViewerOverlay').classList.remove('active')">Close</button>
+    </div>
+  </div>
+
+  <div class="surrender-overlay" id="surrenderOverlay">
+    <div class="surrender-box">
+      <h2>Surrender?</h2>
+      <p style="color:#8b949e;margin-bottom:1.5rem;">Are you sure you want to concede?</p>
+      <div class="surrender-buttons">
+        <button class="surrender-btn yes" id="btnSurrenderYes">Yes, Surrender</button>
+        <button class="surrender-btn no" id="btnSurrenderNo">No, Keep Fighting</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="curse-info-overlay" id="curseInfoOverlay">
+    <div class="curse-info-box">
+      <h2>Anito's Curse</h2>
+      <div id="curseInfoContent"></div>
+      <button class="close-btn" onclick="document.getElementById('curseInfoOverlay').classList.remove('active')">Close</button>
+    </div>
+  </div>
+
+  <div class="info-overlay" id="infoOverlay">
+    <div class="info-box">
+      <div class="info-tabs">
+        <button class="info-tab-btn active" id="tabDiceBtn">🎲 Dice Effects</button>
+        <button class="info-tab-btn" id="tabPassivesBtn">🛡️ Passives</button>
+      </div>
+      <div id="infoTabContent"></div>
+      <button class="close-btn" onclick="document.getElementById('infoOverlay').classList.remove('active')">Close</button>
+    </div>
+  </div>
+
+  <div class="game-interface" id="gameInterface">
+    <div class="main-board-area">
+      <div class="battlefield-wrapper">
+        <div class="battlefield">
+          <div class="row"><div class="row-label"></div><div class="slots-container">
+            <div class="slot enemy-slot" id="enemyRanged1" data-row="ranged" data-idx="0"></div>
+            <div class="slot enemy-slot" id="enemyRanged2" data-row="ranged" data-idx="1"></div>
+            <div class="slot enemy-slot god-slot" id="enemyRanged3" data-row="ranged" data-idx="2"></div>
+            <div class="slot enemy-slot" id="enemyRanged4" data-row="ranged" data-idx="3"></div>
+            <div class="slot enemy-slot" id="enemyRanged5" data-row="ranged" data-idx="4"></div>
+          </div></div>
+          <div class="row"><div class="row-label"></div><div class="slots-container">
+            <div class="slot enemy-slot" id="enemyMelee1" data-row="melee" data-idx="0"></div>
+            <div class="slot enemy-slot" id="enemyMelee2" data-row="melee" data-idx="1"></div>
+            <div class="slot enemy-slot" id="enemyMelee3" data-row="melee" data-idx="2"></div>
+            <div class="slot enemy-slot" id="enemyMelee4" data-row="melee" data-idx="3"></div>
+            <div class="slot enemy-slot" id="enemyMelee5" data-row="melee" data-idx="4"></div>
+          </div></div>
+          <div class="row"><div class="row-label"></div><div class="slots-container">
+            <div class="slot player-slot" id="playerMelee1" data-row="melee" data-idx="0"></div>
+            <div class="slot player-slot" id="playerMelee2" data-row="melee" data-idx="1"></div>
+            <div class="slot player-slot" id="playerMelee3" data-row="melee" data-idx="2"></div>
+            <div class="slot player-slot" id="playerMelee4" data-row="melee" data-idx="3"></div>
+            <div class="slot player-slot" id="playerMelee5" data-row="melee" data-idx="4"></div>
+          </div></div>
+          <div class="row"><div class="row-label"></div><div class="slots-container">
+            <div class="slot player-slot" id="playerRanged1" data-row="ranged" data-idx="0"></div>
+            <div class="slot player-slot" id="playerRanged2" data-row="ranged" data-idx="1"></div>
+            <div class="slot player-slot god-slot" id="playerRanged3" data-row="ranged" data-idx="2"></div>
+            
+            <div class="slot player-slot" id="playerRanged4" data-row="ranged" data-idx="3"></div>
+            <div class="slot player-slot" id="playerRanged5" data-row="ranged" data-idx="4"></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="hand-fan-container" id="handFanContainer"></div>
+
+      <div class="info-panel">
+        <span id="logMessage">Drag cards to play or click to attack!</span>
+        <span>Round: <span id="roundDisplay">1</span></span>
+        <span>Dice: <span id="diceInfo">Every 4 Turns</span></span>
+        <button class="menu-btn" id="btnMenu">Exit</button>
+      </div>
+    </div>
+  </div>
+  <div id="hintBubble" class="hint-bubble"></div>
 </div>
 
 <!-- Victory/Defeat Overlay -->
@@ -254,22 +244,14 @@
     </div>
 </div>
 
-<!-- ==================== YOUR FULL GAME SCRIPT ==================== -->
 <script>
 
 
-(function() {
-  function applyScaling() {
-    var wrapper = document.getElementById('gameWrapper');
-    if (!wrapper) return;
-    var scaleX = window.innerWidth / 1400;
-    var scaleY = window.innerHeight / 900;
-    var scale = Math.min(scaleX, scaleY);
-    wrapper.style.transform = 'scale(' + scale + ')';
-  }
 
+
+
+(function() {
   window.addEventListener('resize', function() {
-    applyScaling();
     if (typeof renderAll === 'function' && document.getElementById('gameInterface').classList.contains('active')) {
       renderAll();
     }
@@ -406,6 +388,79 @@
   enemyBlockers: {}
 };
   let selectedAttacker = null;
+  // ========== IN-GAME HINT SYSTEM ==========
+let hintsShown = {};   // track which hints have been shown this game
+let hintTimer = null;
+
+function showHint(text, targetElement, direction = 'above') {
+  const bubble = document.getElementById('hintBubble');
+  if (!bubble || !targetElement) return;
+  
+  // Clear any existing timer
+  if (hintTimer) clearTimeout(hintTimer);
+  
+  // Set text
+  bubble.textContent = text;
+  
+  // Position the bubble relative to target
+  const targetRect = targetElement.getBoundingClientRect();
+  const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+  
+  const bubbleWidth = bubble.offsetWidth || 180;
+  const bubbleHeight = bubble.offsetHeight || 40;
+  const gap = 8;
+  
+  let left = targetRect.left + targetRect.width/2 - bubbleWidth/2;
+  let top;
+  
+  // Adjust arrow direction
+  const arrow = bubble.style;
+  
+  if (direction === 'above') {
+    top = targetRect.top - bubbleHeight - gap;
+    arrow.setProperty('--arrow-dir', 'down');
+    bubble.style.setProperty('border-bottom', 'none');
+  } else if (direction === 'below') {
+    top = targetRect.bottom + gap;
+    arrow.setProperty('--arrow-dir', 'up');
+  } else if (direction === 'left') {
+    top = targetRect.top + targetRect.height/2 - bubbleHeight/2;
+    left = targetRect.left - bubbleWidth - gap;
+    arrow.setProperty('--arrow-dir', 'right');
+  } else if (direction === 'right') {
+    top = targetRect.top + targetRect.height/2 - bubbleHeight/2;
+    left = targetRect.right + gap;
+    arrow.setProperty('--arrow-dir', 'left');
+  }
+  
+  // Keep inside game area bounds
+  const maxLeft = gameAreaRect.width - bubbleWidth;
+  const maxTop = gameAreaRect.height - bubbleHeight;
+  left = Math.max(0, Math.min(left, maxLeft));
+  top = Math.max(0, Math.min(top, maxTop));
+  
+  // Apply position (relative to game-area)
+  bubble.style.left = left + 'px';
+  bubble.style.top = top + 'px';
+  
+  // Show with animation
+  bubble.classList.add('visible');
+  
+  // Auto-hide after 4 seconds
+  hintTimer = setTimeout(() => {
+    bubble.classList.remove('visible');
+    hintTimer = null;
+  }, 4000);
+}
+
+// Helper to check if a hint was already shown this game
+function hintNotShown(key) {
+  if (hintsShown[key]) return false;
+  hintsShown[key] = true;
+  return true;
+}
+// Reset hints when a new game starts
+// (add `hintsShown = {};` inside resetGame)
   let turnCounter = 0; // Tracks total turns for dice scheduling
 
   function shuffle(a) { for (let i=a.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -578,6 +633,8 @@ function showEnemySmite() {
       attackToken: firstPlayer
     };
 
+    hintsShown = {};   // reset tutorial hints
+
 
 
     // inside resetGame(), after state = { ... } is defined
@@ -609,7 +666,6 @@ state.wildModifier = randomMod.id;   // store the ID for logic, or store the nam
     document.getElementById('anitoCurseDisplay').addEventListener('click', showCurseInfo);
     
     updatePhaseIndicator('player', state.round, 4 - (turnCounter % 4));
-    applyScaling();
     renderAll();
     startTimer();
     triggerAutoOverlay('Match Started');
@@ -665,7 +721,7 @@ function updatePhaseIndicator(phase, round, subPhase) {
 
   switch(phase) {
     case 'player_develop':
-      statusText += `🟢 Your Turn<br><br>⚔️ ${state.attackToken === 'player' ? 'Attack!' : '🛡️ Defend!'}`;
+      statusText += `🟢 Your Turn<br><br>⚔️ ${state.attackToken === 'player' ? 'Attack!' : 'Attack!'}`;
       phaseStatus.style.color = '#7a9a60';
       break;
     case 'player_attack':
@@ -706,7 +762,7 @@ function startNewRound() {
   state.enemyRanged.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
   
   updatePhaseIndicator('player_develop', state.round);
-  document.getElementById('phaseDiceInfo').textContent = state.attackToken === 'player' ? '⚔️ Attack Token' : '🛡️ No Token';
+  document.getElementById('phaseDiceInfo').textContent = state.attackToken === 'player' ? 'Place Cards and Attack!' : '🛡️ No Token';
   
   renderAll();
   startTimer();
@@ -716,6 +772,11 @@ function startNewRound() {
 
 // Modified enemy AI turn
 function executeEnemyAITurn() {
+
+  
+  if (hintNotShown('enemyTurn')) {
+  setTimeout(() => showHint('👹 Enemy turn — wait for your turn.', document.getElementById('handFanContainer'), 'above'), 500);
+}
   state.roundPhase = 'enemy';
   state.phase = 'development';
   updatePhaseIndicator('enemy_develop', state.round);
@@ -732,6 +793,7 @@ function executeEnemyAITurn() {
     else enemyTimerEl.classList.remove('critical-danger');
     if (enemyTime <= 0) clearInterval(state.enemyTimerInterval);
   }, 1000);
+  
 
   // Build list of cards to play
   let enemyProvPool = state.provPerTurn + 2;
@@ -782,15 +844,15 @@ function executeEnemyAITurn() {
     }
 
     const card = cardsToPlay[cardIndex];
-    if (card.type === 'Unit') {
-      let arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
-      let slot = arr.findIndex(s => s === null);
-      if (slot === -1) { arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee; slot = arr.findIndex(s => s === null); }
-      if (slot !== -1) {
-        arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
-        document.getElementById('logMessage').textContent = `👹 Enemy played ${card.name}`;
-      }
-    }
+if (card.type === 'Unit') {
+  let arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
+  let slot = arr.findIndex((s, idx) => s === null && idx !== 2);
+  if (slot === -1) { arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee; slot = arr.findIndex((s, idx) => s === null && idx !== 2); }
+  if (slot !== -1) {
+    arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
+    document.getElementById('logMessage').textContent = `👹 Enemy played ${card.name}`;
+  }
+}
     renderAll();
     cardIndex++;
 
@@ -923,13 +985,13 @@ function endRound() {
     setTimeout(() => {
       state.turn = 'player';
       startNewRound();
-      triggerAutoOverlay(state.attackToken === 'player' ? '⚔️ Attack Token!' : '🛡️ Defend!');
+      triggerAutoOverlay(state.attackToken === 'player' ? 'Attack!' : 'Attack!');
     }, 6000);
   } else {
     setTimeout(() => {
       state.turn = 'player';
       startNewRound();
-      triggerAutoOverlay(state.attackToken === 'player' ? '⚔️ Attack Token!' : '🛡️ Defend!');
+      triggerAutoOverlay(state.attackToken === 'player' ? 'Attack!' : 'Attack!');
     }, 1500);
   }
 }
@@ -946,7 +1008,7 @@ function triggerAutoOverlay(title) {
 }
 
   function executeShake() {
-    const stage = document.getElementById('stageBlock');
+    const stage = document.getElementById('gameInterface');
     stage.classList.remove('shake-effect');
     void stage.offsetWidth;
     stage.classList.add('shake-effect');
@@ -954,7 +1016,7 @@ function triggerAutoOverlay(title) {
   }
 
   function executeHeavyShake() {
-    const stage = document.getElementById('stageBlock');
+    const stage = document.getElementById('gameInterface');
     stage.classList.remove('heavy-shake-effect');
     void stage.offsetWidth;
     stage.classList.add('heavy-shake-effect');
@@ -1086,7 +1148,12 @@ function checkAffordableCards() {
     const btnEndTurn = document.getElementById('btnEndTurn');
 
     if (!hasAffordable && state.hand.length > 0) {
-      document.getElementById('logMessage').textContent = '⚠️ No affordable cards! Click End Turn to skip.';
+      document.getElementById('logMessage').textContent = 'Attack Enemy Cards before clicking End Turn';
+
+      if (!hasAffordable && state.hand.length > 0 && hintNotShown('endTurnHint')) {
+  const endTurnBtn = document.getElementById('btnEndTurn');
+  setTimeout(() => showHint('No affordable cards — press End Turn.', endTurnBtn, 'right'), 500);
+}
       if (btnEndTurn) {
         btnEndTurn.classList.add('highlight-endturn');
         // Remove the highlight after 3 seconds
@@ -1473,10 +1540,16 @@ document.addEventListener('pointerdown', (e) => {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
         document.getElementById('logMessage').textContent = '🎯 Unit selected! Click an empty slot to play, or drag to play.';
         highlightEmptyPlayerSlots();
+        if (hintNotShown('playCard')) {
+  setTimeout(() => showHint('👆 Tap an empty slot to play this card.', handCard, 'above'), 400);
+}
       } else if (cardData.type === 'Spell') {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true, isSpell: true };
         document.getElementById('logMessage').textContent = '✨ Spell selected! Click or drag to a target to cast.';
         highlightSpellTargets(cardData);
+        if (hintNotShown('playSpell')) {
+  setTimeout(() => showHint('✨ Tap a target to cast this spell.', handCard, 'above'), 400);
+}
       }
 
       const handCardEl = handCard;
@@ -1652,6 +1725,12 @@ if (dragState.active) {
     selectedAttacker = { row: source.row, idx: source.idx };
     document.getElementById('logMessage').textContent = '🎯 Card selected! Click an enemy to attack.';
     highlightEnemyTargets();
+if (hintNotShown('attackUnit')) {
+  const hasEnemies = hasEnemyUnits();
+  const msg = hasEnemies ? 'Click your card and Tap an enemy to attack.' : 'No enemies! You can attack the enemy slot!';
+  const targetEl = hasEnemies ? document.getElementById('enemyMelee1') : document.getElementById('enemyGodHpDisplay');
+  setTimeout(() => showHint(msg, targetEl, 'above'), 400);
+}
   }
 }, {passive: false});
   }
@@ -1693,6 +1772,7 @@ if (dragState.active) {
   }
 
   function playCardFromHandToSlot(targetSlot, handSelection) {
+    if (targetSlot.classList.contains('god-slot')) return;  // can't play on God slot
     if (handSelection.card.type !== 'Unit') return;
     const availableProv = state.provPool - state.provUsed;
     const { handIdx, card } = handSelection;
@@ -1990,7 +2070,7 @@ function resolveDragAction(target) {
   }
 
   function executeUltimateScreenEffect(effectType) {
-    const stage = document.getElementById('stageBlock');
+    const stage = document.getElementById('gameInterface');
     switch(effectType) {
       case 'bathala_ult': stage.classList.add('bathala-ult-screen'); setTimeout(() => stage.classList.remove('bathala-ult-screen'), 1000); break;
       case 'lamang_ult': stage.classList.add('lamang-ult-glow'); setTimeout(() => stage.classList.remove('lamang-ult-glow'), 1200); break;
@@ -2138,43 +2218,70 @@ function resolveDragAction(target) {
 
   renderAll();
 }
-  function renderAll() {
+function renderAll() {
 
-const curseDisplay = document.getElementById('anitoCurseDisplay');
-if (curseDisplay) {
-  const details = CURSE_DETAILS[state.wildModifier];
-  curseDisplay.innerHTML = `Anito Curse:<br><br>${details.name}`;
-}
+  const curseDisplay = document.getElementById('anitoCurseDisplay');
+  if (curseDisplay) {
+    const details = CURSE_DETAILS[state.wildModifier];
+    curseDisplay.innerHTML = `Anito Curse:<br><br>${details.name}`;
+  }
 
-    const availableProv = state.provPool - state.provUsed;
-    document.getElementById('enemyDeckPile').textContent = state.enemyDeckSize;
-    document.getElementById('playerDeckPile').textContent = state.deck.length;
-    document.getElementById('enemyGraveCount').textContent = state.enemyGrave.length;
-    document.getElementById('playerGraveCount').textContent = state.playerGrave.length;
+  const availableProv = state.provPool - state.provUsed;
+  document.getElementById('enemyDeckPile').textContent = state.enemyDeckSize;
+  document.getElementById('playerDeckPile').textContent = state.deck.length;
+  document.getElementById('enemyGraveCount').textContent = state.enemyGrave.length;
+  document.getElementById('playerGraveCount').textContent = state.playerGrave.length;
 
-    for (let i = 0; i < 5; i++) {
-      document.getElementById(`playerMelee${i+1}`).innerHTML = renderCardHTML(state.playerMelee[i]);
+  // --- THIS IS THE CRITICAL LOOP ---
+  for (let i = 0; i < 5; i++) {
+
+    // Player melee – always a normal unit slot
+    document.getElementById(`playerMelee${i+1}`).innerHTML = renderCardHTML(state.playerMelee[i]);
+
+    // Player ranged – index 2 is the God slot
+    if (i === 2) {
+      document.getElementById(`playerRanged${i+1}`).innerHTML = `
+        <div class="god-content">
+          <div id="playerGodSide" class="card god-card">
+            <strong>${state.godName}</strong>
+            <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}</button>
+          </div>
+          <div class="god-hp-display player-hp" id="playerGodHpDisplay">HP: ${Math.max(0, state.godHp)}</div>
+        </div>
+      `;
+    } else {
       document.getElementById(`playerRanged${i+1}`).innerHTML = renderCardHTML(state.playerRanged[i]);
-      document.getElementById(`enemyMelee${i+1}`).innerHTML = renderCardHTML(state.enemyMelee[i]);
-      document.getElementById(`enemyRanged${i+1}`).innerHTML = renderCardHTML(state.enemyRanged[i]);
     }
 
-document.getElementById('enemyGodSide').innerHTML = `
-  <div class="card god-card">
-    <strong>${state.enemyGodName}</strong>
-    <button class="ult" ${state.enemyUltAvailable ? '' : 'disabled'}>
-      ${state.enemyUltAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}
-    </button>
-  </div>`;
+    // Enemy melee – always a normal unit slot
+    document.getElementById(`enemyMelee${i+1}`).innerHTML = renderCardHTML(state.enemyMelee[i]);
 
-    document.getElementById('playerGodSide').innerHTML = `
-      <div class="card god-card">
-        <strong>${state.godName}</strong>
-        <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}</button>
-      </div>`;
+    // Enemy ranged – index 2 is the God slot
+    if (i === 2) {
+      document.getElementById(`enemyRanged${i+1}`).innerHTML = `
+        <div class="god-content">
+          <div id="enemyGodSide" class="card god-card">
+            <strong>${state.enemyGodName}</strong>
+            <button class="ult" ${state.enemyUltAvailable ? '' : 'disabled'}>
+              ${state.enemyUltAvailable ? '⚡ Ultimate Ready' : 'Ultimate Used'}
+            </button>
+          </div>
+          <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">HP: ${Math.max(0, state.enemyGodHp)}</div>
+        </div>
+      `;
+    } else {
+      document.getElementById(`enemyRanged${i+1}`).innerHTML = renderCardHTML(state.enemyRanged[i]);
+    }
+  }
+  // --- END OF LOOP ---
 
-document.getElementById('enemyGodHpDisplay').textContent = 'HP: ' + (isNaN(state.enemyGodHp) ? '100' : Math.max(0, state.enemyGodHp));
-document.getElementById('playerGodHpDisplay').textContent = 'HP: ' + (isNaN(state.godHp) ? '100' : Math.max(0, state.godHp));
+  // … rest of renderAll stays EXACTLY the same (prov pillars, hand, attack dots, etc.) …
+
+
+
+
+    document.getElementById('enemyGodHpDisplay').textContent = 'HP: ' + (isNaN(state.enemyGodHp) ? '100' : Math.max(0, state.enemyGodHp));
+    document.getElementById('playerGodHpDisplay').textContent = 'HP: ' + (isNaN(state.godHp) ? '100' : Math.max(0, state.godHp));
 
     document.getElementById('pillarEnemyProv').innerHTML = '🍗 ' + state.provPerTurn;
     document.getElementById('pillarPlayerProv').innerHTML = '🍗 ' + availableProv;
@@ -2188,9 +2295,9 @@ document.getElementById('playerGodHpDisplay').textContent = 'HP: ' + (isNaN(stat
     }
 
         // Show/hide attack button
-const btnEndTurn = document.getElementById('btnEndTurn');
-const btnAttack = document.getElementById('btnAttack');
-if (btnAttack) {
+  const btnEndTurn = document.getElementById('btnEndTurn');
+  const btnAttack = document.getElementById('btnAttack');
+  if (btnAttack) {
   btnAttack.style.display = 'block';
   btnAttack.style.pointerEvents = 'none';
   btnAttack.style.cursor = 'default';
@@ -2200,7 +2307,7 @@ if (btnAttack) {
     btnAttack.style.borderColor = '#ff6b35';
     btnAttack.style.color = '#ff6b35';
   } else {
-    btnAttack.textContent = '🛡️ Defend';
+    btnAttack.textContent = '⚔️ Attack';
     btnAttack.style.background = '#141a2e';
     btnAttack.style.borderColor = '#4a6a8a';
     btnAttack.style.color = '#7a9ac0';
@@ -2283,7 +2390,6 @@ function endTurn() {
     document.getElementById('leftPanelOuter').style.display = 'none';
     document.getElementById('rightPanelOuter').style.display = 'none';
     document.getElementById('enemyTimer').textContent = '30s';
-    applyScaling();
   }
 
   function showInfoTab(tab) {
@@ -2336,8 +2442,11 @@ function endTurn() {
   document.getElementById('tabDiceBtn').addEventListener('click', () => showInfoTab('dice'));
   document.getElementById('tabPassivesBtn').addEventListener('click', () => showInfoTab('passives'));
   document.addEventListener('click', (e) => { if (!e.target.closest('.card') && !e.target.closest('button') && !e.target.closest('.overlay')) { spawnClickRipple(e.clientX, e.clientY); } });
-  window.addEventListener('resize', () => { applyScaling(); if (!state.gameOver && document.getElementById('gameInterface').classList.contains('active')) { renderAll(); } });
-  applyScaling();
+  window.addEventListener('resize', () => {
+  if (!state.gameOver && document.getElementById('gameInterface').classList.contains('active')) {
+    renderAll();
+  }
+});
 })();
 
 </script>
