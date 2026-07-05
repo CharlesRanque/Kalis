@@ -5,10 +5,10 @@
 
 /* ========== ROOT VARIABLES ========== */
 :root {
-  --panel-width: clamp(60px, 8vw, 110px);
+  --panel-width: clamp(50px, 8vw, 110px);
   --panel-bg: rgba(20, 16, 10, 0.65);
   --battlefield-max: 700px;
-  --hand-height: clamp(100px, 16vh, 160px);
+  --hand-height: clamp(80px, 18vh, 150px);
 }
 
 /* ========== GLOBAL RESET ========== */
@@ -50,7 +50,7 @@ html, body {
   padding: 0.8rem 0.2rem;
   z-index: 10;
   border-right: 1px solid rgba(46, 36, 24, 0.6);
-  overflow-y: auto;                     /* allow scroll if content overflows on very short screens */
+  overflow-y: auto;
 }
 
 /* ========== FIXED RIGHT PANEL ========== */
@@ -69,7 +69,7 @@ html, body {
   padding: 2rem 0.2rem;
   z-index: 10;
   border-left: 1px solid rgba(46, 36, 24, 0.6);
-  overflow-y: auto;                     /* allow scroll if needed */
+  overflow-y: auto;
 }
 
 /* Right panel inner sections */
@@ -77,7 +77,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(1.5rem, 3vh, 4rem);       /* responsive gap */
+  gap: clamp(1rem, 2.5vh, 4rem);
 }
 .right-panel-middle {
   display: flex;
@@ -88,7 +88,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(1.5rem, 3vh, 4rem);       /* responsive gap */
+  gap: clamp(1rem, 2.5vh, 4rem);
 }
 
 /* ========== GAME AREA (between panels) ========== */
@@ -106,16 +106,15 @@ html, body {
 
 /* ========== LEFT / RIGHT PANEL INNER ELEMENTS (responsive) ========== */
 .deck-pile {
-  width: 90%;
-  max-width: clamp(50px, 8vw, 65px);
-  height: clamp(60px, 10vh, 100px);
+  width: 70%;
+  height: clamp(50px, 12vh, 100px);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   color: #f0e8d8;
-  font-size: clamp(0.8rem, 1.5vh, 1.1rem);
+  font-size: clamp(0.7rem, 2vh, 1.1rem);
   cursor: pointer;
   transition: all 0.2s;
   margin: 0 auto;
@@ -144,14 +143,13 @@ html, body {
   background: #141916;
   color: #a3c2a0;
   display: flex;
-  flex-direction: column;          /* keep the skull & number stacked */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  font-size: clamp(0.6rem, 1.2vh, 0.7rem);
-  width: 65%;                     /* was 80% */
-  /* max-width removed */
-  height: clamp(60px, 10vh, 100px);
+  font-size: clamp(0.6rem, 1.8vh, 0.7rem);
+  width: 70%;
+  height: clamp(50px, 12vh, 100px);
   border-radius: 8px;
   border: 1px solid #2d3830;
   cursor: pointer;
@@ -165,7 +163,7 @@ html, body {
 .grave-display span {
   font-weight: 700;
   color: #e0e0e0;
-  font-size: clamp(0.6rem, 1.2vh, 0.8rem);
+  font-size: clamp(0.6rem, 1.8vh, 0.8rem);
 }
 
 .god-card-wrapper {
@@ -174,7 +172,7 @@ html, body {
   align-items: center;
   gap: 0.2rem;
   width: 100%;
-  max-height: 30vh;                     /* prevent god card + HP from taking too much space */
+  max-height: 30vh;
 }
 
 .god-card {
@@ -185,12 +183,12 @@ html, body {
   text-align: center;
   width: 100%;
   max-width: clamp(80px, 15vw, 100px);
-  min-height: clamp(50px, 8vh, 60px);
+  min-height: clamp(40px, 10vh, 60px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  font-size: clamp(0.6rem, 1.2vh, 0.75rem);
+  font-size: clamp(0.6rem, 1.8vh, 0.75rem);
   padding: 0.2rem;
   margin: 0;
   overflow: hidden;
@@ -228,7 +226,7 @@ html, body {
 }
 
 .god-hp-display {
-  font-size: clamp(0.7rem, 1.4vh, 0.9rem);
+  font-size: clamp(0.7rem, 2vh, 0.9rem);
   font-weight: bold;
   padding: 0.1rem 0.3rem;
   border-radius: 4px;
@@ -251,26 +249,26 @@ html, body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
   width: 90%;
   margin: 0.2rem auto;
-  font-size: clamp(0.5rem, 1vh, 0.6rem);
+  font-size: clamp(0.5rem, 1.5vh, 0.6rem);
   max-height: 20vh;
   overflow: hidden;
 }
 .phase-round {
-  font-size: clamp(0.5rem, 1vh, 0.6rem);
+  font-size: clamp(0.5rem, 1.5vh, 0.6rem);
   color: #8b8a7a;
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.1rem;
 }
 .phase-status {
-  font-size: clamp(0.55rem, 1.1vh, 0.7rem);
+  font-size: clamp(0.55rem, 1.6vh, 0.7rem);
   font-weight: 700;
   margin-bottom: 0.1rem;
   white-space: normal;
   line-height: 1.2;
 }
 .phase-dice-info {
-  font-size: clamp(0.45rem, 0.9vh, 0.55rem);
+  font-size: clamp(0.45rem, 1.3vh, 0.55rem);
   color: #9b8e7a;
   font-style: italic;
 }
@@ -294,22 +292,42 @@ html, body {
 }
 
 .anito-curse-indicator {
-  font-size: clamp(0.6rem, 1.2vh, 0.65rem);
+  font-size: clamp(0.6rem, 1.8vh, 0.65rem);
   font-weight: 700;
-  border-radius: 4px;
-  padding: 3px 6px;
+  border-radius: 6px;
+  padding: 6px 8px;
   width: 90%;
   text-align: center;
   cursor: pointer;
   white-space: normal;
-  color: #d4b8c0;
-  background: linear-gradient(145deg, rgba(26,14,20,0.9), rgba(13,10,13,0.9));
-  border: 2px solid #5a2a4a;
+  color: #e0d0d0;
+  text-shadow: 0 0 8px rgba(200, 0, 0, 0.6);
+  background: linear-gradient(145deg, #1a0a0f 0%, #0d0508 50%, #1a0a0f 100%);
+  border: 2px solid #5a1a2a;
+  box-shadow: 0 0 12px rgba(120, 10, 30, 0.4), inset 0 0 8px rgba(0,0,0,0.6);
+  animation: anito-pulse 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
 }
 
+.anito-curse-indicator:hover {
+  border-color: #8a2a4a;
+  box-shadow: 0 0 20px rgba(160, 20, 40, 0.7), inset 0 0 12px rgba(0,0,0,0.8);
+  color: #fff;
+  text-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
+}
+
+@keyframes anito-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(120, 10, 30, 0.4), inset 0 0 8px rgba(0,0,0,0.6);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(160, 20, 40, 0.6), inset 0 0 10px rgba(0,0,0,0.8);
+  }
+}
 /* Timer pills */
 .timer-pill {
-  font-size: clamp(0.8rem, 1.6vh, 1rem);
+  font-size: clamp(0.8rem, 2.2vh, 1rem);
   font-weight: 800;
   color: #f0e8d8;
   background: rgba(29, 24, 20, 0.8);
@@ -330,7 +348,7 @@ html, body {
 
 /* Provision labels & values */
 .pillar-label {
-  font-size: clamp(0.5rem, 1vh, 0.6rem);
+  font-size: clamp(0.5rem, 1.4vh, 0.6rem);
   color: #9b8e7a;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -342,7 +360,7 @@ html, body {
   text-align: center;
   padding: 0.1rem;
   font-weight: bold;
-  font-size: clamp(0.9rem, 1.8vh, 1.1rem);
+  font-size: clamp(0.9rem, 2.4vh, 1.1rem);
   width: 90%;
 }
 .pillar-provision-block.enemy-val { color: #c08070; }
@@ -350,14 +368,14 @@ html, body {
 
 /* Circular buttons */
 button.circular-end-turn {
-  width: clamp(60px, 12vw, 80px);
-  height: clamp(60px, 12vw, 80px);
+  width: clamp(55px, 12vh, 80px);
+  height: clamp(55px, 12vh, 80px);
   border-radius: 50%;
   background: #1d1814;
   border: 3px solid #5e5045;
   color: #d4c8a8;
   font-weight: bold;
-  font-size: clamp(0.5rem, 1vw, 0.6rem);
+  font-size: clamp(0.5rem, 1.4vh, 0.6rem);
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
@@ -368,14 +386,14 @@ button.circular-end-turn:hover {
 }
 
 button.circular-surrender {
-  width: clamp(38px, 7vw, 45px);
-  height: clamp(38px, 7vw, 45px);
+  width: clamp(40px, 10vh, 55px);
+  height: clamp(40px, 10vh, 55px);
   border-radius: 50%;
   background: #2e1814;
   border: 2px solid #8b4a3a;
   color: #c08070;
   font-weight: bold;
-  font-size: clamp(0.45rem, 0.9vw, 0.6rem);
+  font-size: clamp(0.45rem, 1.2vh, 0.6rem);
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 0.3rem;
@@ -387,9 +405,9 @@ button.circular-surrender:hover {
 
 .right-info-btn {
   width: 90%;
-  height: clamp(24px, 4vh, 28px);
+  height: clamp(24px, 5vh, 28px);
   padding: 0 0.4rem;
-  font-size: clamp(0.5rem, 1vw, 0.6rem);
+  font-size: clamp(0.5rem, 1.4vh, 0.6rem);
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -437,7 +455,7 @@ button.circular-surrender:hover {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;                            /* full height */
+  bottom: 0;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -456,7 +474,7 @@ button.circular-surrender:hover {
   max-width: var(--battlefield-max);
   height: 100%;
   margin: 0 auto;
-  padding-bottom: var(--hand-height);    /* reserve space so bottom row isn't completely hidden */
+  padding-bottom: var(--hand-height);
 }
 
 .row {
@@ -494,7 +512,7 @@ button.circular-surrender:hover {
   background: rgba(20, 26, 16, 0.8);
   border-radius: 6px;
   height: 100%;
-  aspect-ratio: 95 / 145;
+  aspect-ratio: 95 / 145;       /* was 95 / 145 */
   border: 1px solid #2e3824;
   display: flex;
   align-items: center;
@@ -524,10 +542,10 @@ button.circular-surrender:hover {
 
 .fan-card-wrapper {
   position: relative;
-  height: 100%;             /* fill the hand container */
-  aspect-ratio: 95 / 145;
-  width: auto;              /* let aspect-ratio calculate width automatically */
-  max-width: 95px;          /* optional upper limit for very tall screens */
+  height: 100%;
+  aspect-ratio: 95 / 110;       /* was 95 / 145 */
+  width: auto;
+  max-width: 110px;
   pointer-events: auto;
   transition: transform 0.2s;
 }
@@ -555,18 +573,35 @@ button.circular-surrender:hover {
   border: 2px solid #6b4e2e;
   transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
   cursor: grab;
-  font-size: clamp(0.25rem, 0.6vw, 0.7rem);
+  font-size: clamp(0.4rem, 0.8vw, 0.7rem);   /* was clamp(0.25rem, 0.6vw, 0.7rem) */
   overflow: hidden;
 }
 
 /* Card type variants */
 .card.spell-card {
-  background: #d9ceb5;
-  border: 3px solid #7a5c38;
+  background: linear-gradient(135deg, #3d0c0c 0%, #7a1a1a 40%, #b53a0a 100%) !important;
+  border: 3px solid #ff4500 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(255, 69, 0, 0.6), 0 0 25px rgba(255, 100, 0, 0.3) !important;
+  animation: spell-glow 2s ease-in-out infinite alternate;
+}
+
+.card.spell-card .card-top-row {
+  color: #ffcc80;
+}
+
+.card.spell-card .card-name-center {
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255, 100, 0, 0.8);
 }
 .card.gold-border {
   border: 4px solid #9b7a3c !important;
   box-shadow: 0 0 8px rgba(155, 122, 60, 0.35);
+}
+
+.card.spell-card .card-prov-badge {
+  background: rgba(0,0,0,0.4);
+  color: #ffb347;
 }
 .card.bronze-border {
   border: 3px solid #6b4e2e !important;
@@ -580,17 +615,35 @@ button.circular-surrender:hover {
   filter: grayscale(70%) brightness(0.6);
 }
 
+.card.spell-card.unaffordable {
+  background: #555 !important;
+  border-color: #777 !important;
+  color: #aaa !important;
+  box-shadow: none !important;
+  animation: none;
+  filter: none;
+}
+
+@keyframes spell-glow {
+  0% {
+    box-shadow: 0 0 8px rgba(255, 69, 0, 0.5), 0 0 20px rgba(255, 100, 0, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 14px rgba(255, 69, 0, 0.8), 0 0 30px rgba(255, 140, 0, 0.4);
+  }
+}
+
 /* Card inner elements */
 .card-top-row {
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: clamp(0.4rem, 0.7vw, 0.65rem);
+  font-size: clamp(0.45rem, 0.8vw, 0.65rem);   /* was clamp(0.4rem, 0.7vw, 0.65rem) */
   font-weight: bold;
 }
 .card-name-center {
-  font-size: clamp(0.4rem, 0.7vw, 0.7rem);
+  font-size: clamp(0.45rem, 0.8vw, 0.7rem);   /* was clamp(0.4rem, 0.7vw, 0.7rem) */
   font-weight: 700;
   position: absolute;
   top: 50%;
@@ -1198,7 +1251,7 @@ button.menu-btn:hover {
     rgba(255,255,255,0.9) 0%,
     rgba(255,220,50,0.4) 20%,
     rgba(255,150,0,0.2) 40%,
-    transparent 50%);
+    transparent 0%);
   border-radius: 50%;
   animation: flashBurst 1.2s ease-out forwards;
   z-index: 1;
@@ -1208,7 +1261,7 @@ button.menu-btn:hover {
     rgba(200,240,255,0.9) 0%,
     rgba(68,200,255,0.4) 20%,
     rgba(0,100,255,0.2) 40%,
-    transparent 70%);
+    transparent 0%);
 }
 @keyframes flashBurst {
   0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
@@ -1315,7 +1368,6 @@ button.circular-end-turn.highlight-endturn {
   display: none !important;
 }
 
-
 /* ========== IN-GAME HINT BUBBLE ========== */
 .hint-bubble {
   position: absolute;
@@ -1338,7 +1390,6 @@ button.circular-end-turn.highlight-endturn {
   opacity: 1;
   transform: translateY(0);
 }
-/* Arrow */
 .hint-bubble::after {
   content: '';
   position: absolute;
@@ -1346,13 +1397,8 @@ button.circular-end-turn.highlight-endturn {
   height: 0;
   border: 6px solid transparent;
 }
-/* Arrow directions will be set via JS inline styles */
 
-/* Make the God slot a vertical flex container */
-/* Slot itself – vertical layout */
 /* ========== DIVINE GOD CARD ========== */
-
-/* The God slot itself – keep the vertical split */
 .slot.god-slot {
   flex-direction: column;
   align-items: stretch;
@@ -1360,7 +1406,6 @@ button.circular-end-turn.highlight-endturn {
   gap: 2px;
 }
 
-/* Inner wrapper (unchanged) */
 .god-content {
   display: flex;
   flex-direction: column;
@@ -1369,42 +1414,33 @@ button.circular-end-turn.highlight-endturn {
   gap: 2px;
 }
 
-/* ── The God card (top 70%) – EPIC STYLING ── */
 .slot.god-slot .god-card {
   flex: 7;
   min-height: 0;
   width: 100% !important;
   max-width: none !important;
   margin: 0;
-
-  /* Divine gold gradient background */
   background: radial-gradient(ellipse at 50% 0%, 
                 #f9e7a1 0%, 
                 #d4a745 40%, 
                 #8b6914 100%);
-  /* Subtle inner glow */
   box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.5),
               0 0 15px rgba(218, 165, 32, 0.7);
-  /* Thick, shiny gold border */
   border: 3px solid #ffd700;
   border-radius: 8px;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 6px;
   padding: 6px 4px;
-  padding-top: 10px;   /* you can adjust this for the name positioning */
-  
-  /* Smooth transition for any hover effects (if you add them later) */
+  padding-top: 10px;
   transition: all 0.2s ease;
 }
 
-/* God name */
 .slot.god-slot .god-card strong {
   font-size: clamp(0.6rem, 1.5vh, 0.8rem);
-  color: #1a1410;                 /* dark, crisp text on gold */
+  color: #1a1410;
   text-shadow: 0 1px 2px rgba(255,255,200,0.8);
   text-align: center;
   white-space: nowrap;
@@ -1415,7 +1451,6 @@ button.circular-end-turn.highlight-endturn {
   font-weight: 800;
 }
 
-/* Ultimate button – also enhanced to match the epic feel */
 .slot.god-slot .god-card button.ult {
   background: linear-gradient(180deg, #b54f07 0%, #7a2e00 100%);
   border: 2px solid #ffb347;
@@ -1443,7 +1478,6 @@ button.circular-end-turn.highlight-endturn {
   color: #ccc;
 }
 
-/* ── HP display (bottom 30%) – also refined ── */
 .slot.god-slot .god-hp-display {
   flex: 3;
   min-height: 0;
@@ -1461,33 +1495,73 @@ button.circular-end-turn.highlight-endturn {
   box-shadow: 0 0 6px rgba(155,122,60,0.3);
   white-space: nowrap;
   text-align: center;
-  /* The color classes (enemy-hp / player-hp) will still apply for red/green */
 }
 
-
-/* New center group inside the middle section */
+/* ========== CENTER GROUP (RIGHT PANEL) ========== */
 .center-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(0.8rem, 1.5vh, 1.5rem);   /* tight spacing between the three items */
+  gap: clamp(0.8rem, 1.5vh, 1.5rem);
 }
 
-/* Prevent any leftover margins from pushing the prov groups away */
 .center-group .prov-group {
   margin: 0;
 }
 
-/* The End Turn button inside the group – no extra margins */
 .center-group .circular-end-turn {
   margin: 0;
 }
 
-/* Group deck and graveyard together */
+/* ========== DECK & GRAVE GROUP (LEFT PANEL) ========== */
 .deck-grave-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;          /* tiny gap between deck and graveyard */
-  width: 100%;          /* ensure the group uses full panel width */
+  gap: 0.2rem;
+  width: 100%;
+}
+
+/* ========== PORTRAIT MODE OVERLAY ========== */
+@media (orientation: portrait) and (max-width: 1024px) {
+  .game-interface.active {
+    display: none;
+  }
+  .rotate-device-overlay {
+    display: flex;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.95);
+    color: #d4c8a8;
+    justify-content: center;
+    align-items: center;
+    z-index: 5000;
+    font-size: 1.5rem;
+  }
+}
+
+.hint-toggle-btn {
+  width: 90%;
+  height: clamp(24px, 5vh, 28px);
+  padding: 0 0.4rem;
+  font-size: clamp(0.5rem, 1.4vh, 0.6rem);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #c8b898;
+  background: linear-gradient(180deg, #2a2218 0%, #1d1814 100%);
+  border: 1px solid #4a3e2e;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hint-toggle-btn:hover {
+  background: linear-gradient(180deg, #3a3020 0%, #2a2218 100%);
+  border-color: #9b7a3c;
+  color: #d4c8a8;
+}
+.hint-toggle-btn.off {
+  opacity: 0.5;
 }
