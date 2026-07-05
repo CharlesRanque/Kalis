@@ -84,6 +84,7 @@
   <!-- BOTTOM: Info and Surrender buttons only -->
   <div class="right-panel-bottom">
     <button class="right-info-btn" id="btnInfoPanel" title="Dice & Passive Info">Info</button>
+    <button class="hint-toggle-btn" id="btnToggleHints" title="Toggle tutorial hints">💡</button>
     <button class="circular-surrender" id="btnSurrender">🏳️</button>
   </div>
 </div>
@@ -234,7 +235,14 @@
       </div>
     </div>
   </div>
-  <div id="hintBubble" class="hint-bubble"></div>
+    <div id="hintBubble" class="hint-bubble"></div>
+  
+  <!-- Fullscreen prompt overlay (hidden by default) -->
+  <div id="fullscreenPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; justify-content:center; align-items:center; flex-direction:column;">
+    <p style="color:#d4c8a8; font-size:1.5rem; margin-bottom:1rem;">Tap to enter fullscreen</p>
+    <button onclick="document.documentElement.requestFullscreen(); document.getElementById('fullscreenPrompt').style.display='none';" style="padding:1rem 2rem; font-size:1.2rem; background:#9b7a3c; border:none; border-radius:8px; color:#fff;">Enter Fullscreen</button>
+  </div>
+</div>
 </div>
 
 <!-- Victory/Defeat Overlay -->
@@ -387,14 +395,32 @@
   playerAttackers: [],
   enemyBlockers: {}
 };
-  let selectedAttacker = null;
-  // ========== IN-GAME HINT SYSTEM ==========
-let hintsShown = {};   // track which hints have been shown this game
+
+let selectedAttacker = null;
+
+// ========== IN-GAME HINT SYSTEM ==========
+let hintsShown = {};
+
+// Hint toggle
+let hintsEnabled = localStorage.getItem('ggHintsEnabled') !== 'false';
+
+function toggleHints() {
+  hintsEnabled = !hintsEnabled;
+  localStorage.setItem('ggHintsEnabled', hintsEnabled);
+  const btn = document.getElementById('btnToggleHints');
+  if (btn) {
+    btn.textContent = hintsEnabled ? '💡' : '💡';
+    btn.classList.toggle('off', !hintsEnabled);
+  }
+}
+
 let hintTimer = null;
 
 function showHint(text, targetElement, direction = 'above') {
+  if (!hintsEnabled) return;   // ← add this line
   const bubble = document.getElementById('hintBubble');
   if (!bubble || !targetElement) return;
+  // … rest of the function
   
   // Clear any existing timer
   if (hintTimer) clearTimeout(hintTimer);
@@ -659,6 +685,15 @@ state.wildModifier = randomMod.id;   // store the ID for logic, or store the nam
     document.getElementById('menuScreen').style.display = 'none';
     document.getElementById('mainMenu').style.display = 'none';
     document.getElementById('gameInterface').classList.add('active');
+    document.getElementById('gameInterface').classList.add('active');
+
+// Request fullscreen on mobile devices
+if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
+  document.documentElement.requestFullscreen().catch(() => {
+    const overlay = document.getElementById('fullscreenPrompt');
+    if (overlay) overlay.style.display = 'flex';
+  });
+}
     document.getElementById('leftPanelOuter').style.display = 'flex';
     document.getElementById('rightPanelOuter').style.display = 'flex';
     document.getElementById('diceInfo').textContent = 'Every 4 Turns';
@@ -765,10 +800,18 @@ function startNewRound() {
   document.getElementById('phaseDiceInfo').textContent = state.attackToken === 'player' ? 'Place Cards and Attack!' : '🛡️ No Token';
   
   renderAll();
+  
+  // Show "select a card" hint at the start of your turn
+  if (state.turn === 'player' && hintNotShown('selectCard')) {
+    const handContainer = document.getElementById('handFanContainer');
+    if (handContainer && state.hand.length > 0) {
+      setTimeout(() => showHint('👇 Select a card and place it on the field. If you cant afford anything press End Turn 👉', handContainer, 'above'), 600);
+    }
+  }
+  
   startTimer();
   checkAffordableCards();
 }
-
 
 // Modified enemy AI turn
 function executeEnemyAITurn() {
@@ -950,7 +993,6 @@ function enemyAttack() {
       }
     } else {
       state.godHp -= u.atk; setTimeout(() => bleedGodCard('playerGodSide'), 50);
-      executeShake();
       if (attackerSlot) showAttackIndicator(attackerSlot, document.getElementById('playerGodHpDisplay'), true);
     }
     if (attackerInfo.arr[attackerInfo.idx]) attackerInfo.arr[attackerInfo.idx].hasAttacked = true;
@@ -1150,9 +1192,13 @@ function checkAffordableCards() {
     if (!hasAffordable && state.hand.length > 0) {
       document.getElementById('logMessage').textContent = 'Attack Enemy Cards before clicking End Turn';
 
-      if (!hasAffordable && state.hand.length > 0 && hintNotShown('endTurnHint')) {
+if (!hasAffordable && state.hand.length > 0 && hintNotShown('endTurnHint')) {
   const endTurnBtn = document.getElementById('btnEndTurn');
-  setTimeout(() => showHint('No affordable cards — press End Turn.', endTurnBtn, 'right'), 500);
+  // Wait longer — if the attack hint fires, it will show first
+  const delay = hintsShown['attackUnit'] ? 4500 : 500;
+  // Also delay if the player hasn't selected a unit yet (attack hint may still come)
+  const finalDelay = hasEnemyUnits() ? 500 : Math.max(delay, 3000);
+  setTimeout(() => showHint('No affordable cards — press End Turn.', endTurnBtn, 'right'), finalDelay);
 }
       if (btnEndTurn) {
         btnEndTurn.classList.add('highlight-endturn');
@@ -1540,8 +1586,27 @@ document.addEventListener('pointerdown', (e) => {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
         document.getElementById('logMessage').textContent = '🎯 Unit selected! Click an empty slot to play, or drag to play.';
         highlightEmptyPlayerSlots();
-        if (hintNotShown('playCard')) {
-  setTimeout(() => showHint('👆 Tap an empty slot to play this card.', handCard, 'above'), 400);
+if (hintNotShown('playCard')) {
+  // Find the first empty player slot (melee or ranged)
+  let firstEmptySlot = null;
+  for (let i = 0; i < 5; i++) {
+    const slot = document.getElementById(`playerMelee${i+1}`);
+    if (slot && slot.querySelector('.card') === null && !slot.classList.contains('god-slot')) {
+      firstEmptySlot = slot;
+      break;
+    }
+  }
+  if (!firstEmptySlot) {
+    for (let i = 0; i < 5; i++) {
+      const slot = document.getElementById(`playerRanged${i+1}`);
+      if (slot && slot.querySelector('.card') === null && !slot.classList.contains('god-slot')) {
+        firstEmptySlot = slot;
+        break;
+      }
+    }
+  }
+  const target = firstEmptySlot || handCard;  // fallback to hand card if no empty slot
+  setTimeout(() => showHint(' 👇Pick a card on your hand and place them on the field.', target, 'above'), 400);
 }
       } else if (cardData.type === 'Spell') {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true, isSpell: true };
@@ -1723,13 +1788,13 @@ if (dragState.active) {
     const cardEl = source.slotElement.querySelector('.card');
     if (cardEl) cardEl.classList.add('selected-for-attack');
     selectedAttacker = { row: source.row, idx: source.idx };
-    document.getElementById('logMessage').textContent = '🎯 Card selected! Click an enemy to attack.';
+    document.getElementById('logMessage').textContent = 'Card selected! Click an enemy to attack.';
     highlightEnemyTargets();
 if (hintNotShown('attackUnit')) {
   const hasEnemies = hasEnemyUnits();
-  const msg = hasEnemies ? 'Click your card and Tap an enemy to attack.' : 'No enemies! You can attack the enemy slot!';
-  const targetEl = hasEnemies ? document.getElementById('enemyMelee1') : document.getElementById('enemyGodHpDisplay');
-  setTimeout(() => showHint(msg, targetEl, 'above'), 400);
+  const msg = hasEnemies ? 'Click your card on the field  and Tap an enemy to attack🗡️.' : '🗡️ Click a card and Tap the Enemy GOD!';
+  // Point at the friendly card you just selected, not the enemy
+  setTimeout(() => showHint(msg, cardEl, 'above'), 400);
 }
   }
 }, {passive: false});
@@ -1755,23 +1820,38 @@ if (hintNotShown('attackUnit')) {
     });
   }
 
-  function highlightSpellTargets(cardData) {
-    if (cardData.effect === 'divine_buff') {
-      document.querySelectorAll('.player-slot').forEach(slot => {
-        if (slot.innerHTML.trim() !== '') slot.classList.add('targetable');
-      });
-    } else if (cardData.effect === 'resurrect_2') {
-      document.querySelectorAll('.player-slot').forEach(slot => slot.classList.add('targetable'));
-    } else if (cardData.effect === 'damage_all_2') {
-      document.querySelectorAll('.enemy-slot').forEach(slot => slot.classList.add('targetable'));
-    } else {
-      document.querySelectorAll('.enemy-slot').forEach(slot => {
-        if (slot.innerHTML.trim() !== '') slot.classList.add('targetable');
-      });
-    }
+function highlightSpellTargets(cardData) {
+  if (cardData.effect === 'divine_buff') {
+    document.querySelectorAll('.player-slot').forEach(slot => {
+      if (slot.innerHTML.trim() !== '' && !slot.classList.contains('god-slot')) slot.classList.add('targetable');
+    });
+  } else if (cardData.effect === 'resurrect_2') {
+    document.querySelectorAll('.player-slot').forEach(slot => {
+      if (!slot.classList.contains('god-slot')) slot.classList.add('targetable');
+    });
+  } else if (cardData.effect === 'damage_all_2') {
+    document.querySelectorAll('.enemy-slot').forEach(slot => {
+      if (!slot.classList.contains('god-slot')) slot.classList.add('targetable');
+    });
+    // Also highlight the enemy God
+    const godHp = document.getElementById('enemyGodHpDisplay');
+    if (godHp) godHp.classList.add('targetable');
+    const godSide = document.getElementById('enemyGodSide');
+    if (godSide) godSide.classList.add('targetable');
+  } else {
+    // All other damage/ destroy spells
+    document.querySelectorAll('.enemy-slot').forEach(slot => {
+      if (slot.innerHTML.trim() !== '' && !slot.classList.contains('god-slot')) slot.classList.add('targetable');
+    });
+    // Also highlight the enemy God
+    const godHp = document.getElementById('enemyGodHpDisplay');
+    if (godHp) godHp.classList.add('targetable');
+    const godSide = document.getElementById('enemyGodSide');
+    if (godSide) godSide.classList.add('targetable');
   }
+}
 
-  function playCardFromHandToSlot(targetSlot, handSelection) {
+function playCardFromHandToSlot(targetSlot, handSelection) {
     if (targetSlot.classList.contains('god-slot')) return;  // can't play on God slot
     if (handSelection.card.type !== 'Unit') return;
     const availableProv = state.provPool - state.provUsed;
@@ -1789,6 +1869,22 @@ if (hintNotShown('attackUnit')) {
     if (btnEndTurn) btnEndTurn.classList.remove('highlight-endturn');
     clearSelection();
     renderAll(); checkAffordableCards();
+    
+    // Show attack hint immediately after playing a card if no enemies exist
+    if (!hasEnemyUnits() && hintNotShown('attackUnit') && state.turn === 'player') {
+      const targetEl = document.getElementById('enemyGodHpDisplay');
+      if (targetEl) {
+        setTimeout(() => showHint('☝️Tap a card on the Field and click this GOD to 🗡️Attack!', targetEl, 'above'), 500);
+      }
+    }
+    
+    // Show "click your card to attack" hint if enemies exist
+    if (hasEnemyUnits() && hintNotShown('attackField') && state.turn === 'player') {
+      const placedSlot = document.getElementById(`player${tgtRow.charAt(0).toUpperCase() + tgtRow.slice(1)}${tgtIdx + 1}`);
+      if (placedSlot) {
+        setTimeout(() => showHint('👇 Click your card on the field and tap an enemy to attack 🗡️.', placedSlot, 'above'), 500);
+      }
+    }
   }
 
   function getEffectiveAtk(card) {
@@ -1854,6 +1950,29 @@ function resolveDragAction(target) {
       if (availableProv < card.cost) { document.getElementById('logMessage').textContent = '⚠️ Not enough provisions!'; return; }
       
       const useSpell = () => { state.provUsed += card.cost; state.hand.splice(handIdx, 1); };
+      // === SPELL DAMAGE ON ENEMY GOD ===
+if ((card.effect === 'damage_3' || card.effect === 'damage_6' || card.effect === 'destroy_strongest' || card.effect === 'damage_all_2') &&
+    (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide') || target.closest('.god-slot.enemy-slot'))) {
+  
+  let dmg = 0;
+  if (card.effect === 'damage_3') dmg = 3;
+  else if (card.effect === 'damage_6') dmg = 6;
+  else if (card.effect === 'destroy_strongest') dmg = 10;  // destroy = heavy damage to God
+  else if (card.effect === 'damage_all_2') dmg = 2;
+  
+  state.provUsed += card.cost;
+  state.hand.splice(handIdx, 1);
+  state.enemyGodHp = Math.max(0, state.enemyGodHp - dmg);
+  
+  const godHpEl = document.getElementById('enemyGodHpDisplay');
+  if (godHpEl) showFloatingDamage(godHpEl, dmg, '#ff6b35');
+  executeShake();
+  document.getElementById('logMessage').textContent = `🔥 Spell dealt ${dmg} damage to enemy God!`;
+  
+  clearSelection();
+  setTimeout(() => { renderAll(); checkAffordableCards(); }, 400);
+  return;
+}
       
       if (card.effect === 'damage_3' && target.classList.contains('enemy-slot')) {
         const arr = target.dataset.row === 'melee' ? state.enemyMelee : state.enemyRanged;
@@ -1933,20 +2052,25 @@ function resolveDragAction(target) {
       const attackerSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
 
       // Attack enemy god
-      if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
-        if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
-        const effAtk = getEffectiveAtk(attacker);
-        state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake() ; setTimeout(() => bleedGodCard('enemyGodSide'), 50);
-        showFloatingDamage(target, effAtk, '#ff6b35');
-        if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
-        document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
-        
+if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
+  if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
+  const effAtk = getEffectiveAtk(attacker);
+  state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake(); setTimeout(() => bleedGodCard('enemyGodSide'), 50);
+  showFloatingDamage(target, effAtk, '#ff6b35');
+  if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+  document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
         // Lifesteal on god hit
         if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
           const healAmt = parseInt(attacker.passive.split(' ')[1]) || 1;
           attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmt);
         }
-        
+        // Show "reduce HP to 0" hint on first enemy God damage
+if (hintNotShown('killGod')) {
+  const godSlot = document.getElementById('enemyRanged3');  // the battlefield God slot
+  if (godSlot) {
+    setTimeout(() => showHint('☝ Kill him and reduce his HP to 0!', godSlot, 'below'), 600);
+  }
+}
         clearSelection();
         renderAll(); return;
       }
@@ -1958,19 +2082,25 @@ function resolveDragAction(target) {
         let enemyCard = enemyArr[tgtIdx];
 
         if (!enemyCard && hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
-        if (!enemyCard && !hasEnemyUnits()) {
-          const effAtk = getEffectiveAtk(attacker);
-          state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake() ; setTimeout(() => bleedGodCard('enemyGodSide'), 10);
-          showFloatingDamage(target, effAtk, '#ff6b35');
-          if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
-          document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
+    if (!enemyCard && !hasEnemyUnits()) {
+  const effAtk = getEffectiveAtk(attacker);
+  state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake(); setTimeout(() => bleedGodCard('enemyGodSide'), 10);
+  showFloatingDamage(target, effAtk, '#ff6b35');
+  if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+  document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
           
           // Lifesteal on god hit
           if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
             const healAmt = parseInt(attacker.passive.split(' ')[1]) || 1;
             attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmt);
           }
-          
+          // Show "reduce HP to 0" hint on first enemy God damage
+if (hintNotShown('killGod')) {
+  const godSlot = document.getElementById('enemyRanged3');  // the battlefield God slot
+  if (godSlot) {
+    setTimeout(() => showHint('☝ Kill him and reduce his HP to 0!', godSlot, 'below'), 600);
+  }
+}
           clearSelection();
           renderAll(); return;
         }
@@ -2423,6 +2553,13 @@ function endTurn() {
   document.getElementById('btnChooseMonsters').addEventListener('click', () => { showGodSelection('monsters'); });
   document.getElementById('btnMenu').addEventListener('click', exitToMenu);
   document.getElementById('btnEndTurn').addEventListener('click', endTurn);
+
+// Hint toggle button
+const btnToggleHints = document.getElementById('btnToggleHints');
+if (btnToggleHints) {
+  btnToggleHints.addEventListener('click', toggleHints);
+  if (!hintsEnabled) btnToggleHints.classList.add('off');
+}
 
   document.getElementById('btnSurrender').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.add('active'); });
   document.getElementById('btnSurrenderYes').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.remove('active'); state.gameOver = true; if (state.timerInterval) clearInterval(state.timerInterval); if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval); exitToMenu(); });
