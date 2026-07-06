@@ -559,7 +559,7 @@ button.circular-surrender:hover {
 
 /* ========== CARDS ========== */
 .card {
-  background: #e8ddc4;
+  background: #e4d5b2;
   color: #1a1410;
   border-radius: 6px;
   padding: 0.05rem 0.05rem;
@@ -1734,12 +1734,12 @@ button.circular-end-turn.highlight-endturn {
   position: fixed;
   pointer-events: none;
   z-index: 500;
-  width: 10px;                /* was 6px */
-  height: 10px;               /* was 6px */
+  width: 24px;                /* doubled size */
+  height: 24px;
   border-radius: 50%;
   background: #4caf50;
-  box-shadow: 0 0 10px rgba(76,175,80,0.9);   /* brighter glow */
-  animation: heal-burst 1s ease-out forwards; /* was 0.8s */
+  box-shadow: 0 0 20px rgba(76,175,80,0.9), 0 0 40px rgba(76,175,80,0.6);  /* bigger glow */
+  animation: heal-burst 1s ease-out forwards;
 }
 
 @keyframes heal-burst {
@@ -1757,6 +1757,10 @@ button.circular-end-turn.highlight-endturn {
   0%   { background-color: rgba(0, 255, 0, 0.8) !important; }   /* brighter green */
   80%  { background-color: rgba(0, 255, 0, 0.8) !important; }
   100% { background-color: transparent !important; }
+}
+
+.heal-flash {
+  animation: unit-heal-flash 0.5s ease;
 }
 
 /* ========== GREEN BUFF SPELL CARD ========== */
@@ -1891,4 +1895,36 @@ button.circular-end-turn:disabled {
 }
 .turn-overlay.visible {
   opacity: 1;
+}
+
+.anito-curse-indicator.curse-glow {
+  animation: curse-glow-pulse 4s ease-in-out forwards;
+}
+
+@keyframes curse-glow-pulse {
+  0%   { box-shadow: 0 0 5px rgba(212, 175, 55, 0.7); }
+  50%  { box-shadow: 0 0 18px rgba(212, 175, 55, 1); }
+  100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0); }
+}
+
+.draft-timer-bar {
+  width: 100%;
+  height: 4px;
+  background: #d4af37;
+  border-radius: 2px;
+  margin-bottom: 8px;
+  animation: draft-timer-shrink 10s linear forwards;
+}
+
+@keyframes draft-timer-shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+.info-curse-gods {
+  margin-bottom: 12px;
+}
+.info-curse-gods .info-section {
+  margin-bottom: 4px;
+  font-size: 0.8rem;
 }
