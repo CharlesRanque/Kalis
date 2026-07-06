@@ -10,11 +10,18 @@
 
 <svg id="arrowSvgLayer">
   <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#fbff85" />
+    <!-- Yellow crosshair for player attacks -->
+    <marker id="crosshair-player" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <circle cx="7" cy="7" r="6" fill="none" stroke="#fbff85" stroke-width="2" />
+      <line x1="7" y1="1" x2="7" y2="13" stroke="#fbff85" stroke-width="2" />
+      <line x1="1" y1="7" x2="13" y2="7" stroke="#fbff85" stroke-width="2" />
     </marker>
-    <marker id="arrowhead-enemy" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#fbff85" />
+
+    <!-- Blue crosshair for enemy attacks -->
+    <marker id="crosshair-enemy" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <circle cx="7" cy="7" r="6" fill="none" stroke="#ADD8E6" stroke-width="2" />
+      <line x1="7" y1="1" x2="7" y2="13" stroke="#ADD8E6" stroke-width="2" />
+      <line x1="1" y1="7" x2="13" y2="7" stroke="#ADD8E6" stroke-width="2" />
     </marker>
   </defs>
 </svg>
@@ -68,13 +75,13 @@
   <div class="right-panel-middle">
     <div class="center-group">
       <div class="prov-group">
-        <div class="pillar-label">Enemy Prov</div>
+        <div class="pillar-label">Enemy Food</div>
         <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
         <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
       </div>
       <button class="circular-end-turn" id="btnEndTurn">END TURN</button>
       <div class="prov-group">
-        <div class="pillar-label">Your Prov</div>
+        <div class="pillar-label">Your Food</div>
         <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
         <div class="timer-pill" id="turnTimer">30s</div>
       </div>
@@ -90,6 +97,10 @@
 </div>
 <!-- GAME AREA (between panels) -->
 <div class="game-area">
+
+  <div id="turnOverlay" class="turn-overlay">
+  <span id="turnOverlayText"></span>
+</div>
   <div class="main-menu" id="mainMenu" style="display:flex;">
     <h1>GOD'S GAMBIT</h1>
     <div class="menu-subtitle">Philippine Mythological Warfare</div>
@@ -804,9 +815,16 @@ function startNewRound() {
   state.playerRanged.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
   state.enemyMelee.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
   state.enemyRanged.forEach(u => { if(u) { u.hasAttacked = false; if(u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); }});
+    updatePhaseIndicator('player_develop', state.round);
 
-  updatePhaseIndicator('player_develop', state.round);
+  triggerTurnOverlay(`🟢 Round ${state.round} — YOUR TURN`);
   document.getElementById('phaseDiceInfo').textContent = state.attackToken === 'player' ? 'Place Cards and Attack!' : '🛡️ No Token';
+    // Reset End Turn button to player state
+  const btn = document.getElementById('btnEndTurn');
+  if (btn) {
+    btn.textContent = 'END TURN';
+    btn.disabled = false;
+  }
 
   renderAll();
 
@@ -900,6 +918,7 @@ function executeEnemyAITurn() {
   state.roundPhase = 'enemy';
   state.phase = 'development';
   updatePhaseIndicator('enemy_develop', state.round);
+    triggerTurnOverlay(`🔴 Round ${state.round} — ENEMY TURN`);
   
   let enemyTime = 30;
   const enemyTimerEl = document.getElementById('enemyTimer');
@@ -972,6 +991,9 @@ if (card.type === 'Unit') {
     arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
     document.getElementById('logMessage').textContent = `👹 Enemy played ${card.name}`;
   }
+} else if (card.type === 'Spell') {
+  executeAISpell(card);
+  state.enemyDeckSize--;
 }
     renderAll();
     cardIndex++;
@@ -986,6 +1008,87 @@ if (card.type === 'Unit') {
   state.playerRanged.forEach(u => { if(u && u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); });
   state.enemyMelee.forEach(u => { if(u && u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); });
   state.enemyRanged.forEach(u => { if(u && u.passive === 'Regen 1') u.hp = Math.min(u.maxHp, u.hp + 1); });
+}
+
+function executeAISpell(card) {
+  if (card.type !== 'Spell') return;
+
+  const playerSide = [state.playerMelee, state.playerRanged];
+  const enemySide  = [state.enemyMelee,  state.enemyRanged];
+
+  // ---- Damage spells – target the player's strongest unit (or God if no units) ----
+  if (card.effect === 'damage_3' || card.effect === 'damage_6' || card.effect === 'damage_all_2' || card.effect === 'destroy_strongest') {
+    let targetArr = null, targetIdx = -1, strongest = null;
+
+    // Find the player's strongest unit (by ATK)
+    playerSide.forEach(arr => {
+      arr.forEach((c, i) => {
+        if (c && (!strongest || c.atk > strongest.atk)) {
+          strongest = c;
+          targetArr = arr;
+          targetIdx = i;
+        }
+      });
+    });
+
+    if (targetArr && targetIdx >= 0) {
+      // Damage the target
+      let dmg = 0;
+      if (card.effect === 'damage_3') dmg = 3;
+      else if (card.effect === 'damage_6') dmg = 6;
+      else if (card.effect === 'damage_all_2') dmg = 2;
+      else if (card.effect === 'destroy_strongest') dmg = 10; // heavy damage
+
+      targetArr[targetIdx].hp -= dmg;
+      if (targetArr[targetIdx].hp <= 0) {
+        killCardAndSendToGrave(targetArr[targetIdx], targetArr, targetIdx, state.playerGrave);
+      }
+      // Visual feedback
+      const targetSlot = document.getElementById(`player${targetArr === state.playerMelee ? 'Melee' : 'Ranged'}${targetIdx + 1}`);
+      if (targetSlot) {
+        showFloatingDamage(targetSlot, dmg, '#ff6b35');
+        const enemySlot = document.getElementById('enemyMelee1'); // approximate source
+        if (enemySlot) showAttackIndicator(enemySlot, targetSlot, true);
+      }
+    } else {
+      // No units – damage the player God directly
+      let dmg = 0;
+      if (card.effect === 'damage_3') dmg = 3;
+      else if (card.effect === 'damage_6') dmg = 6;
+      else if (card.effect === 'damage_all_2') dmg = 2;
+      else if (card.effect === 'destroy_strongest') dmg = 10;
+
+      state.godHp = Math.max(0, state.godHp - dmg);
+      const godHpEl = document.getElementById('playerGodHpDisplay');
+      if (godHpEl) {
+        showFloatingDamage(godHpEl, dmg, '#ff6b35');
+        executeShake();
+      }
+    }
+
+    document.getElementById('logMessage').textContent = `👹 Enemy cast ${card.name}!`;
+  }
+
+  // ---- Buff spells – target a random friendly unit ----
+  else if (card.effect === 'divine_buff') {
+    const friendlyTargets = [];
+    enemySide.forEach(arr => {
+      arr.forEach((c, i) => {
+        if (c) friendlyTargets.push({ card: c, arr, idx: i });
+      });
+    });
+    if (friendlyTargets.length > 0) {
+      const randomTarget = friendlyTargets[Math.floor(Math.random() * friendlyTargets.length)];
+      randomTarget.card.atk += 2;
+      randomTarget.card.hp += 2;
+      randomTarget.card.maxHp += 2;
+      const slot = document.getElementById(`enemy${randomTarget.arr === state.enemyMelee ? 'Melee' : 'Ranged'}${randomTarget.idx + 1}`);
+      if (slot) flashCardHeal(slot);
+      document.getElementById('logMessage').textContent = `👹 Enemy buffed ${randomTarget.card.name}!`;
+    }
+  }
+
+  // ---- Resurrection spell – not used by AI for now (keep it simple) ----
 }
 
 function enemyAttack() {
@@ -1130,6 +1233,20 @@ function triggerAutoOverlay(title) {
     overlay.classList.add('active');
     setTimeout(function() { overlay.classList.remove('active'); }, 1000);
 }
+function triggerTurnOverlay(text) {
+  const overlay = document.getElementById('turnOverlay');
+  if (!overlay) return;
+  const textEl = document.getElementById('turnOverlayText');
+  if (!textEl) return;
+
+  textEl.textContent = text;
+  overlay.classList.add('visible');
+
+  // Hide after 2.5 seconds
+  setTimeout(() => {
+    overlay.classList.remove('visible');
+  }, 2500);
+}
 
   function executeShake() {
     const stage = document.getElementById('gameInterface');
@@ -1185,6 +1302,7 @@ function showFloatingDamage(element, damage, color) {
     const toY = toRect.top + toRect.height / 2;
     
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('marker-end', isEnemy ? 'url(#crosshair-enemy)' : 'url(#crosshair-player)');
     line.setAttribute('x1', fromX);
     line.setAttribute('y1', fromY);
     line.setAttribute('x2', toX);
@@ -1485,16 +1603,21 @@ if (!hasAffordable && state.hand.length > 0 && hintNotShown('endTurnHint')) {
 
   function setupPointerEngine() {
     const svgLayer = document.getElementById('arrowSvgLayer');
-    svgLayer.innerHTML = `
-      <defs>
-        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-          <polygon points="0 0, 8 3, 0 6" fill="#fbff85" />
-        </marker>
-        <marker id="arrowhead-enemy" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-          <polygon points="0 0, 8 3, 0 6" fill="#fbff85" />
-        </marker>
-      </defs>
-    `;
+svgLayer.innerHTML = `
+  <defs>
+    <marker id="crosshair-player" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <circle cx="7" cy="7" r="6" fill="none" stroke="#fbff85" stroke-width="2" />
+      <line x1="7" y1="1" x2="7" y2="13" stroke="#fbff85" stroke-width="2" />
+      <line x1="1" y1="7" x2="13" y2="7" stroke="#fbff85" stroke-width="2" />
+    </marker>
+
+    <marker id="crosshair-enemy" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <circle cx="7" cy="7" r="6" fill="none" stroke="#ADD8E6" stroke-width="2" />
+      <line x1="7" y1="1" x2="7" y2="13" stroke="#ADD8E6" stroke-width="2" />
+      <line x1="1" y1="7" x2="13" y2="7" stroke="#ADD8E6" stroke-width="2" />
+    </marker>
+  </defs>
+`;
     svgLayer.style.display = 'none';
     document.getElementById('attackIndicator').style.display = 'none';
     document.getElementById('enemyAttackIndicator').style.display = 'none';
@@ -1734,7 +1857,7 @@ document.addEventListener('pointermove', (e) => {
       dragState.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       dragState.line.setAttribute('stroke', '#fbff85');
       dragState.line.setAttribute('stroke-width', '3');
-      dragState.line.setAttribute('marker-end', 'url(#arrowhead-enemy)');
+      dragState.line.setAttribute('marker-end', 'url(#crosshair-player)');
       dragState.line.setAttribute('stroke-linecap', 'round');
       svgLayer.appendChild(dragState.line);
     }
@@ -1769,7 +1892,7 @@ document.addEventListener('pointermove', (e) => {
     dragState.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     dragState.line.setAttribute('stroke', '#fbff85');
     dragState.line.setAttribute('stroke-width', '3');
-    dragState.line.setAttribute('marker-end', 'url(#arrowhead-enemy)');
+    dragState.line.setAttribute('marker-end', 'url(#crosshair-player)');
     dragState.line.setAttribute('stroke-linecap', 'round');
     svgLayer.appendChild(dragState.line);
   }
@@ -2061,25 +2184,23 @@ function spawnHealParticles(slotElement) {
   const rect = slotElement.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  const particleCount = 8;
+  const particleCount = 14;                // was 8  →  more particles
 
   for (let i = 0; i < particleCount; i++) {
     const particle = document.createElement('div');
     particle.className = 'heal-particle';
-    // Gentle upward bias
-    const angle = Math.random() * Math.PI;  // 0 to PI (upward half-circle)
-    const distance = 20 + Math.random() * 30;
+    const angle = Math.random() * Math.PI;
+    const distance = 30 + Math.random() * 50;   // was 20 + 30 → wider spread
     const dx = Math.cos(angle) * distance;
-    const dy = -Math.sin(angle) * distance;  // negative because Y axis goes down
+    const dy = -Math.sin(angle) * distance;
     particle.style.setProperty('--dx', dx + 'px');
     particle.style.setProperty('--dy', dy + 'px');
     particle.style.left = cx + 'px';
     particle.style.top = cy + 'px';
-    // Fresh green tones
     const colors = ['#4caf50','#66bb6a','#81c784','#a5d6a7','#c8e6c9'];
     particle.style.background = colors[Math.floor(Math.random() * colors.length)];
     document.body.appendChild(particle);
-    setTimeout(() => particle.remove(), 800);
+    setTimeout(() => particle.remove(), 1000);   // was 800 → longer life
   }
 }
 
@@ -2235,9 +2356,21 @@ if (selectedAttacker && selectedAttacker.isHandCard) {
                     if (slotEl) spawnDeathParticles(slotEl);
           executeHeavyShake();
           document.getElementById('logMessage').textContent = `💀 Dark Ritual destroyed ${strongest.name}!`;
+              // Force‑clear all attack lines after the spell
+          setTimeout(() => {
+            const svgLayer = document.getElementById('arrowSvgLayer');
+            if (svgLayer) {
+              svgLayer.querySelectorAll('line').forEach(l => l.remove());
+              if (!svgLayer.querySelector('line')) {
+                svgLayer.style.display = 'none';
+              }
+            }
+          }, 900);
         }
       }
+        
       
+    
       
       
       else if (card.effect === 'resurrect_2' && target.classList.contains('player-slot')) {
@@ -2332,10 +2465,22 @@ if (hintNotShown('killGod')) {
           let enemyHasTaunt = enemyCard && enemyCard.passive === 'Taunt' && enemyCard.hp > 0;
           if (!enemyHasTaunt) {
             document.getElementById('logMessage').textContent = '⚠️ An enemy has Taunt! You must attack it first.';
+            
+            // 1. Shake the Taunt card(s)
             document.querySelectorAll('.enemy-slot .card.passive-taunt').forEach(function(tauntCard) {
               tauntCard.classList.add('shake-taunt');
               setTimeout(function() { tauntCard.classList.remove('shake-taunt'); }, 1200);
             });
+
+            // 2. Pop up the hint bubble on top of the enemy melee row (only once per match)
+            if (hintNotShown('tauntWarning')) {
+              const enemyMeleeSlot = document.getElementById('enemyMelee1');
+              if (enemyMeleeSlot) {
+                showHint('⚠️ Kill cards with Taunt first!', enemyMeleeSlot, 'above');
+              }
+            }
+
+            // 3. Restrict targeting so they can ONLY click the Taunt card
             document.querySelectorAll('.enemy-slot').forEach(function(slot) {
               slot.classList.remove('targetable');
             });
@@ -2727,19 +2872,22 @@ function endTurn() {
     const btn = document.getElementById('btnEndTurn');
     if (!btn) return;
 
-    // Add the flip animation
+    // Flip animation
     btn.classList.add('end-turn-pressed');
 
-    // Wait for the animation to finish, then proceed
+    // After the flip, change text and start enemy turn
     setTimeout(() => {
       btn.classList.remove('end-turn-pressed');
+      btn.textContent = 'ENEMY TURN';               // ← new label
+      btn.disabled = true;                          // prevent clicking during enemy turn
+
       clearInterval(state.timerInterval);
       document.getElementById('logMessage').textContent = "🤖 Enemy turn...";
       state.turn = 'enemy';
       selectedAttacker = null;
       document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
       executeEnemyAITurn();
-    }, 400);   // matches the CSS animation duration
+    }, 400);
 }
 
   function exitToMenu() {
