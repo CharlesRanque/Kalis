@@ -61,7 +61,6 @@
   </div>
 
   <!-- Ult refresh button (hidden by default) -->
-  <button class="ult-refresh-btn" id="ultRefreshBtn" disabled style="display:none;">🔄 10🍗</button>
 </div>
 
 <!-- RIGHT PANEL (fixed) – restructured -->
@@ -102,7 +101,7 @@
   <span id="turnOverlayText"></span>
 </div>
   <div class="main-menu" id="mainMenu" style="display:flex;">
-    <h1>GOD'S GAMBIT</h1>
+    <h1>Kalis: Fall of Bathala</h1>
     <div class="menu-subtitle">Philippine Mythological Warfare</div>
     <div class="menu-buttons">
       <div class="menu-btn-main pve-btn" id="btnPVE">⚔️ PLAY PVE</div>
@@ -114,7 +113,7 @@
   </div>
 
   <div class="menu-screen" id="menuScreen" style="display:none;">
-    <h1>GOD'S GAMBIT</h1>
+    <h1>Kalis: Fall of Bathala</h1>
     <div class="menu-subtitle">Choose Your Faction</div>
     <div class="faction-select-container">
       <div class="faction-card heroes" id="btnChooseHeroes">
@@ -132,6 +131,7 @@
     <div class="god-select-box">
       <h2 id="godSelectTitle">Choose Your God</h2>
       <div class="god-choices" id="godChoicesContainer"></div>
+      <button class="back-btn" id="godSelectBackBtn">← Back</button>
     </div>
   </div>
 
@@ -192,10 +192,10 @@
   <div class="info-overlay" id="infoOverlay">
     <div class="info-box">
       <div class="info-tabs">
+        <button class="info-tab-btn" id="tabGodsBtn">✨ Gods</button>
+        <button class="info-tab-btn" id="tabCursesBtn">🧿 Curses</button>
         <button class="info-tab-btn active" id="tabDiceBtn">🎲 Dice Effects</button>
         <button class="info-tab-btn" id="tabPassivesBtn">🛡️ Passives</button>
-        <button class="info-tab-btn" id="tabCursesBtn">🧿 Curses</button>
-        <button class="info-tab-btn" id="tabGodsBtn">✨ Gods</button>
       </div>
       <div id="infoTabContent"></div>
 
@@ -292,10 +292,10 @@
     'Shield 2': { name: 'Shield 2', desc: 'Absorbs 2 hits', type: 'defensive', icon: '🛡️', cssClass: 'passive-shield' },
     'Thorns 1': { name: 'Thorns 1', desc: 'Deal 1 dmg back (even if killed)', type: 'defensive', icon: '🌵', cssClass: 'passive-thorns' },
     'Thorns 2': { name: 'Thorns 2', desc: 'Deal 2 dmg back (even if killed)', type: 'defensive', icon: '🌵', cssClass: 'passive-thorns' },
-    'Overheal': { name: 'Overheal', desc: 'Heal 1 HP per turn', type: 'defensive', icon: '💚', cssClass: 'passive-regen' },
+    'Overheal': { name: 'Overheal', desc: 'Heal 1 HP per turn', type: 'defensive', icon: '💖', cssClass: 'passive-regen' },
     'Pierce': { name: 'Pierce', desc: 'Ignore enemy Shield', type: 'offensive', icon: '🗡️', cssClass: '' },
     'Bloodthirst': { name: 'Bloodthirst', desc: 'Heal 1 HP every time this unit attacks', type: 'offensive', icon: '🩸', cssClass: 'passive-overheal' },
-    'Taunt': { name: 'Taunt', desc: 'Enemy must attack this first', type: 'utility', icon: '📢', cssClass: 'passive-taunt' },
+    'Taunt': { name: 'Taunt', desc: 'Enemy must attack this first', type: 'utility', icon: '😝', cssClass: 'passive-taunt' },
   };
 
   function assignPassive(card) {
@@ -314,73 +314,73 @@
   }
 
   const BRONZE_UNITS_HEROES = [
-    { name: 'Lam-ang Bold', type: 'Unit', cost: 1, row: 'melee', atk: 2, hp: 2, maxHp: 2 },
-    { name: 'Lapulapu Guard', type: 'Unit', cost: 1, row: 'melee', atk: 1, hp: 3, maxHp: 3 },
+    { name: 'Peasant', type: 'Unit', cost: 1, row: 'melee', atk: 2, hp: 2, maxHp: 2 },
+    { name: 'Castle Guard', type: 'Unit', cost: 1, row: 'melee', atk: 1, hp: 3, maxHp: 3 },
     { name: 'Bantugan Scout', type: 'Unit', cost: 1, row: 'ranged', atk: 2, hp: 1, maxHp: 1 },
-    { name: 'Agila Marksman', type: 'Unit', cost: 2, row: 'ranged', atk: 3, hp: 2, maxHp: 2 },
+    { name: 'Agila', type: 'Unit', cost: 2, row: 'ranged', atk: 3, hp: 2, maxHp: 2 },
     { name: 'Tuwaang Seeker', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 2, maxHp: 2 },
     { name: 'Handiong Elite', type: 'Unit', cost: 3, row: 'melee', atk: 4, hp: 4, maxHp: 4 },
     { name: 'Basi Champion', type: 'Unit', cost: 3, row: 'melee', atk: 3, hp: 5, maxHp: 5 },
     { name: 'Sulayman Bow', type: 'Unit', cost: 4, row: 'ranged', atk: 5, hp: 4, maxHp: 4 },
-    { name: 'Datu Legend', type: 'Unit', cost: 5, row: 'melee', atk: 5, hp: 5, maxHp: 5 },
+    { name: 'Datu', type: 'Unit', cost: 5, row: 'melee', atk: 5, hp: 5, maxHp: 5 },
     { name: 'Dayang Healer', type: 'Unit', cost: 3, row: 'ranged', atk: 2, hp: 6, maxHp: 6 },
     { name: 'Timawa Spear', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 3, maxHp: 3 },
     { name: 'Babaylan Seer', type: 'Unit', cost: 4, row: 'ranged', atk: 4, hp: 3, maxHp: 3 },
     { name: 'Bagani Axe', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3 },
   ];
   const BRONZE_UNITS_MONSTERS = [
-    { name: 'Duwende Trick', type: 'Unit', cost: 1, row: 'melee', atk: 2, hp: 2, maxHp: 2 },
-    { name: 'Sirena Scout', type: 'Unit', cost: 1, row: 'ranged', atk: 2, hp: 1, maxHp: 1 },
-    { name: 'Tiyanak Lurker', type: 'Unit', cost: 1, row: 'melee', atk: 3, hp: 1, maxHp: 1 },
-    { name: 'Tikbalang Wild', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 2, maxHp: 2 },
+    { name: 'Duwende', type: 'Unit', cost: 1, row: 'melee', atk: 2, hp: 2, maxHp: 2 },
+    { name: 'Sirena', type: 'Unit', cost: 1, row: 'ranged', atk: 2, hp: 1, maxHp: 1 },
+    { name: 'Tiyanak', type: 'Unit', cost: 1, row: 'melee', atk: 3, hp: 1, maxHp: 1 },
+    { name: 'Tikbalang', type: 'Unit', cost: 2, row: 'melee', atk: 3, hp: 2, maxHp: 2 },
     { name: 'Sigbin Stalker', type: 'Unit', cost: 2, row: 'ranged', atk: 2, hp: 3, maxHp: 3 },
-    { name: 'Kapre Shield', type: 'Unit', cost: 3, row: 'melee', atk: 4, hp: 4, maxHp: 4 },
-    { name: 'Aswang Ripper', type: 'Unit', cost: 3, row: 'melee', atk: 5, hp: 2, maxHp: 2 },
-    { name: 'Bakunawa Elite', type: 'Unit', cost: 4, row: 'ranged', atk: 5, hp: 4, maxHp: 4 },
+    { name: 'Kapre', type: 'Unit', cost: 3, row: 'melee', atk: 4, hp: 4, maxHp: 4 },
+    { name: 'Aswang', type: 'Unit', cost: 3, row: 'melee', atk: 5, hp: 2, maxHp: 2 },
+    { name: 'Acolyte', type: 'Unit', cost: 4, row: 'ranged', atk: 5, hp: 4, maxHp: 4 },
     { name: 'Minokawa Titan', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 6, maxHp: 6 },
-    { name: 'Berberoka Swamp', type: 'Unit', cost: 3, row: 'ranged', atk: 3, hp: 5, maxHp: 5 },
-    { name: 'Mangagaway Hex', type: 'Unit', cost: 2, row: 'melee', atk: 2, hp: 4, maxHp: 4 },
-    { name: 'Manananggal Flight', type: 'Unit', cost: 4, row: 'ranged', atk: 4, hp: 3, maxHp: 3 },
-    { name: 'Santelmo Fire', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3 },
+    { name: 'Berberoka', type: 'Unit', cost: 3, row: 'ranged', atk: 3, hp: 5, maxHp: 5 },
+    { name: 'Mangkukulam', type: 'Unit', cost: 2, row: 'melee', atk: 2, hp: 4, maxHp: 4 },
+    { name: 'Manananggal', type: 'Unit', cost: 4, row: 'ranged', atk: 4, hp: 3, maxHp: 3 },
+    { name: 'Apoy ni Santelmo', type: 'Unit', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3 },
   ];
   const GOLD_UNITS_HEROES = [
-    { name: 'Bayani Champion', type: 'Unit', cost: 6, row: 'melee', atk: 6, hp: 6, maxHp: 6 },
+    { name: 'Aliguyon', type: 'Unit', cost: 6, row: 'melee', atk: 6, hp: 6, maxHp: 6 },
     { name: 'Lakan Commander', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 5, maxHp: 5 },
-    { name: 'Maharlika Lord', type: 'Unit', cost: 6, row: 'ranged', atk: 5, hp: 7, maxHp: 7 },
+    { name: 'Maharlika', type: 'Unit', cost: 6, row: 'ranged', atk: 5, hp: 7, maxHp: 7 },
     { name: 'Datu Paragon', type: 'Unit', cost: 8, row: 'melee', atk: 8, hp: 6, maxHp: 6 },
-    { name: 'Sultan Wise', type: 'Unit', cost: 7, row: 'ranged', atk: 6, hp: 5, maxHp: 5 },
+    { name: 'Sultan', type: 'Unit', cost: 7, row: 'ranged', atk: 6, hp: 5, maxHp: 5 },
     { name: 'Babaylan Elder', type: 'Unit', cost: 6, row: 'melee', atk: 4, hp: 8, maxHp: 8 },
-    { name: 'Bagani Hero', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 6, maxHp: 6 },
+    { name: 'Bernardo Carpio', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 6, maxHp: 6 },
   ];
   const GOLD_UNITS_MONSTERS = [
-    { name: 'Dragon Serpent', type: 'Unit', cost: 6, row: 'ranged', atk: 7, hp: 5, maxHp: 5 },
+    { name: 'Siyokoy', type: 'Unit', cost: 6, row: 'ranged', atk: 7, hp: 5, maxHp: 5 },
     { name: 'Kataw Warlord', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 5, maxHp: 5 },
-    { name: 'Pugot Terror', type: 'Unit', cost: 6, row: 'ranged', atk: 6, hp: 6, maxHp: 6 },
+    { name: 'Pugot', type: 'Unit', cost: 6, row: 'ranged', atk: 6, hp: 6, maxHp: 6 },
     { name: 'Busaw Giant', type: 'Unit', cost: 8, row: 'melee', atk: 8, hp: 6, maxHp: 6 },
-    { name: 'Mambabarang Plague', type: 'Unit', cost: 7, row: 'ranged', atk: 5, hp: 7, maxHp: 7 },
-    { name: 'Wakwak Night', type: 'Unit', cost: 6, row: 'melee', atk: 6, hp: 5, maxHp: 5 },
+    { name: 'Mambabarang', type: 'Unit', cost: 7, row: 'ranged', atk: 5, hp: 7, maxHp: 7 },
+    { name: 'Wakwak', type: 'Unit', cost: 6, row: 'melee', atk: 6, hp: 5, maxHp: 5 },
     { name: 'Ikugan Maw', type: 'Unit', cost: 7, row: 'melee', atk: 7, hp: 6, maxHp: 6 },
   ];
   const SPELLS = [
     { name: 'Divine Blessing (BUFF)', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
     { name: 'Agimat Shield (BUFF)', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
-    { name: 'Lightning Bolt', type: 'Spell', cost: 1, effect: 'damage_3', desc: 'Deal 3 damage' },
-    { name: 'Heavenly Strike', type: 'Spell', cost: 6, effect: 'damage_6', desc: 'Deal 6 damage' },
-    { name: 'Ancestral Call', type: 'Spell', cost: 7, effect: 'resurrect_2', desc: 'Resurrect 2 cards' },
-    { name: 'Firestorm', type: 'Spell', cost: 4, effect: 'damage_all_2', desc: 'Deal 2 to all enemies' },
-    { name: 'Dark Ritual', type: 'Spell', cost: 7, effect: 'destroy_strongest', desc: 'Destroy strongest enemy' },
-    { name: 'Nature Wrath', type: 'Spell', cost: 3, effect: 'damage_3', desc: 'Deal 3 damage' },
-    { name: 'Mystic Barrier (BUFF)', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
-    { name: 'Soul Drain', type: 'Spell', cost: 5, effect: 'damage_6', desc: 'Deal 6 damage' },
+    { name: 'Padugo', type: 'Spell', cost: 1, effect: 'damage_3', desc: 'Deal 3 damage' },
+    { name: 'Sumpa', type: 'Spell', cost: 6, effect: 'damage_6', desc: 'Deal 6 damage' },
+    { name: 'Mimirik', type: 'Spell', cost: 7, effect: 'resurrect_2', desc: 'Resurrect 2 cards' },
+    { name: 'Tigalpo', type: 'Spell', cost: 4, effect: 'damage_all_2', desc: 'Deal 2 to all enemies' },
+    { name: 'Barang', type: 'Spell', cost: 7, effect: 'destroy_strongest', desc: 'Destroy strongest enemy' },
+    { name: 'Gaba', type: 'Spell', cost: 3, effect: 'damage_3', desc: 'Deal 3 damage' },
+    { name: 'Orasyon (BUFF)', type: 'Spell', cost: 2, effect: 'divine_buff', desc: '+2 ATK & +2 HP' },
+    { name: 'Kulam', type: 'Spell', cost: 5, effect: 'damage_6', desc: 'Deal 6 damage' },
   ];
 
   const GODS = {
     heroes: [
-      { name: 'Bathala', power: 'Wrath of Heaven', desc: 'Destroy 3 random enemy cards', effect: 'bathala_ult' },
+      { name: 'Bathala', power: 'Wrath of Heaven', desc: 'Destroy 2 random enemy cards', effect: 'bathala_ult' },
       { name: 'Lam-Ang', power: 'Ancestral Resurrection', desc: 'Resurrect 2 random cards from your graveyard', effect: 'lamang_ult' }
     ],
     monsters: [
-      { name: 'Bakunawa', power: 'Moon Devourer', desc: 'Deal 2 damage to all enemy cards in chosen row', effect: 'bakunawa_ult' },
+      { name: 'Bakunawa', power: 'Moon Devourer', desc: 'Deal 2 damage to all enemy cards in a row', effect: 'bakunawa_ult' },
       { name: 'Engkanto', power: 'Mystic Ward', desc: 'Give +3 HP to 3 of your cards', effect: 'engkanto_ult' }
     ]
   };
@@ -416,6 +416,21 @@
   playerAttackers: [],
   enemyBlockers: {}
 };
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled rejection:', event.reason);
+  if (state && state._aiRunning) {
+    state._aiRunning = false;
+    endRound();
+  }
+});
+window.addEventListener('error', (event) => {
+  console.error('Global error:', event.error);
+  if (state && state._aiRunning) {
+    state._aiRunning = false;
+    endRound();
+  }
+});
 
 let selectedAttacker = null;
 
@@ -618,6 +633,7 @@ function showEnemySmite() {
 
 
   function showGodSelection(faction) {
+    
     pendingFaction = faction;
     const overlay = document.getElementById('godSelectOverlay');
     const container = document.getElementById('godChoicesContainer');
@@ -1017,35 +1033,63 @@ function showDraftScreen() {
   });
 
   overlay.classList.add('active');
-  // Start the 10‑second auto‑pick timer
-const bar = document.getElementById('draftTimerBar');
-if (bar) {
-  // Reset animation
-  bar.style.animation = 'none';
-  void bar.offsetWidth;
-  bar.style.animation = 'draft-timer-shrink 10s linear forwards';
+
+  // ── Start the timer bar animation ──
+  const bar = document.getElementById('draftTimerBar');
+  if (bar) {
+    bar.style.animation = 'none';
+    void bar.offsetWidth;
+    bar.style.animation = 'draft-timer-shrink 10s linear forwards';
+  }
+
+  // ── Auto‑pick fallback (guaranteed to always work) ──
+  if (state._draftTimer) clearTimeout(state._draftTimer);
+  state._draftTimer = setTimeout(() => {
+    if (document.getElementById('draftOverlay').classList.contains('active')) {
+      // If a random card is still clickable, click it.
+      const allChoices = document.querySelectorAll('#draftChoices .draft-card');
+      if (allChoices.length > 0) {
+        const randomIndex = Math.floor(Math.random() * allChoices.length);
+        try {
+          allChoices[randomIndex].click();
+        } catch (e) {
+          // If the click fails, force‑pick the first card manually
+          forceSelectCard(draftCards[0], draftCards);
+        }
+      } else {
+        // No cards in the DOM? Force‑pick from the data we still have
+        forceSelectCard(draftCards[0], draftCards);
+      }
+    }
+  }, 10000);
 }
 
-// Auto‑pick after 10 seconds
-if (state._draftTimer) clearTimeout(state._draftTimer);
-state._draftTimer = setTimeout(() => {
-  if (document.getElementById('draftOverlay').classList.contains('active')) {
-    // Pick a random card from the choices (or the first one)
-    const allChoices = document.querySelectorAll('#draftChoices .draft-card');
-    if (allChoices.length > 0) {
-      const randomIndex = Math.floor(Math.random() * allChoices.length);
-      allChoices[randomIndex].click();   // simulates a click on a random card
-    }
+// Helper that bypasses the click handler and directly resolves the draft
+function forceSelectCard(chosenCard, allDraftCards) {
+  if (!chosenCard) return;
+  chosenCard._isNewDraw = true;
+  state.hand.push(chosenCard);
+  allDraftCards.forEach(card => {
+    const idx = state.deck.findIndex(d => d.id === card.id);
+    if (idx !== -1) state.deck.splice(idx, 1);
+  });
+  document.getElementById('draftOverlay').classList.remove('active');
+  if (state._draftTimer) {
+    clearTimeout(state._draftTimer);
+    state._draftTimer = null;
   }
-}, 10000);
+  renderAll();
+  startTimer();
+  checkAffordableCards();
+  document.getElementById('logMessage').textContent = `Auto‑drafted ${chosenCard.name}!`;
 }
 
 function selectDraftCard(chosenCard, allDraftCards) {
   // Stop the draft timer
-if (state._draftTimer) {
-  clearTimeout(state._draftTimer);
-  state._draftTimer = null;
-}
+  if (state._draftTimer) {
+    clearTimeout(state._draftTimer);
+    state._draftTimer = null;
+  }
   chosenCard._isNewDraw = true;
   state.hand.push(chosenCard);
 
@@ -1057,27 +1101,22 @@ if (state._draftTimer) {
   document.getElementById('draftOverlay').classList.remove('active');
   renderAll();
   startTimer();
-  // in selectDraftCard, after renderAll() and startTimer(), add:
 
-// Show "select a card" hint at the start of your turn
-if (state.turn === 'player' && hintNotShown('selectCard')) {
-  const handContainer = document.getElementById('handFanContainer');
-  if (handContainer && state.hand.length > 0) {
-    setTimeout(() => showHint('👇 Select a card and place it on the field.', handContainer, 'above'), 600);
+  if (state.turn === 'player' && hintNotShown('selectCard')) {
+    const handContainer = document.getElementById('handFanContainer');
+    if (handContainer && state.hand.length > 0) {
+      setTimeout(() => showHint('👇 Select a card and place it on the field.', handContainer, 'above'), 600);
+    }
   }
-}
   checkAffordableCards();
-
   document.getElementById('logMessage').textContent = `Drafted ${chosenCard.name}!`;
 }
 
 function executeEnemyAITurn() {
-  // Prevent re-entrance (if somehow called again during the same turn)
   if (state._aiRunning) return;
   state._aiRunning = true;
 
   try {
-    // ── Show hint once per game ──
     if (hintNotShown('enemyTurn')) {
       setTimeout(() => showHint('Enemy turn, wait for yours.', document.getElementById('handFanContainer'), 'above'), 500);
     }
@@ -1091,16 +1130,20 @@ function executeEnemyAITurn() {
     const enemyTimerEl = document.getElementById('enemyTimer');
     enemyTimerEl.textContent = enemyTime + 's';
     enemyTimerEl.classList.remove('critical-danger');
+
     if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
     state.enemyTimerInterval = setInterval(() => {
       enemyTime--;
       enemyTimerEl.textContent = enemyTime + 's';
       if (enemyTime <= 10) enemyTimerEl.classList.add('critical-danger');
       else enemyTimerEl.classList.remove('critical-danger');
-      if (enemyTime <= 0) clearInterval(state.enemyTimerInterval);
+      if (enemyTime <= 0) {
+        clearInterval(state.enemyTimerInterval);
+        state._aiRunning = false;
+        endRound();
+      }
     }, 1000);
 
-    // Build list of cards to play (spellbound‑safe loop already in your code)
     let enemyProvPool = state.provPerTurn + 2;
     let enemyProvUsed = 0;
     const cardsToPlay = [];
@@ -1134,70 +1177,100 @@ function executeEnemyAITurn() {
 
     let cardIndex = 0;
     function playNextCard() {
-      if (!state._aiRunning) return;   // safety: stop if turn was aborted
-
-      if (cardIndex >= cardsToPlay.length) {
-        renderAll();
-
-        if (state.enemyUltAvailable && state.round >= 3 && Math.random() < 0.3) {
-          enemyUseUltimate();
-          setTimeout(() => {
-            renderAll();
-            if (state.attackToken === 'enemy') {
-              enemyAttack();
-            } else {
-              endRound();
-            }
-            state._aiRunning = false;   // turn complete
-          }, 1500);
-        } else {
-          if (state.attackToken === 'enemy') {
+      if (!state._aiRunning) return;
+      try {
+        if (cardIndex >= cardsToPlay.length) {
+          renderAll();
+          if (state.enemyUltAvailable && state.round >= 3 && Math.random() < 0.3) {
+            enemyUseUltimate();
             setTimeout(() => {
-              enemyAttack();
-              state._aiRunning = false;
-            }, 800);
+              try {
+                renderAll();
+                if (state.attackToken === 'enemy') {
+                  enemyAttack();
+                } else {
+                  endRound();
+                }
+                state._aiRunning = false;
+              } catch (e) {
+                console.error(e);
+                state._aiRunning = false;
+                endRound();
+              }
+            }, 1500);
           } else {
-            setTimeout(() => {
-              endRound();
-              state._aiRunning = false;
-            }, 800);
+            if (state.attackToken === 'enemy') {
+              setTimeout(() => {
+                try {
+                  enemyAttack();
+                  state._aiRunning = false;
+                } catch (e) {
+                  console.error(e);
+                  state._aiRunning = false;
+                  endRound();
+                }
+              }, 800);
+            } else {
+              setTimeout(() => {
+                try {
+                  endRound();
+                  state._aiRunning = false;
+                } catch (e) {
+                  console.error(e);
+                  state._aiRunning = false;
+                  endRound();
+                }
+              }, 800);
+            }
           }
+          return;
         }
-        return;
-      }
 
-      const card = cardsToPlay[cardIndex];
-      if (card.type === 'Unit') {
-        let arr;
-        if (state.lockedRow) {
-          arr = state.lockedRow === 'melee' ? state.enemyMelee : state.enemyRanged;
-        } else {
-          arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
+        const card = cardsToPlay[cardIndex];
+        if (card.type === 'Unit') {
+          let arr;
+          if (state.lockedRow) {
+            arr = state.lockedRow === 'melee' ? state.enemyMelee : state.enemyRanged;
+          } else {
+            arr = Math.random() < 0.5 ? state.enemyMelee : state.enemyRanged;
+          }
+          let slot = arr.findIndex((s, idx) => s === null && idx !== 2);
+          if (slot === -1) {
+            arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee;
+            slot = arr.findIndex((s, idx) => s === null && idx !== 2);
+          }
+          if (slot !== -1) {
+            arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
+            document.getElementById('logMessage').textContent = `👹 Enemy played ${card.name}`;
+          }
+        } else if (card.type === 'Spell') {
+          executeAISpell(card);
+          state.enemyDeckSize--;
         }
-        let slot = arr.findIndex((s, idx) => s === null && idx !== 2);
-        if (slot === -1) {
-          arr = arr === state.enemyMelee ? state.enemyRanged : state.enemyMelee;
-          slot = arr.findIndex((s, idx) => s === null && idx !== 2);
-        }
-        if (slot !== -1) {
-          arr[slot] = { ...card, hasAttacked: false, playOrder: enemyPlayOrderCounter++ };
-          document.getElementById('logMessage').textContent = `👹 Enemy played ${card.name}`;
-        }
-      } else if (card.type === 'Spell') {
-        executeAISpell(card);
-        state.enemyDeckSize--;
-      }
 
-      renderAll();
-      cardIndex++;
-      setTimeout(() => playNextCard(), 900);
+        renderAll();
+        cardIndex++;
+        setTimeout(() => {
+          try {
+            playNextCard();
+          } catch (e) {
+            console.error(e);
+            state._aiRunning = false;
+            endRound();
+          }
+        }, 900);
+
+      } catch (err) {
+        console.error('AI turn error:', err);
+        state._aiRunning = false;
+        endRound();
+      }
     }
 
     playNextCard();
 
   } catch (err) {
     console.error('AI turn error:', err);
-    // Force the turn to end cleanly
     endRound();
     state._aiRunning = false;
   }
@@ -1374,10 +1447,15 @@ function enemyAttack() {
 // Bloodthirst: always gain +1 HP & +1 max HP, with green flash
 // Bloodthirst: gain +1 HP & max HP with green flash
 if (attackerInfo.arr[attackerInfo.idx] !== null && u.passive && u.passive.startsWith('Bloodthirst')) {
-    u.maxHp += 1;
-    u.hp += 1;
-    const bSlot = document.getElementById(`enemy${attackerInfo.row.charAt(0).toUpperCase() + attackerInfo.row.slice(1)}${attackerInfo.idx + 1}`);
-    if (bSlot) flashCardHeal(bSlot);
+    const target = targetArr && targetIdx !== undefined ? targetArr[targetIdx] : null;
+    if (target && target.passive && target.passive.startsWith('Thorns')) {
+        // Thorns blocks Bloodthirst
+    } else {
+        u.maxHp += 1;
+        u.hp += 1;
+        const bSlot = document.getElementById(`enemy${attackerInfo.row.charAt(0).toUpperCase() + attackerInfo.row.slice(1)}${attackerInfo.idx + 1}`);
+        if (bSlot) flashCardHeal(bSlot);
+    }
 }
 
     // ✅ Mark attacker as having attacked, even if it died from thorns (prevents double attack)
@@ -2238,7 +2316,7 @@ if (dragState.active) {
     highlightEnemyTargets();
 if (hintNotShown('attackUnit')) {
   const hasEnemies = hasEnemyUnits();
-  const msg = hasEnemies ? 'Click your card on the field  and Tap an enemy to attack.' : 'Click a card and Tap the Enemy GOD!';
+  const msg = hasEnemies ? 'Click a card on the field and Tap an enemy to attack.' : 'Click a card and Tap the Enemy GOD!';
   // Point at the friendly card you just selected, not the enemy
   setTimeout(() => showHint(msg, cardEl, 'above'), 400);
 }
@@ -2659,7 +2737,6 @@ if (selectedAttacker && selectedAttacker.isHandCard) {
       if (!attacker || attacker.hasAttacked) return;
 
       const attackerSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
-
       // Attack enemy god
 if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
   if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
@@ -2668,25 +2745,25 @@ if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') ||
   showFloatingDamage(target, effAtk, '#ff6b35');
   if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
   document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
-        // Overheal on god hit
-// Bloodthirst: always gain +1 HP & +1 max HP, with green flash
-// Bloodthirst: gain +1 HP & max HP with green flash
-if (attacker.passive && attacker.passive.startsWith('Bloodthirst')) {
-    attacker.maxHp += 1;
-    attacker.hp += 1;
-    const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
-    if (bSlot) flashCardHeal(bSlot);
-}
-        // Show "reduce HP to 0" hint on first enemy God damage
-if (hintNotShown('killGod')) {
-  const godSlot = document.getElementById('enemyRanged3');  // the battlefield God slot
-  if (godSlot) {
-    setTimeout(() => showHint('☝ Kill him and reduce his HP to 0!', godSlot, 'below'), 600);
+
+  // Bloodthirst: always heal against God (God has no Thorns)
+  if (attacker.passive && attacker.passive.startsWith('Bloodthirst')) {
+      attacker.maxHp += 1;
+      attacker.hp += 1;
+      const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
+      if (bSlot) flashCardHeal(bSlot);
   }
+
+  // Show "reduce HP to 0" hint on first enemy God damage
+  if (hintNotShown('killGod')) {
+    const godSlot = document.getElementById('enemyRanged3');  // the battlefield God slot
+    if (godSlot) {
+      setTimeout(() => showHint('☝ Reduce his HP to 0!', godSlot, 'below'), 600);
+    }
+  }
+  clearSelection();
+  renderAll(); return;
 }
-        clearSelection();
-        renderAll(); return;
-      }
 
       // Attack enemy slot
       if (target.classList.contains('enemy-slot')) {
@@ -2760,15 +2837,18 @@ if (hintNotShown('killGod')) {
         let shield = getShieldValue(enemyCard);
         if (attacker.passive === 'Pierce') shield = 0;
 
-        if (shield > 0) {
-          shield--;
-          enemyCard.passive = shield > 0 ? `Shield ${shield}` : null;
-          attacker.hasAttacked = true;
-          targetDom?.classList.add('defend-flash'); 
-          if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
-          clearSelection();
-          renderAll(); return;
-        }
+if (shield > 0) {
+    shield--;
+    enemyCard.passive = shield > 0 ? `Shield ${shield}` : null;
+    attacker.hasAttacked = true;
+    clearSelection();
+    renderAll();                              // redraws the board
+    // Re‑apply the shield animation on the freshly rendered card
+    const cardAfter = target.querySelector('.card');
+    if (cardAfter) cardAfter.classList.add('defend-flash');
+    if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+    return;
+}
 
         // Show attack indicator
         if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
@@ -2794,8 +2874,7 @@ if (hintNotShown('killGod')) {
               const thornDmg = parseInt(enemyCard.passive.split(' ')[1]) || 1;
               attacker.hp -= thornDmg;
               if (attacker.hp <= 0) { killCardAndSendToGrave(attacker, attackerArr, src.idx, state.playerGrave); }
-            }
-            targetDom?.classList.add('defend-flash'); executeShake();
+            } executeShake();
           }
           
           // Overheal on EVERY attack (moved outside kill check)
@@ -2859,7 +2938,7 @@ let classes = `card ${c.type === 'Spell' ? 'spell-card' : ''} ${isBuff ? 'spell-
         let allEnemyCards = [];
         state.enemyMelee.forEach((c, i) => { if(c) allEnemyCards.push({card: c, arr: state.enemyMelee, idx: i, row: 'melee'}); });
         state.enemyRanged.forEach((c, i) => { if(c) allEnemyCards.push({card: c, arr: state.enemyRanged, idx: i, row: 'ranged'}); });
-        const targets = shuffle(allEnemyCards).slice(0, Math.min(3, allEnemyCards.length));
+        const targets = shuffle(allEnemyCards).slice(0, Math.min(2, allEnemyCards.length));
         targets.forEach((t, i) => { setTimeout(() => { const slotId = `enemy${t.row.charAt(0).toUpperCase() + t.row.slice(1)}${t.idx + 1}`; const slot = document.getElementById(slotId); const cardEl = slot?.querySelector('.card'); if (cardEl) { cardEl.classList.add('burst-vanish'); showFloatingDamage(slot, t.card.hp); } killCardAndSendToGrave(t.card, t.arr, t.idx, state.enemyGrave); }, i * 150); });
         setTimeout(() => { document.getElementById('logMessage').textContent = `💥 Bathala destroyed ${targets.length} enemy cards!`; renderAll(); }, targets.length * 150 + 200);
         break;
@@ -2869,122 +2948,69 @@ let classes = `card ${c.type === 'Spell' ? 'spell-card' : ''} ${isBuff ? 'spell-
           const resurrect = shuffle([...state.playerGrave]).slice(0, Math.min(2, state.playerGrave.length));
           let resurrectedCount = 0;
           resurrect.forEach((card, i) => { state.playerGrave.splice(state.playerGrave.indexOf(card), 1); let placed = false; for (let arr of [state.playerMelee, state.playerRanged]) { for (let j = 0; j < arr.length; j++) { if (!arr[j] && card.type === 'Unit') { arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: playerPlayOrderCounter++ }; placed = true; resurrectedCount++; break; } } if (placed) break; } if (!placed) state.hand.push({ ...card }); });
+          // ── Green glow on graveyard button ──
+          const graveBtn = document.getElementById('playerGraveBtn');
+          if (graveBtn) {
+            graveBtn.style.boxShadow = '0 0 20px 10px rgba(0, 255, 100, 0.8)';
+            setTimeout(() => { graveBtn.style.boxShadow = ''; }, 1500);
+          }
           document.getElementById('logMessage').textContent = `✨ Lam-Ang resurrected ${resurrectedCount} cards!`;
         } else { document.getElementById('logMessage').textContent = 'No cards to resurrect!'; state.ultAvailable = true; }
         renderAll(); break;
-      case 'bakunawa_ult':
-        const rowOverlay = document.getElementById('rowSelectOverlay'); rowOverlay.classList.add('active');
-        rowOverlay.querySelectorAll('.row-choice-btn').forEach(btn => { btn.onclick = () => { rowOverlay.classList.remove('active'); state.ultAvailable = false; const targetRow = btn.dataset.target; const enemyArr = targetRow === 'melee' ? state.enemyMelee : state.enemyRanged; let damagedCount = 0; enemyArr.forEach((c, idx) => { if (c) { c.hp -= 2; damagedCount++; const slotId = `enemy${targetRow.charAt(0).toUpperCase() + targetRow.slice(1)}${idx + 1}`; const slot = document.getElementById(slotId); if (slot) showFloatingDamage(slot, 2); if (c.hp <= 0) { setTimeout(() => { const cardEl = slot?.querySelector('.card'); cardEl?.classList.add('burst-vanish'); killCardAndSendToGrave(c, enemyArr, idx, state.enemyGrave); }, idx * 100); } } }); executeHeavyShake(); document.getElementById('logMessage').textContent = `🌑 Bakunawa dealt 2 damage to ${damagedCount} enemy ${targetRow} cards!`; setTimeout(() => renderAll(), enemyArr.length * 100 + 200); }; });
-        return;
+
+
+case 'bakunawa_ult':
+    const rowOverlay = document.getElementById('rowSelectOverlay'); rowOverlay.classList.add('active');
+    rowOverlay.querySelectorAll('.row-choice-btn').forEach(btn => { btn.onclick = () => {
+        rowOverlay.classList.remove('active');
+        state.ultAvailable = false;
+        const targetRow = btn.dataset.target;
+        const enemyArr = targetRow === 'melee' ? state.enemyMelee : state.enemyRanged;
+        let damagedCount = 0;
+        // ── Purple glow on the targeted row ──
+        const rowSlot = document.getElementById(`enemy${targetRow.charAt(0).toUpperCase() + targetRow.slice(1)}1`);
+        if (rowSlot) {
+            rowSlot.style.boxShadow = '0 0 30px 15px rgba(128, 0, 128, 0.8)';
+            setTimeout(() => { rowSlot.style.boxShadow = ''; }, 1000);
+        }
+        enemyArr.forEach((c, idx) => { if (c) {
+            c.hp -= 2; damagedCount++;
+            const slotId = `enemy${targetRow.charAt(0).toUpperCase() + targetRow.slice(1)}${idx + 1}`;
+            const slot = document.getElementById(slotId);
+            if (slot) showFloatingDamage(slot, 2);
+            if (c.hp <= 0) { setTimeout(() => { const cardEl = slot?.querySelector('.card'); cardEl?.classList.add('burst-vanish'); killCardAndSendToGrave(c, enemyArr, idx, state.enemyGrave); }, idx * 100); }
+        }});
+        executeHeavyShake();
+        document.getElementById('logMessage').textContent = `🌑 Bakunawa dealt 2 damage to ${damagedCount} enemy ${targetRow} cards!`;
+        setTimeout(() => renderAll(), enemyArr.length * 100 + 200);
+    }; });
+    return;
+
+
       case 'engkanto_ult':
         state.ultAvailable = false;
         let allPlayerCards = [];
         state.playerMelee.forEach((c, i) => { if(c) allPlayerCards.push({card: c, arr: state.playerMelee, idx: i, row: 'Melee'}); });
         state.playerRanged.forEach((c, i) => { if(c) allPlayerCards.push({card: c, arr: state.playerRanged, idx: i, row: 'Ranged'}); });
         const buffs = shuffle(allPlayerCards).slice(0, Math.min(3, allPlayerCards.length));
-        buffs.forEach((t, i) => { setTimeout(() => { t.card.hp += 3; t.card.maxHp += 3; }, i * 200); });
+        buffs.forEach((t, i) => { setTimeout(() => {
+            t.card.hp += 3; t.card.maxHp += 3;
+            // ── Blue sparkle on each buffed card ──
+            const slotId = `player${t.row}${t.idx + 1}`;
+            const slot = document.getElementById(slotId);
+            if (slot) {
+                slot.style.boxShadow = '0 0 15px 8px rgba(76, 175, 80, 0.8)';
+                setTimeout(() => { slot.style.boxShadow = ''; }, 1200);
+            }
+        }, i * 200); });
         document.getElementById('logMessage').textContent = `✨ Engkanto buffed ${buffs.length} cards with +3 HP!`;
         setTimeout(() => renderAll(), buffs.length * 200 + 300); break;
     }
     if (state.godEffect !== 'bakunawa_ult') { setTimeout(() => renderAll(), 300); }
-  }
-  window.triggerUltimate = triggerUltimate;
-
-  function refreshUltimate() {
-    if (state.ultAvailable || state.ultRefreshed || state.gameOver || state.turn !== 'player') return;
-    const availableProv = state.provPool - state.provUsed;
-    if (availableProv < 10) return;
-    state.provUsed += 10;
-    state.ultAvailable = true;
-    state.ultRefreshed = true;
-    document.getElementById('logMessage').textContent = '⚡ Ultimate refreshed for 10 provisions!';
-    renderAll();
-  }
-  window.refreshUltimate = refreshUltimate;
-
-
-  function enemyUseUltimate() {
-  if (!state.enemyUltAvailable) return;
-
-  // Choose a target row for Bakunawa (random), others have no row choice
-  const targetRow = Math.random() < 0.5 ? 'melee' : 'ranged';
-
-  // Show the enemy using ultimate on the UI (optional shake / screen effect)
-  const enemyGodSlot = document.getElementById('enemyGodSide').querySelector('.card');
-  if (enemyGodSlot) enemyGodSlot.classList.add('god-ult-animation');
-  setTimeout(() => { if (enemyGodSlot) enemyGodSlot.classList.remove('god-ult-animation'); }, 800);
-
-  executeHeavyShake();
-
-  switch (state.enemyGodEffect) {
-    case 'bathala_ult':
-      state.enemyUltAvailable = false;
-      let allPlayerUnits = [];
-      state.playerMelee.forEach((c, i) => { if (c) allPlayerUnits.push({ card: c, arr: state.playerMelee, idx: i, row: 'melee' }); });
-      state.playerRanged.forEach((c, i) => { if (c) allPlayerUnits.push({ card: c, arr: state.playerRanged, idx: i, row: 'ranged' }); });
-      const targets = shuffle(allPlayerUnits).slice(0, Math.min(3, allPlayerUnits.length));
-      targets.forEach((t, i) => {
-        setTimeout(() => {
-          killCardAndSendToGrave(t.card, t.arr, t.idx, state.playerGrave);
-        }, i * 150);
-      });
-      document.getElementById('logMessage').textContent = `💥 Enemy ${state.enemyGodName} destroyed ${targets.length} cards!`;
-      break;
-
-    case 'lamang_ult':
-      state.enemyUltAvailable = false;
-      if (state.enemyGrave.length > 0) {
-        const resurrect = shuffle([...state.enemyGrave]).slice(0, Math.min(2, state.enemyGrave.length));
-        resurrect.forEach(card => {
-          state.enemyGrave.splice(state.enemyGrave.indexOf(card), 1);
-          let placed = false;
-          for (let arr of [state.enemyMelee, state.enemyRanged]) {
-            for (let j = 0; j < arr.length; j++) {
-              if (!arr[j] && card.type === 'Unit') {
-                arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: enemyPlayOrderCounter++ };
-                placed = true;
-                break;
-              }
-            }
-            if (placed) break;
-          }
-          if (!placed) state.enemyDeckSize++; // put back in deck if board full
-        });
-        document.getElementById('logMessage').textContent = `👻 Enemy ${state.enemyGodName} resurrected units!`;
-      } else {
-        document.getElementById('logMessage').textContent = `Enemy ${state.enemyGodName} had nothing to resurrect.`;
-        state.enemyUltAvailable = true; // refund
-      }
-      break;
-
-    case 'bakunawa_ult':
-      state.enemyUltAvailable = false;
-      const enemyArr = targetRow === 'melee' ? state.playerMelee : state.playerRanged;
-      enemyArr.forEach((c, idx) => {
-        if (c) {
-          c.hp -= 2;
-          if (c.hp <= 0) killCardAndSendToGrave(c, enemyArr, idx, state.playerGrave);
-        }
-      });
-      document.getElementById('logMessage').textContent = `🌑 Enemy Bakunawa dealt 2 damage to your ${targetRow} row!`;
-      break;
-
-    case 'engkanto_ult':
-      state.enemyUltAvailable = false;
-      let allEnemyCards = [];
-      state.enemyMelee.forEach((c, i) => { if (c) allEnemyCards.push(c); });
-      state.enemyRanged.forEach((c, i) => { if (c) allEnemyCards.push(c); });
-      const buffs = shuffle(allEnemyCards).slice(0, Math.min(3, allEnemyCards.length));
-      buffs.forEach(card => {
-        card.hp += 3;
-        card.maxHp += 3;
-      });
-      document.getElementById('logMessage').textContent = `✨ Enemy Engkanto buffed ${buffs.length} cards with +3 HP!`;
-      break;
-  }
-
-  renderAll();
 }
+
+
+
 function renderAll() {
 
   const curseDisplay = document.getElementById('anitoCurseDisplay');
@@ -3048,12 +3074,6 @@ function renderAll() {
     document.getElementById('pillarPlayerProv').innerHTML = '🍗 ' + availableProv;
     document.getElementById('roundDisplay').textContent = state.round;
     document.getElementById('diceInfo').textContent = 'Every 4 Turns';
-
-    const ultRefreshBtn = document.getElementById('ultRefreshBtn');
-    if (ultRefreshBtn) {
-      ultRefreshBtn.disabled = state.ultAvailable || state.ultRefreshed || availableProv < 10;
-      ultRefreshBtn.onclick = function() { refreshUltimate(); };
-    }
 
         // Show/hide attack button
   const btnEndTurn = document.getElementById('btnEndTurn');
@@ -3171,15 +3191,16 @@ function endTurn() {
 
 function showInfoTab(tab) {
   const content = document.getElementById('infoTabContent');
+  const godsBtn = document.getElementById('tabGodsBtn');
+  const cursesBtn = document.getElementById('tabCursesBtn');
   const diceBtn = document.getElementById('tabDiceBtn');
   const passBtn = document.getElementById('tabPassivesBtn');
-  const cursesBtn = document.getElementById('tabCursesBtn');
-  const godsBtn = document.getElementById('tabGodsBtn');
-
+  godsBtn.classList.toggle('active', tab === 'gods');
+  cursesBtn.classList.toggle('active', tab === 'curses');
   diceBtn.classList.toggle('active', tab === 'dice');
   passBtn.classList.toggle('active', tab === 'passives');
-  cursesBtn.classList.toggle('active', tab === 'curses');
-  godsBtn.classList.toggle('active', tab === 'gods');
+  
+  
 
   if (tab === 'dice') {
     content.innerHTML = DICE_EVENTS.map(d => `
@@ -3224,14 +3245,12 @@ function showInfoTab(tab) {
     content.innerHTML = `
       <div class="info-gods-section">
         <div class="info-god-item">
-          <span class="god-icon">✨</span>
           <div>
             <strong>Your God: ${state.godName}</strong><br>
             <span style="color:#8b949e;font-size:0.75rem;">${playerGodDesc}</span>
-          </div>
+          </div>  
         </div>
-        <div class="info-god-item">
-          <span class="god-icon">👹</span>
+        <div class="info-god-item"><br>
           <div>
             <strong>Enemy God: ${state.enemyGodName}</strong><br>
             <span style="color:#8b949e;font-size:0.75rem;">${enemyGodDesc}</span>
@@ -3261,25 +3280,38 @@ if (btnToggleHints) {
   document.getElementById('surrenderOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
   document.getElementById('playerGraveBtn').addEventListener('click', () => showGraveyard('player'));
   document.getElementById('enemyGraveBtn').addEventListener('click', () => showGraveyard('enemy'));
+  document.getElementById('godSelectBackBtn').addEventListener('click', () => {
+    document.getElementById('godSelectOverlay').classList.remove('active');
+    document.getElementById('menuScreen').style.display = 'flex';
+});
   document.getElementById('playerDeckPile').addEventListener('click', () => showDeck());
   document.getElementById('graveyardOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
   document.getElementById('deckViewerOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
-  document.getElementById('rowSelectOverlay').addEventListener('click', function(e) { if (e.target === this) { this.classList.remove('active'); } });
+  document.getElementById('rowSelectOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.remove('active');
+        renderAll();                    // force a clean re-render when dismissed
+        checkAffordableCards();
+    }
+});
   document.getElementById('btnInfoPanel').addEventListener('click', () => {
     document.getElementById('infoOverlay').classList.add('active');
-    showInfoTab('dice');
+    showInfoTab('gods');
   });
   document.getElementById('infoOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+  document.getElementById('tabGodsBtn').addEventListener('click', () => showInfoTab('gods'));
+  document.getElementById('tabCursesBtn').addEventListener('click', () => showInfoTab('curses'));
   document.getElementById('tabDiceBtn').addEventListener('click', () => showInfoTab('dice'));
   document.getElementById('tabPassivesBtn').addEventListener('click', () => showInfoTab('passives'));
-  document.getElementById('tabCursesBtn').addEventListener('click', () => showInfoTab('curses'));
-document.getElementById('tabGodsBtn').addEventListener('click', () => showInfoTab('gods'));
   document.addEventListener('click', (e) => { if (!e.target.closest('.card') && !e.target.closest('button') && !e.target.closest('.overlay')) { spawnClickRipple(e.clientX, e.clientY); } });
   window.addEventListener('resize', () => {
   if (!state.gameOver && document.getElementById('gameInterface').classList.contains('active')) {
     renderAll();
   }
+
 });
+
+  window.triggerUltimate = triggerUltimate;
 })();
 
 </script>
