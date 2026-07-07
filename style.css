@@ -653,15 +653,23 @@ button.circular-surrender:hover {
 }
 .card-passive-badge {
   position: absolute;
-  bottom: 2px;
-  left: 2px;
-  right: 2px;
-  font-size: clamp(0.55rem, 1vw, 0.8rem); 
+  bottom: 2%;
+  left: 2%;
+  right: 2%;
+  font-size: clamp(0.45rem, 0.9em, 0.7rem);   /* relative to card's text size */
   font-weight: 700;
   text-align: center;
+  line-height: 1.2;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-sizing: border-box;
+  white-space: normal;          /* allow wrapping */
+  word-break: break-word;       /* break very long words if needed */
   overflow: hidden;
-  white-space: nowrap;
+  max-height: 2.4em;            /* limit to ~2 lines */
 }
+
+/* Keep your existing color types, just update sizing if needed */
 .card-passive-badge.defensive {
   background: rgba(74, 110, 58, 0.15);
   border: 1px solid rgba(74, 110, 58, 0.3);
@@ -690,40 +698,72 @@ button.circular-surrender:hover {
   animation: taunt-shake 0.4s ease-in-out 3;
 }
 
-/* ========== ATTACK DOTS ========== */
-/* ========== ATTACK DOTS ========== */
+/* ========== ATTACK DOTS – Minimalist 3D Gold ========== */
 .attack-dot {
+  /* --- PRESERVED SIZING & POSITIONING --- */
   position: absolute;
-  bottom: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 18%;
+  width: 20%;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: bold;
-  color: #fff;
   z-index: 5;
   pointer-events: none;
-  background: #555;           /* default (shouldn’t show) */
+
+  /* --- MINIMALIST 3D DESIGN --- */
+  /* Clean, smooth gold metallic gradient */
+  background: radial-gradient(circle at 30% 30%, 
+              #ffe082 0%, 
+              #ffb300 70%, 
+              #ff8f00 100%);
+
+  /* Self-matching metallic border (no dark outlines to choke the number) */
+  border: 1px solid #ffb300;
+
+  /* Clean, crisp 3D bevel and soft drop shadow */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.15),                /* soft depth shadow */
+    inset 0 2px 2px rgba(255, 255, 255, 0.6),     /* clean top light reflection */
+    inset 0 -2px 3px rgba(0, 0, 0, 0.15);         /* clean bottom shade */
+
+  /* High-contrast, ultra-sharp typography for mobile landscape */
+  font-size: clamp(6px, 0.55em, 10px);
+  font-weight: 800;
+  line-height: 1;
+  color: #3e2723;                                 /* deep solid brown for maximum contrast */
+  text-shadow: none;                              /* removed to prevent blurring on small screens */
 }
 
-.attack-dot.can-attack {
-  background: #7a0404;        /* bright green */
-}
+/* Ready to attack – vibrant, clean gold (No glow, no animation) */
 .attack-dot.can-attack::after {
   content: '1';
 }
-
-.attack-dot.has-attacked-dot {
-  background: #555;           /* dark gray */
+.attack-dot.can-attack {
+  background: radial-gradient(circle at 30% 30%, 
+              #fff59d 0%, 
+              #fbc02d 70%, 
+              #f57f17 100%);
+  border-color: #fbc02d;
+  color: #212121;                                 /* near-black for absolute sharpness */
 }
+
+/* Already attacked – flat, muted matte grey */
 .attack-dot.has-attacked-dot::after {
   content: '0';
 }
-
+.attack-dot.has-attacked-dot {
+  background: rgba(232, 215, 180, 0.6);   /* warm cream, semi‑transparent */
+  border: 1px solid rgba(180, 160, 130, 0.5);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  color: #b0a090;                          /* soft beige number */
+  text-shadow: none;
+}
 /* ========== SELECTION & TARGET GLOWS ========== */
 .card.selected-for-attack {
   box-shadow: 0 0 8px rgba(100, 140, 60, 0.5), 0 0 16px rgba(100, 120, 40, 0.3) !important;
@@ -2015,12 +2055,12 @@ button.circular-end-turn:disabled {
   color: #d4c8a8;               /* parchment text */
   border: 1px solid #6b4f32;    /* lighter brown outline */
   border-radius: 6px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   font-size: 0.85rem;
   cursor: pointer;
   font-family: inherit;
   transition: background 0.2s;
-  margin-bottom: 8px;
+  margin-bottom: 1px;
 }
 
 .back-btn:hover {

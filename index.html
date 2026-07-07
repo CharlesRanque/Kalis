@@ -117,12 +117,10 @@
     <div class="menu-subtitle">Choose Your Faction</div>
     <div class="faction-select-container">
       <div class="faction-card heroes" id="btnChooseHeroes">
-        <h3>✨ Heroes & Warriors</h3>
-        <p>Command legendary protectors like Lam-ang, Lapulapu, and Bantugan alongside ancient blessings to defend the realms.</p>
+        <h3>🪓 Heroes & Warriors</h3>
       </div>
       <div class="faction-card monsters" id="btnChooseMonsters">
         <h3>👹 Mythical Monsters</h3>
-        <p>Unleash the cataclysmic wrath of the Bakunawa, Minokawa, Kapre, and dynamic curses to tear down your opposition.</p>
       </div>
     </div>
   </div>
@@ -276,10 +274,6 @@
 
 <script>
 
-
-
-
-
 (function() {
   window.addEventListener('resize', function() {
     if (typeof renderAll === 'function' && document.getElementById('gameInterface').classList.contains('active')) {
@@ -294,7 +288,7 @@
     'Thorns 2': { name: 'Thorns 2', desc: 'Deal 2 dmg back (even if killed)', type: 'defensive', icon: '🌵', cssClass: 'passive-thorns' },
     'Overheal': { name: 'Overheal', desc: 'Heal 1 HP per turn', type: 'defensive', icon: '💖', cssClass: 'passive-regen' },
     'Pierce': { name: 'Pierce', desc: 'Ignore enemy Shield', type: 'offensive', icon: '🗡️', cssClass: '' },
-    'Bloodthirst': { name: 'Bloodthirst', desc: 'Heal 1 HP every time this unit attacks', type: 'offensive', icon: '🩸', cssClass: 'passive-overheal' },
+    'Lifesteal': { name: 'Lifesteal', desc: 'Heal 1 HP every time this unit attacks', type: 'offensive', icon: '🩸', cssClass: 'passive-overheal' },
     'Taunt': { name: 'Taunt', desc: 'Enemy must attack this first', type: 'utility', icon: '😝', cssClass: 'passive-taunt' },
   };
 
@@ -402,7 +396,6 @@
   fortress:        { name: 'Fortress',         desc: 'All units gain +2 HP but -1 ATK (minimum 0 ATK).', icon: '🏰' },
   blood_frenzy:    { name: 'Blood Frenzy',     desc: 'When a unit dies, its controller draws a card.', icon: '🩸' },
   mirror_match:    { name: 'Mirror Match',     desc: 'Both players use the same faction (Heroes or Monsters).', icon: '🪞' },
-  row_lockdown:    { name: 'Row Lockdown',     desc: 'Only one random row can be played each turn.', icon: '🔒' },
   double_trouble:  { name: 'Double Trouble',   desc: 'All provision costs are reduced by 1 (minimum 1).', icon: '👥' },
   divine_gambit:   { name: 'Divine Gambit',     desc: 'Ult refresh costs 0 provision, but deals 5 damage to your own God each time.', icon: '🎲' },
   none:            { name: 'No Curse',         desc: 'The gods are calm today. Standard rules apply.', icon: '✨' }
@@ -724,7 +717,6 @@ const WILD_MODIFIERS = [
   { id: 'fortress', name: 'Fortress' },
   { id: 'blood_frenzy', name: 'Blood Frenzy' },
   { id: 'mirror_match', name: 'Mirror Match' },
-  { id: 'row_lockdown', name: 'Row Lockdown' },
   { id: 'double_trouble', name: 'Double Trouble' },
 ];
 
@@ -783,14 +775,37 @@ else if (state.wildModifier === 'double_trouble') {
   // Also mark that future drawn cards should be reduced
 }
 
-state.lockedRow = null;   // for Row Lockdown curse
-// (row_lockdown and double_trouble can be added later)
+
+const affordableUnitIndex = state.deck.findIndex(
+  c => c.type === 'Unit' && c.cost <= state.provPool
+);
+if (affordableUnitIndex !== -1) {
+  // Swap the found affordable unit to the top of the deck
+  [state.deck[0], state.deck[affordableUnitIndex]] = [state.deck[affordableUnitIndex], state.deck[0]];
+}
 for (let i = 0; i < 3; i++) {
   drawCard();
 }
-    document.getElementById('menuScreen').style.display = 'none';
-    document.getElementById('mainMenu').style.display = 'none';
-    document.getElementById('gameInterface').classList.add('active');
+
+// ── FALLBACK: force at least one affordable unit (in case curses removed them) ──
+{
+  const hasAffordableUnit = state.hand.some(
+    c => c.type === 'Unit' && c.cost <= state.provPool
+  );
+  if (!hasAffordableUnit) {
+    const replaceIndex = state.hand.findIndex(c => c.type !== 'Unit' || c.cost > state.provPool);
+    const idx = replaceIndex !== -1 ? replaceIndex : 0;
+    state.hand[idx] = {
+      name: 'Militia', type: 'Unit', cost: 1, row: 'melee',
+      atk: 1, hp: 2, maxHp: 2, id: 'militia_' + Math.random().toString(36).slice(2,6),
+      _isNewDraw: true, playOrder: playerPlayOrderCounter++
+    };
+  }
+}
+
+document.getElementById('menuScreen').style.display = 'none';
+document.getElementById('mainMenu').style.display = 'none';
+document.getElementById('gameInterface').classList.add('active');
 // Request fullscreen and force landscape on mobile devices
 if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
   document.documentElement.requestFullscreen().then(() => {
@@ -804,7 +819,6 @@ if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
     if (overlay) overlay.style.display = 'flex';
   });
 }
-
     document.getElementById('leftPanelOuter').style.display = 'flex';
     document.getElementById('rightPanelOuter').style.display = 'flex';
     document.getElementById('diceInfo').textContent = 'Every 4 Turns';
@@ -967,15 +981,6 @@ applyRegen(state.enemyMelee, 'enemyMelee');
 applyRegen(state.enemyRanged, 'enemyRanged');
 
     updatePhaseIndicator('player_develop', state.round);
-
-  // ---- Row Lockdown curse ----
-  if (state.wildModifier === 'row_lockdown') {
-    state.lockedRow = Math.random() < 0.5 ? 'melee' : 'ranged';
-    document.getElementById('logMessage').textContent =
-      '🔒 Row Lockdown: Only ' + state.lockedRow + ' row available this turn!';
-  } else {
-    state.lockedRow = null;
-  }
   triggerTurnOverlay(`🟢 Round ${state.round} — YOUR TURN`);
   document.getElementById('phaseDiceInfo').textContent = state.attackToken === 'player' ? 'Place Cards and Attack!' : '🛡️ No Token';
     // Reset End Turn button to player state
@@ -1112,6 +1117,86 @@ function selectDraftCard(chosenCard, allDraftCards) {
   document.getElementById('logMessage').textContent = `Drafted ${chosenCard.name}!`;
 }
 
+function enemyUseUltimate() {
+  if (!state.enemyUltAvailable) return;
+
+  const targetRow = Math.random() < 0.5 ? 'melee' : 'ranged';
+
+  const enemyGodSlot = document.getElementById('enemyGodSide').querySelector('.card');
+  if (enemyGodSlot) enemyGodSlot.classList.add('god-ult-animation');
+  setTimeout(() => { if (enemyGodSlot) enemyGodSlot.classList.remove('god-ult-animation'); }, 800);
+
+  executeHeavyShake();
+
+  switch (state.enemyGodEffect) {
+    case 'bathala_ult':
+      state.enemyUltAvailable = false;
+      let allPlayerUnits = [];
+      state.playerMelee.forEach((c, i) => { if (c) allPlayerUnits.push({ card: c, arr: state.playerMelee, idx: i, row: 'melee' }); });
+      state.playerRanged.forEach((c, i) => { if (c) allPlayerUnits.push({ card: c, arr: state.playerRanged, idx: i, row: 'ranged' }); });
+      const targets = shuffle(allPlayerUnits).slice(0, Math.min(3, allPlayerUnits.length));
+      targets.forEach((t, i) => {
+        setTimeout(() => {
+          killCardAndSendToGrave(t.card, t.arr, t.idx, state.playerGrave);
+        }, i * 150);
+      });
+      document.getElementById('logMessage').textContent = `💥 Enemy ${state.enemyGodName} destroyed ${targets.length} cards!`;
+      break;
+
+    case 'lamang_ult':
+      state.enemyUltAvailable = false;
+      if (state.enemyGrave.length > 0) {
+        const resurrect = shuffle([...state.enemyGrave]).slice(0, Math.min(2, state.enemyGrave.length));
+        resurrect.forEach(card => {
+          state.enemyGrave.splice(state.enemyGrave.indexOf(card), 1);
+          let placed = false;
+          for (let arr of [state.enemyMelee, state.enemyRanged]) {
+            for (let j = 0; j < arr.length; j++) {
+              if (!arr[j] && card.type === 'Unit') {
+                arr[j] = { ...card, hasAttacked: false, hp: card.maxHp || card.hp, playOrder: enemyPlayOrderCounter++ };
+                placed = true;
+                break;
+              }
+            }
+            if (placed) break;
+          }
+          if (!placed) state.enemyDeckSize++;
+        });
+        document.getElementById('logMessage').textContent = `👻 Enemy ${state.enemyGodName} resurrected units!`;
+      } else {
+        document.getElementById('logMessage').textContent = `Enemy ${state.enemyGodName} had nothing to resurrect.`;
+        state.enemyUltAvailable = true;
+      }
+      break;
+
+    case 'bakunawa_ult':
+      state.enemyUltAvailable = false;
+      const enemyArr = targetRow === 'melee' ? state.playerMelee : state.playerRanged;
+      enemyArr.forEach((c, idx) => {
+        if (c) {
+          c.hp -= 2;
+          if (c.hp <= 0) killCardAndSendToGrave(c, enemyArr, idx, state.playerGrave);
+        }
+      });
+      document.getElementById('logMessage').textContent = `🌑 Enemy Bakunawa dealt 2 damage to your ${targetRow} row!`;
+      break;
+
+    case 'engkanto_ult':
+      state.enemyUltAvailable = false;
+      let allEnemyCards = [];
+      state.enemyMelee.forEach((c, i) => { if (c) allEnemyCards.push(c); });
+      state.enemyRanged.forEach((c, i) => { if (c) allEnemyCards.push(c); });
+      const buffs = shuffle(allEnemyCards).slice(0, Math.min(3, allEnemyCards.length));
+      buffs.forEach(card => {
+        card.hp += 3;
+        card.maxHp += 3;
+      });
+      document.getElementById('logMessage').textContent = `✨ Enemy Engkanto buffed ${buffs.length} cards with +3 HP!`;
+      break;
+  }
+
+  renderAll();
+}
 function executeEnemyAITurn() {
   if (state._aiRunning) return;
   state._aiRunning = true;
@@ -1444,12 +1529,12 @@ function enemyAttack() {
     }
 
     // ✅ OVERHEAL triggers after every attack (even on God) – only if attacker is still alive
-// Bloodthirst: always gain +1 HP & +1 max HP, with green flash
-// Bloodthirst: gain +1 HP & max HP with green flash
-if (attackerInfo.arr[attackerInfo.idx] !== null && u.passive && u.passive.startsWith('Bloodthirst')) {
+// Lifesteal: always gain +1 HP & +1 max HP, with green flash
+// Lifesteal: gain +1 HP & max HP with green flash
+if (attackerInfo.arr[attackerInfo.idx] !== null && u.passive && u.passive.startsWith('Lifesteal')) {
     const target = targetArr && targetIdx !== undefined ? targetArr[targetIdx] : null;
     if (target && target.passive && target.passive.startsWith('Thorns')) {
-        // Thorns blocks Bloodthirst
+        // Thorns blocks Lifesteal
     } else {
         u.maxHp += 1;
         u.hp += 1;
@@ -2746,8 +2831,8 @@ if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') ||
   if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
   document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
 
-  // Bloodthirst: always heal against God (God has no Thorns)
-  if (attacker.passive && attacker.passive.startsWith('Bloodthirst')) {
+  // Lifesteal: always heal against God (God has no Thorns)
+  if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
       attacker.maxHp += 1;
       attacker.hp += 1;
       const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
@@ -2779,9 +2864,9 @@ if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') ||
   document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
           
           // Overheal on god hit
-// Bloodthirst: always gain +1 HP & +1 max HP, with green flash
-// Bloodthirst: gain +1 HP & max HP with green flash
-if (attacker.passive && attacker.passive.startsWith('Bloodthirst')) {
+// Lifesteal: always gain +1 HP & +1 max HP, with green flash
+// Lifesteal: gain +1 HP & max HP with green flash
+if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
     attacker.maxHp += 1;
     attacker.hp += 1;
     const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
@@ -2879,9 +2964,9 @@ if (shield > 0) {
           
           // Overheal on EVERY attack (moved outside kill check)
         // Overheal on god hit
-// Bloodthirst: always gain +1 HP & +1 max HP, with green flash
-// Bloodthirst: gain +1 HP & max HP with green flash
-if (attacker.passive && attacker.passive.startsWith('Bloodthirst')) {
+// Lifesteal: always gain +1 HP & +1 max HP, with green flash
+// Lifesteal: gain +1 HP & max HP with green flash
+if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
     attacker.maxHp += 1;
     attacker.hp += 1;
     const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
