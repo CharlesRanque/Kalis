@@ -11,7 +11,7 @@ const BRONZE_UNITS_HEROES = [
   { name: 'Dayang Healer', type: 'Unit', faction: 'heroes', cost: 3, row: 'ranged', atk: 2, hp: 6, maxHp: 6 },
   { name: 'Timawa Warrior', type: 'Unit', faction: 'heroes', cost: 2, row: 'melee', atk: 3, hp: 3, maxHp: 3 },
   { name: 'Babaylan Seer', type: 'Unit', faction: 'heroes', cost: 4, row: 'ranged', atk: 4, hp: 3, maxHp: 3 },
-  { name: 'Bagani Axe', type: 'Unit', faction: 'heroes', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3 },
+  { name: 'Bagani Axe', type: 'Unit', faction: 'heroes', cost: 5, row: 'melee', atk: 6, hp: 3, maxHp: 3, },
 ];
 
 const GOLD_UNITS_HEROES = [
