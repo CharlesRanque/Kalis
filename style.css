@@ -698,6 +698,14 @@ button.circular-surrender:hover {
   animation: taunt-shake 0.4s ease-in-out 3;
 }
 
+
+/* ========== FOR CARD TEMPLATES ========== */
+
+
+
+
+
+
 /* ========== ATTACK DOTS – Minimalist 3D Gold ========== */
 .attack-dot {
   /* --- PRESERVED SIZING & POSITIONING --- */
@@ -1985,46 +1993,192 @@ button.circular-end-turn:disabled {
   font-size: 0.8rem;
 }
 
-/* ========== GOD ULTIMATE ANIMATIONS ========== */
+/* ========== GOD ULTIMATE ANIMATIONS (INSANE 3D CINEMATIC) ========== */
 
-/* Bathala – golden heaven flash + light rays */
-.bathala-ult-screen {
-  animation: bathala-ult 1.2s ease-out;
-}
-@keyframes bathala-ult {
-  0%   { box-shadow: inset 0 0 0 100vmax rgba(255, 215, 0, 0.8); }
-  30%  { box-shadow: inset 0 0 0 100vmax rgba(255, 215, 0, 0.4); }
-  100% { box-shadow: inset 0 0 0 100vmax rgba(255, 215, 0, 0); }
+/* ==========================================
+   1. TUWAANG – Divine Lightning & Golden Sky Rupture
+   Effect: Blinds the screen, distorts card contrast, 
+   and creates a massive gold shockwave compression.
+   ========================================== */
+.Tuwaang-ult-screen {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 999;
+  pointer-events: none;
+  animation: tuwaang-cosmic-gold 1.4s cubic-bezier(0.05, 0.9, 0.1, 1) forwards;
 }
 
-/* Bakunawa – purple flash on affected row */
+@keyframes tuwaang-cosmic-gold {
+  0% {
+    background: radial-gradient(circle, #ffffff 0%, rgba(255, 215, 0, 0.9) 40%, rgba(50, 35, 0, 0.9) 100%);
+    box-shadow: inset 0 0 150px 50px #ffffff;
+    backdrop-filter: brightness(4) contrast(2) blur(0px);
+    transform: scale(1.2);
+  }
+  10% {
+    /* Screen shockwave impact */
+    background: radial-gradient(circle, rgba(255,255,255,0) 20%, rgba(255, 235, 120, 0.8) 60%, rgba(130, 90, 0, 0.9) 100%);
+    box-shadow: 
+      inset 0 0 200px 100px rgba(255, 215, 0, 0.8),
+      0 0 0 100vmax rgba(255, 215, 0, 0.2);
+    backdrop-filter: brightness(2.5) contrast(1.8) blur(10px);
+    transform: scale(1);
+  }
+  40% {
+    /* Burning golden debris/rays effect */
+    background: transparent;
+    box-shadow: 
+      inset 0 0 100px rgba(255, 180, 0, 0.4),
+      inset 0 0 300px rgba(0, 0, 0, 0.8);
+    backdrop-filter: brightness(1.2) contrast(1.3) blur(4px);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0px rgba(0, 0, 0, 0);
+    backdrop-filter: brightness(1) contrast(1) blur(0px);
+  }
+}
+
+
+/* ==========================================
+   2. BAKUNAWA – Eclipse Void & Moon-Eater Doom
+   Effect: Screen violently violently violently shakes, 
+   crushes the board into deep darkness, and blasts 
+   a hyper-saturated blood-red ring.
+   ========================================== */
 .bakunawa-ult-screen {
-  animation: bakunawa-ult 1s ease-out;
-}
-@keyframes bakunawa-ult {
-  0%   { box-shadow: inset 0 0 0 100vmax rgba(128, 0, 128, 0.7); }
-  40%  { box-shadow: inset 0 0 0 100vmax rgba(128, 0, 128, 0.3); }
-  100% { box-shadow: inset 0 0 0 100vmax rgba(128, 0, 128, 0); }
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 999;
+  pointer-events: none;
+  animation: bakunawa-apocalypse 1.2s cubic-bezier(0.15, 0.85, 0.2, 1) forwards;
 }
 
-/* Lam-Ang – ghostly green mist */
+@keyframes bakunawa-apocalypse {
+  0% { 
+    transform: scale(1.1) translate(10px, -10px) rotate(1deg);
+    background: #000000;
+    box-shadow: inset 0 0 0 100vmax rgba(200, 0, 20, 0.9);
+    backdrop-filter: saturate(3) hue-rotate(-20deg) invert(0.1);
+  }
+  5% { transform: translate(-10px, 8px) rotate(-1deg); }
+  10% { transform: translate(8px, -5px) scale(1.05); background: transparent; }
+  15% { transform: translate(-5px, 5px); }
+  20% { 
+    /* The Crimson Eclipse Core opens */
+    transform: translate(0, 0) scale(1);
+    box-shadow: 
+      inset 0 0 120px 40px rgba(0, 0, 0, 0.95),
+      inset 0 0 0 100vmax rgba(160, 0, 15, 0.7);
+    backdrop-filter: saturate(2.5) contrast(2);
+  }
+  50% { 
+    /* Shadow consumes the light */
+    box-shadow: 
+      inset 0 0 250px 8px rgba(110, 0, 10, 0.8),
+      inset 0 0 40px 100vmax rgba(0, 0, 0, 0.9);
+    backdrop-filter: saturate(1.2) contrast(1.5);
+  }
+  100% { 
+    box-shadow: inset 0 0 0 0px rgba(0, 0, 0, 0);
+    backdrop-filter: saturate(1) contrast(1);
+  }
+}
+
+
+/* ==========================================
+   3. LAM-ANG – Deathless Underworld Jade Plasma
+   Effect: Ethereal, radioactive-style necromantic green 
+   mist that liquefies and warps the layout underneath.
+   ========================================== */
+/* ========== LAM-ANG – Deathless Jade Overdrive (No-Shake Clean Edition) ========== */
 .lamang-ult-glow {
-  animation: lamang-ult 1.5s ease-out;
-}
-@keyframes lamang-ult {
-  0%   { box-shadow: 0 0 80px 40px rgba(0, 255, 100, 0.6), inset 0 0 60px 30px rgba(0, 255, 100, 0.3); }
-  50%  { box-shadow: 0 0 40px 20px rgba(0, 255, 100, 0.3), inset 0 0 30px 15px rgba(0, 255, 100, 0.15); }
-  100% { box-shadow: 0 0 0px 0px rgba(0, 255, 100, 0), inset 0 0 0px 0px rgba(0, 255, 100, 0); }
+  position: fixed;
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh;
+  z-index: 999;
+  pointer-events: none;
+  /* Ultra-smooth curve that hits instantly, then gracefully dissipates */
+  animation: lamang-ghost-overdrive-clean 1.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
 }
 
-/* Engkanto – soft blue/pink sparkle burst */
-.engkanto-ult-screen {
-  animation: engkanto-ult 1.5s ease-out;
+@keyframes lamang-ghost-overdrive-clean {
+  0% { 
+    /* Massive initial shockwave of neon jade plasma light */
+    background: radial-gradient(circle, rgba(0, 255, 135, 0.7) 0%, rgba(0, 60, 25, 0.8) 60%, rgba(0, 15, 5, 0.95) 100%);
+    box-shadow: 
+      inset 0 0 100px rgba(0, 255, 135, 0.9),
+      inset 0 0 300px rgba(0, 0, 0, 0.9);
+    backdrop-filter: brightness(1.5); /* Crisp brightness flash without blurring */
+  }
+  20% {
+    /* Center clears out instantly so the player can see cards, freezing a neon border */
+    background: transparent;
+    box-shadow: 
+      inset 0 0 200px rgba(0, 255, 135, 0.6),
+      inset 0 0 0 100vmax rgba(0, 35, 10, 0.4);
+    backdrop-filter: brightness(1.2);
+  }
+  60% {
+    /* Ghostly energy quietly burns out along the screen edges */
+    box-shadow: 
+      inset 0 0 150px rgba(0, 255, 135, 0.2),
+      inset 0 0 80px rgba(0, 0, 0, 0.7);
+    backdrop-filter: brightness(1);
+  }
+  100% { 
+    box-shadow: inset 0 0 0px rgba(0, 0, 0, 0);
+    backdrop-filter: brightness(1);
+  }
 }
-@keyframes engkanto-ult {
-  0%   { box-shadow: 0 0 60px 30px rgba(76, 175, 80, 0.6), 0 0 100px 50px rgba(129, 199, 132, 0.4); }
-  50%  { box-shadow: 0 0 30px 15px rgba(76, 175, 80, 0.3), 0 0 50px 25px rgba(129, 199, 132, 0.2); }
-  100% { box-shadow: 0 0 0px 0px rgba(76, 175, 80, 0), 0 0 0px 0px rgba(129, 199, 132, 0); }
+
+
+/* ==========================================
+   4. ENGKANTO – Iridescent Fae Realm Supernova
+   Effect: Mind-bending, psychedelic cosmic explosion 
+   of shifting hot pink, electric neon cyan, and violet.
+   ========================================== */
+.engkanto-ult-screen {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 999;
+  pointer-events: none;
+  animation: engkanto-fae-shatter 1.6s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+@keyframes engkanto-fae-shatter {
+  0% { 
+    /* Massive tri-color neon overlay blast */
+    background: linear-gradient(135deg, rgba(255, 0, 128, 0.6) 0%, rgba(0, 227, 255, 0.6) 100%);
+    box-shadow: 
+      inset 0 0 150px rgba(255, 0, 200, 0.8),
+      0 0 200px 100px rgba(0, 255, 230, 0.5);
+    /* Inverts colors underneath instantly for an otherworldly tech-magic shock */
+    backdrop-filter: hue-rotate(180deg) invert(0.3) saturate(3);
+    transform: scale(0.9) rotate(-2deg);
+  }
+  20% {
+    background: transparent;
+    box-shadow: 
+      inset 0 0 100px rgba(245, 0, 180, 0.5),
+      inset 0 0 250px rgba(0, 200, 255, 0.4);
+    backdrop-filter: hue-rotate(90deg) invert(0) saturate(2);
+    transform: scale(1.05) rotate(0deg);
+  }
+  50% { 
+    /* Dissolving sparkle mist color shift */
+    box-shadow: 
+      inset 0 0 80px rgba(200, 0, 255, 0.2), 
+      inset 0 0 40px rgba(0, 255, 200, 0.1);
+    backdrop-filter: hue-rotate(30deg) saturate(1.5);
+  }
+  100% { 
+    box-shadow: none;
+    backdrop-filter: hue-rotate(0deg) saturate(1);
+    transform: scale(1);
+  }
 }
 
 .defend-flash {
