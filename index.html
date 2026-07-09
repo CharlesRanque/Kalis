@@ -255,8 +255,7 @@
       <div id="tutorialOverlay" style="display:none; position:absolute; z-index:100; text-align:center; pointer-events:none;">
         <div style="background:rgba(20,16,10,0.95); border:2px solid #9b7a3c; border-radius:12px; padding:0.5rem 1.5rem; box-shadow:0 0 20px rgba(0,0,0,0.8); pointer-events:auto; display:inline-block; position:relative;">
           <p id="tutorialText" style="color:#f0e8d8; font-size:clamp(0.9rem, 2vh, 1.3rem); margin-bottom:0.5rem; white-space:nowrap;"></p>
-                   
-          <div style="position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:10px solid transparent; border-right:10px solid transparent; border-top:10px solid rgba(20,16,10,0.95); pointer-events:none;"></div>
+            
         </div>
       </div>
 
@@ -402,7 +401,7 @@ function startTutorial() {
         }
         break;
 case 1:
-  textEl.textContent = 'Drag ⊕ an empty slot to play the card';
+  textEl.textContent = 'Drag ⊕ to an empty slot to play the card';
   // Highlight all empty player slots (excluding god slot)
   const emptySlots = document.querySelectorAll('.player-slot:not(.god-slot)');
   emptySlots.forEach(slot => {
@@ -1151,6 +1150,7 @@ applyRegen(state.enemyRanged, 'enemyRanged');
 }
 
 function showDraftScreen() {
+  if (tutorialState.enemyTurnBlocked) return; 
   if (state.deck.length < 3) return;
 
   const draftCards = [];
@@ -1929,7 +1929,7 @@ function endRound() {
   
   state.attackToken = state.attackToken === 'player' ? 'enemy' : 'player';
   
-  if (turnCounter % 2 === 0) {
+  if (turnCounter % 2 === 0 && !tutorialState.enemyTurnBlocked) {
     triggerDiceRoll();
     setTimeout(() => {
       state.turn = 'player';
