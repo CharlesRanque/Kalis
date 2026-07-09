@@ -199,7 +199,13 @@
       <button class="close-btn" onclick="document.getElementById('infoOverlay').classList.remove('active')">Close</button>
     </div>
   </div>
-
+<!-- HOW TO PLAY OVERLAY -->
+<div class="howtoplay-overlay" id="howToPlayOverlay">
+  <div class="howtoplay-box">
+    <div class="howtoplay-content" id="howToPlayContent"></div>
+    <button class="close-btn" onclick="document.getElementById('howToPlayOverlay').classList.remove('active')">Close</button>
+  </div>
+</div>
   <div class="draft-overlay" id="draftOverlay">
     <div class="draft-box">
       <div class="draft-timer-bar" id="draftTimerBar"></div>
@@ -207,7 +213,6 @@
       <div class="draft-choices" id="draftChoices"></div>
     </div>
   </div>
-
   <div class="game-interface" id="gameInterface">
     <div class="main-board-area">
       <div class="battlefield-wrapper">
@@ -263,12 +268,7 @@
       </div>
     </div>
   </div>
-  
-  <!-- Fullscreen prompt overlay (hidden by default) -->
-  <div id="fullscreenPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; justify-content:center; align-items:center; flex-direction:column;">
-    <p style="color:#d4c8a8; font-size:1.5rem; margin-bottom:1rem;">Tap to enter fullscreen</p>
-    <button onclick="document.documentElement.requestFullscreen().then(() => { if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }).catch(()=>{}); document.getElementById('fullscreenPrompt').style.display='none';" style="padding:1rem 2rem; font-size:1.2rem; background:#9b7a3c; border:none; border-radius:8px; color:#fff;">Enter Fullscreen</button>
-  </div>
+
 </div>
 </div>
 
@@ -357,11 +357,13 @@ let tutorialState = {
     step: 0,
     selectedHandIdx: null,
     selectedBoard: null,
-    waitingForAttack: false   // add this
+    waitingForAttack: false,
+    panelTourReady: false,   // add this line
+    enemyTurnBlocked: true 
 };
 
 function startTutorial() {
-    if (localStorage.getItem('tutorialCompleted') === 'true') return;
+    //if (localStorage.getItem('tutorialCompleted') === 'true') return;//
     tutorialState.active = true;
     tutorialState.step = 0;
     tutorialState.selectedHandIdx = null;
@@ -381,7 +383,7 @@ function startTutorial() {
 
     switch(step) {
       case 0:
-        textEl.textContent = 'Tap a card in your hand to select it';
+        textEl.textContent = 'Drag a card in your hand to the field';
         // Highlight the first affordable hand card
         // Find the first affordable unit card
         const handCards = document.querySelectorAll('.fan-card-wrapper');
@@ -399,21 +401,28 @@ function startTutorial() {
           targetEl = chosen;
         }
         break;
-      case 1:
-        textEl.textContent = 'Tap an empty slot to play the card';
-        // Highlight all empty player slots (excluding god slot)
-        const emptySlots = document.querySelectorAll('.player-slot:not(.god-slot)');
-        let foundEmpty = false;
-        emptySlots.forEach(slot => {
-          if (slot.innerHTML.trim() === '') {
-            slot.classList.add('tutorial-highlight');
-            if (!foundEmpty) {
-              targetEl = slot;
-              foundEmpty = true;
-            }
-          }
-        });
+case 1:
+  textEl.textContent = 'Drag ⊕ an empty slot to play the card';
+  // Highlight all empty player slots (excluding god slot)
+  const emptySlots = document.querySelectorAll('.player-slot:not(.god-slot)');
+  emptySlots.forEach(slot => {
+    if (slot.innerHTML.trim() === '') {
+      slot.classList.add('tutorial-highlight');
+    }
+  });
+  // Position the overlay above melee 3 if it's empty, otherwise above first empty slot
+  const melee3 = document.getElementById('playerMelee3');
+  if (melee3 && melee3.innerHTML.trim() === '') {
+    targetEl = melee3;
+  } else {
+    for (const slot of emptySlots) {
+      if (slot.innerHTML.trim() === '') {
+        targetEl = slot;
         break;
+      }
+    }
+  }
+  break;
               case 2:
         textEl.textContent = 'Press END TURN to finish your turn ->.';
         const endBtn = document.getElementById('btnEndTurn');
@@ -500,17 +509,35 @@ function showPostTutorialMessage() {
     overlay.style.top = '40%';
     overlay.style.transform = 'translate(-50%, -50%)';
 
-    textEl.textContent = 'Click your card and drag to the enemy God';
+    textEl.textContent = 'Click your card and drag the crosshair ⊕ to the enemy God';
 
-    // Highlight the placed card and the enemy God
-    // Find the player's card that was just played (any occupied non-god player slot)
+    // Find the card that was just played (first occupied non‑god player slot)
     const playerSlots = document.querySelectorAll('.player-slot:not(.god-slot)');
+    let placedSlot = null;
     for (const slot of playerSlots) {
         if (slot.querySelector('.card')) {
-            slot.classList.add('tutorial-highlight');
-            break; // only one card placed
+            placedSlot = slot;
+            break;
         }
     }
+
+    if (placedSlot) {
+        const slotRect = placedSlot.getBoundingClientRect();
+        const gameInterface = document.getElementById('gameInterface');
+        const ifaceRect = gameInterface.getBoundingClientRect();
+        // Center above the slot, with a small gap
+        overlay.style.left = (slotRect.left + slotRect.width / 2 - ifaceRect.left) + 'px';
+        overlay.style.top = (slotRect.top - ifaceRect.top - 10) + 'px'; // 10px above
+        overlay.style.transform = 'translate(-50%, -100%)';
+    } else {
+        // Fallback if no card found
+        overlay.style.left = '50%';
+        overlay.style.top = '40%';
+        overlay.style.transform = 'translate(-50%, -50%)';
+    }
+
+    overlay.style.display = 'block';
+
     // Highlight the enemy God slot
     const godSlot = document.getElementById('enemyRanged3');
     if (godSlot) {
@@ -558,6 +585,8 @@ function showEndTurnMessage() {
 
     // Remove the card and god highlights (in case they're still there)
     document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+
+        tutorialState.panelTourReady = true;
 
     // Hide after 5 seconds and remove glow
     setTimeout(() => {
@@ -887,19 +916,7 @@ for (let i = 0; i < 3; i++) {
 document.getElementById('menuScreen').style.display = 'none';
 document.getElementById('mainMenu').style.display = 'none';
 document.getElementById('gameInterface').classList.add('active');
-// Request fullscreen and force landscape on mobile devices
-if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
-  document.documentElement.requestFullscreen().then(() => {
-    // After entering fullscreen, force landscape
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(() => {});
-    }
-  }).catch(() => {
-    // If browser blocks auto fullscreen, show prompt
-    const overlay = document.getElementById('fullscreenPrompt');
-    if (overlay) overlay.style.display = 'flex';
-  });
-}
+
     document.getElementById('leftPanelOuter').style.display = 'flex';
     document.getElementById('rightPanelOuter').style.display = 'flex';
     document.getElementById('diceInfo').textContent = 'Every 4 Turns';
@@ -911,10 +928,26 @@ if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
 
 
     setupPointerEngine();
+        // Request fullscreen on first user touch (mobile only)
+    if (window.innerWidth < 1024) {
+        const goFullscreen = () => {
+            document.documentElement.requestFullscreen().then(() => {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
+            }).catch(() => {});
+            // Remove the listener after the first touch
+            document.removeEventListener('click', goFullscreen);
+            document.removeEventListener('touchstart', goFullscreen);
+        };
+        document.addEventListener('click', goFullscreen);
+        document.addEventListener('touchstart', goFullscreen, { passive: true });
+    }
+
     checkAffordableCards();
     
     // Start tutorial if first time, otherwise normal turn logic
-    if (localStorage.getItem('tutorialCompleted') !== 'true') {
+    if (true) { // TEMPORARY: always run tutorial
       // Force player to go first for tutorial
       state.turn = 'player';
       state.attackToken = 'player';
@@ -929,6 +962,7 @@ if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
     // Force player to go first if tutorial not completed, else normal
     // Force player to go first if tutorial not completed, else normal turn logic
     if (localStorage.getItem('tutorialCompleted') !== 'true') {
+      tutorialState.enemyTurnBlocked = true;
       state.turn = 'player';
       state.attackToken = 'player';
       if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
@@ -1313,8 +1347,209 @@ function enemyUseUltimate() {
 
   renderAll();
 }
+
+function startPanelAwarenessTour() {
+    const overlay = document.getElementById('tutorialOverlay');
+    const textEl = document.getElementById('tutorialText');
+    const innerBox = overlay.querySelector('div');
+    if (innerBox) innerBox.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'none';
+
+    // Helper that positions the overlay beside the highlighted element
+    function highlightElement(id, text, callback, delay = 2000) {
+        const el = document.getElementById(id);
+        if (!el) {
+            setTimeout(() => { if (callback) callback(); }, delay);
+            return;
+        }
+        el.classList.add('tutorial-highlight');
+        const rect = el.getBoundingClientRect();
+        const gameRect = document.querySelector('.game-area').getBoundingClientRect();
+
+        // Determine if element is in the left panel (x < game area left + 100px)
+        const isLeftPanel = rect.left < gameRect.left + 100;
+        const isRightPanel = rect.right > gameRect.right - 100;
+
+        if (isLeftPanel) {
+            // Place overlay to the RIGHT of the element
+            overlay.style.left = (rect.right - gameRect.left + 15) + 'px';
+            overlay.style.top = (rect.top + rect.height/2 - gameRect.top) + 'px';
+            overlay.style.transform = 'translate(0, -50%)';
+        } else if (isRightPanel) {
+            // Place overlay to the LEFT of the element
+            overlay.style.left = (rect.left - gameRect.left - 15) + 'px';
+            overlay.style.top = (rect.top + rect.height/2 - gameRect.top) + 'px';
+            overlay.style.transform = 'translate(-100%, -50%)';
+        } else {
+            // Fallback: above
+            overlay.style.left = (rect.left - gameRect.left + rect.width/2) + 'px';
+            overlay.style.top = (rect.top - gameRect.top - 10) + 'px';
+            overlay.style.transform = 'translate(-50%, -100%)';
+        }
+
+        overlay.style.display = 'block';
+        textEl.textContent = text;
+
+        setTimeout(() => {
+            el.classList.remove('tutorial-highlight');
+            if (callback) callback();
+        }, delay);
+    }
+
+    // Sequence
+    highlightElement('playerDeckPile', '👈Your Deck', () => {
+        highlightElement('playerGraveBtn', '👈Your Graveyard', () => {
+            highlightElement('enemyDeckPile', '👈Enemy Deck', () => {
+                highlightElement('enemyGraveBtn', '👈Enemy Graveyard', () => {
+                    highlightElement('pillarPlayerProv', 'Your Food👉', () => {
+                    highlightElement('pillarEnemyProv', 'Enemy Food👉', () => {
+                        showCardLegendStep();
+                        }, 2000);
+                    }, 2000);
+                }, 2000);
+            }, 2000);
+        }, 2000);
+    }, 2000);
+}
+
+function showCardLegendStep() {
+    const overlay = document.getElementById('tutorialOverlay');
+    const textEl = document.getElementById('tutorialText');
+    const innerBox = overlay.querySelector('div');
+    if (innerBox) innerBox.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'none';
+
+    // Find the placed card (first occupied non‑god player slot)
+    const playerSlots = document.querySelectorAll('.player-slot:not(.god-slot)');
+    let placedSlot = null;
+    for (const slot of playerSlots) {
+        if (slot.querySelector('.card')) {
+            placedSlot = slot;
+            break;
+        }
+    }
+
+    if (placedSlot) {
+        placedSlot.classList.add('tutorial-highlight');
+        const slotRect = placedSlot.getBoundingClientRect();
+        const gameInterface = document.getElementById('gameInterface');
+        const ifaceRect = gameInterface.getBoundingClientRect();
+        // Center above the slot
+        overlay.style.left = (slotRect.left + slotRect.width / 2 - ifaceRect.left) + 'px';
+        overlay.style.top = (slotRect.top - ifaceRect.top - 10) + 'px';
+        overlay.style.transform = 'translate(-50%, -100%)';
+    } else {
+        // Fallback if no card found
+        overlay.style.left = '50%';
+        overlay.style.top = '40%';
+        overlay.style.transform = 'translate(-50%, -50%)';
+    }
+
+    overlay.style.display = 'block';
+    // Allow line breaks for this message only
+    textEl.style.whiteSpace = 'normal';
+    textEl.innerHTML = '♦️ = Attack<br>🟢 = Health<br>🟫 = Food<br>⚔️ = Attack indicator';
+
+setTimeout(() => {
+    overlay.style.display = 'none';
+    if (innerBox) innerBox.style.pointerEvents = 'auto';
+    overlay.style.pointerEvents = 'auto';
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+    textEl.style.whiteSpace = 'nowrap';
+    showPassiveRPSAboveCard();
+}, 4000);
+}
+
+function showPassiveRPSAboveCard() {
+    const overlay = document.getElementById('tutorialOverlay');
+    const textEl = document.getElementById('tutorialText');
+    const innerBox = overlay.querySelector('div');
+    if (innerBox) innerBox.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'none';
+
+    // Find the placed card
+    const playerSlots = document.querySelectorAll('.player-slot:not(.god-slot)');
+    let placedSlot = null;
+    for (const slot of playerSlots) {
+        if (slot.querySelector('.card')) {
+            placedSlot = slot;
+            break;
+        }
+    }
+
+    function positionOverlay() {
+        if (placedSlot) {
+            placedSlot.classList.add('tutorial-highlight');
+            const slotRect = placedSlot.getBoundingClientRect();
+            const gameInterface = document.getElementById('gameInterface');
+            const ifaceRect = gameInterface.getBoundingClientRect();
+            overlay.style.left = (slotRect.left + slotRect.width / 2 - ifaceRect.left) + 'px';
+            overlay.style.top = (slotRect.top - ifaceRect.top - 10) + 'px';
+            overlay.style.transform = 'translate(-50%, -100%)';
+        } else {
+            overlay.style.left = '50%';
+            overlay.style.top = '40%';
+            overlay.style.transform = 'translate(-50%, -50%)';
+        }
+        overlay.style.display = 'block';
+    }
+
+    // Step 1: Icon labels
+    positionOverlay();
+    textEl.style.whiteSpace = 'normal';
+    textEl.innerHTML = '🛡️ Shield  🌵 Thorns  💖 Overheal<br>😝 Taunt  🗡️ Pierce  🩸 Lifesteal';
+
+    setTimeout(() => {
+        // Step 2: Tell them to check the info button
+        textEl.innerHTML = 'Click the info button for more details';
+        document.getElementById('btnInfoPanel').classList.add('glow-info');
+
+        setTimeout(() => {
+            // Done – clean up and start enemy turn
+            overlay.style.display = 'none';
+            if (innerBox) innerBox.style.pointerEvents = 'auto';
+            overlay.style.pointerEvents = 'auto';
+            if (placedSlot) placedSlot.classList.remove('tutorial-highlight');
+            textEl.style.whiteSpace = 'nowrap';
+            document.getElementById('btnInfoPanel').classList.remove('glow-info');
+            tutorialState.enemyTurnBlocked = false;
+            executeEnemyAITurn();
+        }, 6000);
+    }, 5000);
+}
+
+
+function showPassiveRPSMessage() {
+    const overlay = document.getElementById('tutorialOverlay');
+    const textEl = document.getElementById('tutorialText');
+    const innerBox = overlay.querySelector('div');
+    if (innerBox) innerBox.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'none';
+
+    // Center the overlay
+    overlay.style.left = '50%';
+    overlay.style.top = '40%';
+    overlay.style.transform = 'translate(-50%, -50%)';
+    overlay.style.display = 'block';
+
+    textEl.style.whiteSpace = 'normal';
+    textEl.innerHTML = 'Passives counter each other!<br><br>Thorns > Lifesteal > Overheal > Taunt<br>Pierce beats Shield';
+
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        if (innerBox) innerBox.style.pointerEvents = 'auto';
+        overlay.style.pointerEvents = 'auto';
+        textEl.style.whiteSpace = 'nowrap';
+        executeEnemyAITurn();
+    }, 5000);
+}
+
 function executeEnemyAITurn() {
   if (state._aiRunning) return;
+  if (tutorialState.enemyTurnBlocked) {
+    endRound();
+    return;
+}
   state._aiRunning = true;
 
   try {
@@ -2059,7 +2294,7 @@ function checkAffordableCards() {
         }
       })(); break;
 
-      case 2: setTimeout(() => {   // Gods Bleed (was case 4)
+      case 2: setTimeout(() => {   
         state.godHp = Math.max(0, state.godHp - 2);
         state.enemyGodHp = Math.max(0, state.enemyGodHp - 2);
         setTimeout(() => bleedGodCard('playerGodSide'), 10);
@@ -3317,18 +3552,25 @@ function endTurn() {
     // Flip animation
     btn.classList.add('end-turn-pressed');
 
-    // After the flip, change text and start enemy turn
+    // After the flip, either show panel tour or start enemy turn
     setTimeout(() => {
       btn.classList.remove('end-turn-pressed');
-      btn.textContent = 'ENEMY TURN';               // ← new label
-      btn.disabled = true;                          // prevent clicking during enemy turn
+      btn.textContent = 'ENEMY TURN';
+      btn.disabled = true;
 
       clearInterval(state.timerInterval);
       document.getElementById('logMessage').textContent = "🤖 Enemy turn...";
       state.turn = 'enemy';
       selectedAttacker = null;
       document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
-      executeEnemyAITurn();
+
+      // If panel tour hasn't been shown yet and the tutorial messages just finished
+      if (tutorialState.panelTourReady) {
+        tutorialState.panelTourReady = false;
+        startPanelAwarenessTour();   // this will eventually call executeEnemyAITurn()
+      } else {
+        executeEnemyAITurn();
+      }
     }, 400);
 }
 
@@ -3344,6 +3586,23 @@ function endTurn() {
     document.getElementById('rightPanelOuter').style.display = 'none';
     document.getElementById('enemyTimer').textContent = '30s';
   }
+
+  function showHowToPlay() {
+  const content = document.getElementById('howToPlayContent');
+  content.innerHTML = `
+    <h2 style="text-align:center; margin-bottom:1rem; color:#d4c8a8;">How to Play</h2>
+    <p><strong>1. Select a card</strong> – Tap a card in your hand to pick it up.</p>
+    <p><strong>2. Play it</strong> – Tap an empty slot on your side of the battlefield to put the card into play.</p>
+    <p><strong>3. Attack</strong> – Tap one of your cards on the field, then tap an enemy card (or the enemy God) to strike it. You can also <strong>drag</strong> from your card to the target.</p>
+    <p><strong>4. Provisions (Food)</strong> – Each card costs food. Your current food is shown on the right panel. It increases every round.</p>
+    <p><strong>5. End Turn</strong> – When you’re ready, press the <strong>END TURN</strong> button. The enemy will then take its turn.</p>
+<p><strong>6. Card symbols</strong> – <span style="color:#a50707;">◆</span> Attack, <span style="color:#42c431;">●</span> Health, <span style="color:#6b3a1f;">■</span> Food cost. A glowing <span style="color:#ff3d00;">⚔️</span> on a card means it can attack.</p>
+    <p><strong>7. Passives</strong> – Cards can have special abilities like Shield, Thorns, or Lifesteal. See the Info panel (📋) for a full list.</p>
+    <p><strong>8. Deck & Graveyard</strong> – Located on the left panel. Tap them to see your remaining cards or those that have been destroyed.</p>
+    <p><strong>9. God Powers</strong> – Each God has a powerful ultimate ability. Use it once per game from the God card on the battlefield.</p>
+  `;
+  document.getElementById('howToPlayOverlay').classList.add('active');
+}
 
 function showInfoTab(tab) {
   const content = document.getElementById('infoTabContent');
@@ -3416,8 +3675,11 @@ function showInfoTab(tab) {
     `;
   }
 }
-
-    document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
+  document.getElementById('btnToggleHints').addEventListener('click', showHowToPlay);
+  document.getElementById('howToPlayOverlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('active');
+});
+  document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
   document.getElementById('btnChooseHeroes').addEventListener('click', () => { showGodSelection('heroes'); });
   document.getElementById('btnChooseMonsters').addEventListener('click', () => { showGodSelection('monsters'); });
   document.getElementById('btnMenu').addEventListener('click', exitToMenu);

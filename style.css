@@ -740,15 +740,18 @@ button.circular-surrender:hover {
   animation: taunt-shake 0.4s ease-in-out 3;
 }
 
+button.right-info-btn.glow-info {
+  animation: info-pulse 1s ease-in-out infinite alternate;
+  box-shadow: 0 0 10px #ffb347;
+  border-color: #ffb347 !important;
+}
 
-/* ========== FOR CARD TEMPLATES ========== */
+@keyframes info-pulse {
+  from { box-shadow: 0 0 10px #ffb347; }
+  to   { box-shadow: 0 0 20px #ffb347; }
+}
 
 
-
-
-
-
-/* ========== ATTACK DOTS – Minimalist 3D Gold ========== */
 .attack-dot {
   position: absolute;
   left: 50%;
@@ -756,56 +759,37 @@ button.circular-surrender:hover {
   bottom: 18%;
   width: 20%;
   aspect-ratio: 1 / 1;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 5;
   pointer-events: none;
-
-  background: radial-gradient(circle at 30% 30%, 
-              #ff6b4a 0%, 
-              #e62e00 70%, 
-              #991a00 100%);
-
-  border: 1px solid #e62e00;
-
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.15),
-    inset 0 2px 2px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.15);
-
+  /* Make the dot itself invisible */
+  background: transparent;
+  border: none;
+  box-shadow: none;
   font-size: clamp(6px, 0.55em, 10px);
   font-weight: 800;
   line-height: 1;
   color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
 }
 
 .attack-dot.can-attack::after {
   content: '⚔️';
+  font-size: inherit;
+  /* Slightly enlarge the sword and give it a subtle glow */
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
 }
-.attack-dot.can-attack {
-  background: radial-gradient(circle at 30% 30%, 
-              #ff8c66 0%, 
-              #ff3d00 70%, 
-              #cc2200 100%);
-  border-color: #ff3d00;
-  color: #ffffff;
-}
+
 
 /* Already attacked – flat, muted matte grey */
 .attack-dot.has-attacked-dot::after {
   content: '0';
 }
 .attack-dot.has-attacked-dot {
-  background: rgba(232, 215, 180, 0.6);   /* warm cream, semi‑transparent */
-  border: 1px solid rgba(180, 160, 130, 0.5);
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    inset 0 1px 2px rgba(255, 255, 255, 0.5);
-  color: #b0a090;                          /* soft beige number */
-  text-shadow: none;
+  display: none;   /* hide the '0' dot completely */
 }
 /* ========== SELECTION & TARGET GLOWS ========== */
 .card.selected-for-attack {
@@ -2309,4 +2293,35 @@ button.circular-end-turn:disabled {
 }
 #tutorialMessage {
   animation: pulse-message 1.5s ease-in-out infinite;
+}
+
+/* How to Play overlay */
+.howtoplay-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.howtoplay-overlay.active {
+  display: flex !important;
+}
+.howtoplay-box {
+  background: #1b1e16;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #3a3028;
+  text-align: left;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #d4c8a8;
+}
+.howtoplay-content p {
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
