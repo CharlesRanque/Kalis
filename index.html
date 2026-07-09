@@ -67,7 +67,6 @@
 <div class="right-panel-outer" id="rightPanelOuter" style="display:none;">
   <!-- TOP: Anito curse only -->
   <div class="right-panel-top">
-    <div class="anito-curse-indicator" id="anitoCurseDisplay">Anito's Curse: None</div>
   </div>
 
   <!-- MIDDLE: Enemy Prov, End Turn, Your Prov grouped together -->
@@ -113,7 +112,7 @@
   </div>
 
   <div class="menu-screen" id="menuScreen" style="display:none;">
-    <h1>Kalis: Fall of Tuwaang</h1>
+    <h1>Kalis: Fall of Bathala</h1>
     <div class="menu-subtitle">Choose Your Faction</div>
     <div class="faction-select-container">
       <div class="faction-card heroes" id="btnChooseHeroes">
@@ -247,6 +246,15 @@
 
       <div class="hand-fan-container" id="handFanContainer"></div>
 
+            <!-- TUTORIAL OVERLAY -->
+      <div id="tutorialOverlay" style="display:none; position:absolute; z-index:100; text-align:center; pointer-events:none;">
+        <div style="background:rgba(20,16,10,0.95); border:2px solid #9b7a3c; border-radius:12px; padding:0.5rem 1.5rem; box-shadow:0 0 20px rgba(0,0,0,0.8); pointer-events:auto; display:inline-block; position:relative;">
+          <p id="tutorialText" style="color:#f0e8d8; font-size:clamp(0.9rem, 2vh, 1.3rem); margin-bottom:0.5rem; white-space:nowrap;"></p>
+                   
+          <div style="position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:10px solid transparent; border-right:10px solid transparent; border-top:10px solid rgba(20,16,10,0.95); pointer-events:none;"></div>
+        </div>
+      </div>
+
       <div class="info-panel">
         <span id="logMessage">Drag cards to play or click to attack!</span>
         <span>Round: <span id="roundDisplay">1</span></span>
@@ -255,7 +263,6 @@
       </div>
     </div>
   </div>
-    <div id="hintBubble" class="hint-bubble"></div>
   
   <!-- Fullscreen prompt overlay (hidden by default) -->
   <div id="fullscreenPrompt" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; justify-content:center; align-items:center; flex-direction:column;">
@@ -344,6 +351,223 @@
   double_trouble:  { name: 'Double Trouble',   desc: 'All provision costs are reduced by 1 (minimum 1).', icon: '👥' },
   none:            { name: 'No Curse',         desc: 'The gods are calm today. Standard rules apply.', icon: '✨' }
 };
+  // ========== TUTORIAL SYSTEM ==========
+let tutorialState = {
+    active: false,
+    step: 0,
+    selectedHandIdx: null,
+    selectedBoard: null,
+    waitingForAttack: false   // add this
+};
+
+function startTutorial() {
+    if (localStorage.getItem('tutorialCompleted') === 'true') return;
+    tutorialState.active = true;
+    tutorialState.step = 0;
+    tutorialState.selectedHandIdx = null;
+    tutorialState.selectedBoard = null;
+    document.getElementById('tutorialOverlay').style.display = 'block';
+    showTutorialStep(0);
+}
+
+  function showTutorialStep(step) {
+    tutorialState.step = step;
+    const textEl = document.getElementById('tutorialText');
+    const overlay = document.getElementById('tutorialOverlay');
+    // Remove all previous highlights
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+
+    let targetEl = null;
+
+    switch(step) {
+      case 0:
+        textEl.textContent = 'Tap a card in your hand to select it';
+        // Highlight the first affordable hand card
+        // Find the first affordable unit card
+        const handCards = document.querySelectorAll('.fan-card-wrapper');
+        let chosen = null;
+        handCards.forEach(wrapper => {
+          if (chosen) return;
+          const idx = parseInt(wrapper.dataset.idx);
+          const card = state.hand[idx];
+          if (card && card.type === 'Unit' && card.cost <= (state.provPool - state.provUsed)) {
+            chosen = wrapper;
+          }
+        });
+        if (chosen) {
+          chosen.classList.add('tutorial-highlight');
+          targetEl = chosen;
+        }
+        break;
+      case 1:
+        textEl.textContent = 'Tap an empty slot to play the card';
+        // Highlight all empty player slots (excluding god slot)
+        const emptySlots = document.querySelectorAll('.player-slot:not(.god-slot)');
+        let foundEmpty = false;
+        emptySlots.forEach(slot => {
+          if (slot.innerHTML.trim() === '') {
+            slot.classList.add('tutorial-highlight');
+            if (!foundEmpty) {
+              targetEl = slot;
+              foundEmpty = true;
+            }
+          }
+        });
+        break;
+              case 2:
+        textEl.textContent = 'Press END TURN to finish your turn ->.';
+        const endBtn = document.getElementById('btnEndTurn');
+        if (endBtn) {
+          endBtn.classList.add('tutorial-highlight');
+          targetEl = endBtn;
+        }
+        break;
+    }
+
+    // Position the overlay above the target element (or center for step 4)
+    // Position the overlay above the target element (or center for step 4)
+    if (step === 3) {
+      overlay.style.left = '50%';
+      overlay.style.top = '5%';
+      overlay.style.transform = 'translate(-50%, 0)';
+      overlay.style.display = 'block';
+    } else if (targetEl) {
+      const targetRect = targetEl.getBoundingClientRect();
+      const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+      overlay.style.left = (targetRect.left - gameAreaRect.left + targetRect.width/2) + 'px';
+      overlay.style.top = (targetRect.top - gameAreaRect.top - 10) + 'px';
+      overlay.style.transform = 'translate(-50%, -100%)';
+      overlay.style.display = 'block';
+    } else {
+      overlay.style.left = '50%';
+      overlay.style.top = '5%';
+      overlay.style.transform = 'translate(-50%, 0)';
+      overlay.style.display = 'block';
+    }
+  }
+
+function handleTutorialClick(e) {
+    if (!tutorialState.active) return true; // allow normal handling
+    const target = e.target.closest('.tutorial-highlight'); // ← THIS LINE MUST EXIST
+    if (!target) return false; // ignore clicks outside highlights
+
+    switch(tutorialState.step) {
+      case 0: // … etc
+
+        if (target.classList.contains('fan-card-wrapper')) {
+          const idx = parseInt(target.dataset.idx);
+          const cardData = state.hand[idx];
+          if (cardData && cardData.type === 'Unit' && cardData.cost <= (state.provPool - state.provUsed)) {
+            clearSelection();
+            selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
+            target.querySelector('.card').classList.add('selected-for-attack');
+            highlightEmptyPlayerSlots();
+            showTutorialStep(1);
+          }
+        }
+        break;
+case 1: // Play onto empty slot
+  if (target.classList.contains('player-slot') && selectedAttacker && selectedAttacker.isHandCard) {
+    playCardFromHandToSlot(target, selectedAttacker);
+  }
+  break;
+    }
+    return false; // block default game handling
+  }
+
+function completeTutorial() {
+    localStorage.setItem('tutorialCompleted', 'true');
+    tutorialState.active = false;
+    // document.getElementById('tutorialOverlay').style.display = 'none';   // ← must stay hidden
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+    clearSelection();
+}
+
+function showPostTutorialMessage() {
+    const overlay = document.getElementById('tutorialOverlay');
+    const textEl = document.getElementById('tutorialText');
+
+    // Hide the skip button
+
+    // Make the box non‑blocking
+    const innerBox = overlay.querySelector('div');
+    if (innerBox) innerBox.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'none';
+
+    // Position and show
+    overlay.style.display = 'block';
+    overlay.style.left = '50%';
+    overlay.style.top = '40%';
+    overlay.style.transform = 'translate(-50%, -50%)';
+
+    textEl.textContent = 'Click your card and drag to the enemy God';
+
+    // Highlight the placed card and the enemy God
+    // Find the player's card that was just played (any occupied non-god player slot)
+    const playerSlots = document.querySelectorAll('.player-slot:not(.god-slot)');
+    for (const slot of playerSlots) {
+        if (slot.querySelector('.card')) {
+            slot.classList.add('tutorial-highlight');
+            break; // only one card placed
+        }
+    }
+    // Highlight the enemy God slot
+    const godSlot = document.getElementById('enemyRanged3');
+    if (godSlot) {
+        godSlot.classList.add('tutorial-highlight');
+    }
+
+    // Set the flag so the next attack triggers the End Turn message
+    tutorialState.waitingForAttack = true;
+
+    // Safety timeout: hide after 10 seconds if they never attack
+    setTimeout(() => {
+        if (tutorialState.waitingForAttack) {
+            overlay.style.display = 'none';
+            if (innerBox) innerBox.style.pointerEvents = 'auto';
+            overlay.style.pointerEvents = 'auto';
+            tutorialState.waitingForAttack = false;
+            // Remove highlights on timeout
+            document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+        }
+    }, 10000);
+}
+
+
+function showEndTurnMessage() {
+    const overlay = document.getElementById('tutorialOverlay');
+    const textEl = document.getElementById('tutorialText');
+    const endBtn = document.getElementById('btnEndTurn');
+    if (!endBtn) return;
+
+    const innerBox = overlay.querySelector('div');
+    if (innerBox) innerBox.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'none';
+
+    const endBtnRect = endBtn.getBoundingClientRect();
+    const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+    overlay.style.left = (endBtnRect.left - gameAreaRect.left - 10) + 'px';
+    overlay.style.top = (endBtnRect.top + endBtnRect.height/2) + 'px';
+    overlay.style.transform = 'translate(-100%, -50%)';
+    overlay.style.display = 'block';
+
+    textEl.textContent = 'Press End Turn👉';
+
+    // Add glow effect to the End Turn button
+    endBtn.classList.add('highlight-endturn');
+
+    // Remove the card and god highlights (in case they're still there)
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+
+    // Hide after 5 seconds and remove glow
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        if (innerBox) innerBox.style.pointerEvents = 'auto';
+        overlay.style.pointerEvents = 'auto';
+        endBtn.classList.remove('highlight-endturn');
+    }, 5000);
+}
+
 
   let state = {
   attackToken: 'player',
@@ -371,74 +595,7 @@ window.addEventListener('error', (event) => {
 
 let selectedAttacker = null;
 
-// ========== IN-GAME HINT SYSTEM ==========
-let hintsShown = {};
-let curseHintActive = false;   // blocks end-turn hint while curse intro is visible
-let hintTimer = null;
-// Hint toggle
-let hintsEnabled = localStorage.getItem('ggHintsEnabled') !== 'false';
 
-function toggleHints() {
-  hintsEnabled = !hintsEnabled;
-  localStorage.setItem('ggHintsEnabled', hintsEnabled);
-  const btn = document.getElementById('btnToggleHints');
-  if (btn) {
-    btn.textContent = hintsEnabled ? '💡' : '💡';
-    btn.classList.toggle('off', !hintsEnabled);
-  }
-}
-
-let activeHintPriority = 0;   // 0 means no hint is currently showing
-
-function showHint(text, targetElement, direction = 'above') {
-  if (!hintsEnabled) return;
-
-  const draftOverlay = document.getElementById('draftOverlay');
-  if (draftOverlay && draftOverlay.classList.contains('active')) return;
-  const bubble = document.getElementById('hintBubble');
-  if (!bubble || !targetElement) return;
-  
-  if (hintTimer) clearTimeout(hintTimer);
-  
-  bubble.textContent = text;
-  
-  const targetRect = targetElement.getBoundingClientRect();
-  const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
-  
-  const bubbleWidth = bubble.offsetWidth || 180;
-  const bubbleHeight = bubble.offsetHeight || 40;
-  const gap = 8;
-  
-  let left = targetRect.left + targetRect.width/2 - bubbleWidth/2;
-  let top;
-  
-  if (direction === 'above') {
-    top = targetRect.top - bubbleHeight - gap;
-  } else if (direction === 'below') {
-    top = targetRect.bottom + gap;
-  } else if (direction === 'left') {
-    top = targetRect.top + targetRect.height/2 - bubbleHeight/2;
-    left = targetRect.left - bubbleWidth - gap;
-  } else if (direction === 'right') {
-    top = targetRect.top + targetRect.height/2 - bubbleHeight/2;
-    left = targetRect.right + gap;
-  }
-  
-  const maxLeft = gameAreaRect.width - bubbleWidth;
-  const maxTop = gameAreaRect.height - bubbleHeight;
-  left = Math.max(0, Math.min(left, maxLeft));
-  top = Math.max(0, Math.min(top, maxTop));
-  
-  bubble.style.left = left + 'px';
-  bubble.style.top = top + 'px';
-  
-  bubble.classList.add('visible');
-  
-  hintTimer = setTimeout(() => {
-    bubble.classList.remove('visible');
-    hintTimer = null;
-  }, 4000);
-}
 // ── CURSE HELPER FUNCTIONS (can go here) ──
 function applyGlassCannonEffect(state) {
   modifyAllUnits(state, (card) => {
@@ -466,14 +623,8 @@ function modifyAllUnits(state, modifierFn) {
   state.enemyGrave.forEach(modifierFn);
 }
 
-// Helper to check if a hint was already shown this game
-function hintNotShown(key) {
-  if (hintsShown[key]) return false;
-  hintsShown[key] = true;
-  return true;
-}
-// Reset hints when a new game starts
-// (add `hintsShown = {};` inside resetGame)
+
+
   let turnCounter = 0; // Tracks total turns for dice scheduling
 
   function shuffle(a) { for (let i=a.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -603,7 +754,6 @@ function showEnemySmite() {
     const opposingFaction = chosenFaction === 'heroes' ? 'monsters' : 'heroes';
     const enemyGods = GODS[opposingFaction];
     const enemyGod = enemyGods[Math.floor(Math.random() * enemyGods.length)];
-    const firstPlayer = Math.random() < 0.5 ? 'player' : 'enemy';
     playerPlayOrderCounter = 0;
     enemyPlayOrderCounter = 0;
      state = {
@@ -643,28 +793,16 @@ function showEnemySmite() {
       attackerDeclared: false,
       playerAttackers: [],
       enemyBlockers: {},
-      turn: firstPlayer,
-      attackToken: firstPlayer
+      turn: 'player',
+      attackToken: 'player'
     };
-    hintsShown = {};   // reset tutorial hints
 
     state._aiRunning = false;   // prevent leftover AI lock
 
 
 
 
-const WILD_MODIFIERS = [
-  { id: 'sudden_death', name: 'Sudden Death' },
-  { id: 'gift_of_gods', name: 'Gift of the Gods' },
-  { id: 'spellbound', name: 'Spellbound' },
-  { id: 'glass_cannon', name: 'Glass Cannon' },
-  { id: 'blood_frenzy', name: 'Blood Frenzy' },
-  { id: 'mirror_match', name: 'Mirror Match' },
-  { id: 'double_trouble', name: 'Double Trouble' },
-];
-
-const randomMod = WILD_MODIFIERS[Math.floor(Math.random() * WILD_MODIFIERS.length)];
-state.wildModifier = randomMod.id || 'none';   // store the ID for logic, or store the name if you prefer
+state.wildModifier = 'none';
 // ================= APPLY CURSE EFFECTS =================
 // Modify state based on the chosen wild modifier
 if (state.wildModifier === 'sudden_death') {
@@ -770,39 +908,45 @@ if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
     renderAll();
     startTimer();
     triggerAutoOverlay('Match Started');
-    // Show curse hint bubble after a short delay
 
-setTimeout(() => {
-  const curseDisplay = document.getElementById('anitoCurseDisplay');
-  if (!curseDisplay) return;
 
-  const details = CURSE_DETAILS[state.wildModifier] || CURSE_DETAILS.none;   // ← fallback
-  const shortDesc = details.desc.split('.')[0] + '.';
-  const hintText = `Click to know what Curse You have👉`;
-
-  curseHintActive = true;
-  showHint(hintText, curseDisplay, 'left');
-  curseDisplay.classList.add('curse-glow');
-  
-  setTimeout(() => {
-    curseDisplay.classList.remove('curse-glow');
-    curseHintActive = false;
-  }, 4000);
-}, 1500);
     setupPointerEngine();
     checkAffordableCards();
     
-    if (state.turn === 'player') {
-  // Player won the coin flip → start their turn normally
-  startTimer();
-  document.getElementById('logMessage').textContent = 'Your turn! Play a card.';
-} else {
-  // Enemy won the coin flip → immediately execute their first turn
-  document.getElementById('logMessage').textContent = 'Enemy starts first!';
-  executeEnemyAITurn();
-}
-
-
+    // Start tutorial if first time, otherwise normal turn logic
+    if (localStorage.getItem('tutorialCompleted') !== 'true') {
+      // Force player to go first for tutorial
+      state.turn = 'player';
+      state.attackToken = 'player';
+      // Ensure any pending enemy action is cleared
+      if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
+      document.getElementById('enemyTimer').textContent = '30s';
+      document.getElementById('logMessage').textContent = 'Your turn! Follow the tutorial.';
+      renderAll();
+      startTimer();
+      startTutorial();
+    } else {
+    // Force player to go first if tutorial not completed, else normal
+    // Force player to go first if tutorial not completed, else normal turn logic
+    if (localStorage.getItem('tutorialCompleted') !== 'true') {
+      state.turn = 'player';
+      state.attackToken = 'player';
+      if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval);
+      document.getElementById('enemyTimer').textContent = '30s';
+      document.getElementById('logMessage').textContent = 'Your turn! Follow the tutorial.';
+      renderAll();
+      startTimer();
+      startTutorial();
+    } else {
+      if (state.turn === 'player') {
+        startTimer();
+        document.getElementById('logMessage').textContent = 'Your turn! Play a card.';
+      } else {
+        document.getElementById('logMessage').textContent = 'Enemy starts first!';
+        executeEnemyAITurn();
+      }
+    }
+    }
   }
 
   function drawCard() {
@@ -957,7 +1101,6 @@ applyRegen(state.enemyRanged, 'enemyRanged');
 
    renderAll();
 
-  // Wait for the turn overlay to fade before showing draft or hints
   setTimeout(() => {
     if (state.turn === 'player' && state.deck.length >= 3 && state.hand.length < 7) {
       showDraftScreen();
@@ -965,18 +1108,12 @@ applyRegen(state.enemyRanged, 'enemyRanged');
       drawCard();
       renderAll();
       startTimer();
-      if (hintNotShown('selectCard') && !curseHintActive) {
-        const handContainer = document.getElementById('handFanContainer');
-        if (handContainer && state.hand.length > 0) {
-          setTimeout(() => showHint('👇 Select a card and place it on the field.', handContainer, 'above'), 300);
-        }
-      }
       checkAffordableCards();
     } else {
       startTimer();
       checkAffordableCards();
     }
-  }, 2600);
+  }, 3200);
 }
 
 function showDraftScreen() {
@@ -1074,12 +1211,6 @@ function selectDraftCard(chosenCard, allDraftCards) {
   renderAll();
   startTimer();
 
-if (state.turn === 'player' && hintNotShown('selectCard') && !curseHintActive) {
-  const handContainer = document.getElementById('handFanContainer');
-  if (handContainer && state.hand.length > 0) {
-    setTimeout(() => showHint('👇 Select a card and place it on the field.', handContainer, 'above'), 600);
-  }
-}
   checkAffordableCards();
   document.getElementById('logMessage').textContent = `Drafted ${chosenCard.name}!`;
 }
@@ -1187,9 +1318,6 @@ function executeEnemyAITurn() {
   state._aiRunning = true;
 
   try {
-    if (hintNotShown('enemyTurn')) {
-      setTimeout(() => showHint('Enemy turn, wait for yours.', document.getElementById('handFanContainer'), 'above'), 500);
-    }
 
     state.roundPhase = 'enemy';
     state.phase = 'development';
@@ -1672,6 +1800,14 @@ function showFloatingDamage(element, damage, color) {
     line.setAttribute('stroke-width', '2');
     line.setAttribute('stroke-linecap', 'round');
     svgLayer.appendChild(line);
+        // If waiting for the player's first attack, show the End Turn hint
+    if (tutorialState.waitingForAttack && !isEnemy) {
+        tutorialState.waitingForAttack = false;
+        // Hide the current attack hint overlay first
+        document.getElementById('tutorialOverlay').style.display = 'none';
+        // Show the End Turn hint
+        showEndTurnMessage();
+    }
 
 
 
@@ -1772,7 +1908,7 @@ function hasPlayableCard() {
         case 'resurrect_2':
           return state.playerGrave.length > 0 && hasEmptySlot;
         case 'damage_3': case 'damage_6': case 'destroy_strongest':
-          return hasEnemyUnit;          // can target any enemy unit (AI logic allows God target as fallback, but we require unit for hint)
+          return hasEnemyUnit;          // can target any enemy unit (AI logic allows God target as fallback, but we require unit 
         case 'damage_all_2':
           return hasEnemyUnit || true;  // always playable (hits all enemies and God)
         default:
@@ -1790,25 +1926,6 @@ function checkAffordableCards() {
 
   const btnEndTurn = document.getElementById('btnEndTurn');
 
-  // ── End‑turn hint when nothing playable (even if affordable cards exist) ──
-  if (!playable && state.hand.length > 0 && hintNotShown('endTurnHint') && !curseHintActive) {
-    const endTurnBtn = document.getElementById('btnEndTurn');
-    setTimeout(() => {
-      if (!curseHintActive) {
-        showHint('No playable cards press End Turn.', endTurnBtn, 'right');
-      }
-    }, 500);
-
-    if (btnEndTurn) {
-      btnEndTurn.classList.add('highlight-endturn');
-      setTimeout(() => {
-        if (btnEndTurn) btnEndTurn.classList.remove('highlight-endturn');
-      }, 3000);
-    }
-
-    document.getElementById('logMessage').textContent = 'No playable cards press End Turn.';
-    return;
-  }
 
   // ── Normal case (playable cards exist) ──
   if (!hasAffordable && state.hand.length > 0) {
@@ -2063,6 +2180,10 @@ svgLayer.innerHTML = `
     }
 
 document.addEventListener('pointerdown', (e) => {
+  // Tutorial interception
+  if (tutorialState.active) {
+    if (!handleTutorialClick(e)) return;
+  }
   spawnClickRipple(e.clientX, e.clientY);
   if (state.gameOver || state.turn !== 'player') {
     if (state.turn === 'dice') {
@@ -2177,35 +2298,11 @@ document.addEventListener('pointerdown', (e) => {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true };
         document.getElementById('logMessage').textContent = '🎯 Unit selected! Click an empty slot to play, or drag to play.';
         highlightEmptyPlayerSlots();
-if (hintNotShown('playCard')) {
-  // Find the first empty player slot (melee or ranged)
-  let firstEmptySlot = null;
-  for (let i = 0; i < 5; i++) {
-    const slot = document.getElementById(`playerMelee${i+1}`);
-    if (slot && slot.querySelector('.card') === null && !slot.classList.contains('god-slot')) {
-      firstEmptySlot = slot;
-      break;
-    }
-  }
-  if (!firstEmptySlot) {
-    for (let i = 0; i < 5; i++) {
-      const slot = document.getElementById(`playerRanged${i+1}`);
-      if (slot && slot.querySelector('.card') === null && !slot.classList.contains('god-slot')) {
-        firstEmptySlot = slot;
-        break;
-      }
-    }
-  }
-const target = document.getElementById('EnemyRanged3') || handCard;
-setTimeout(() => showHint('👇Pick a card on your hand and place them on the field.', target, 'above'), 400);
-}
+
       } else if (cardData.type === 'Spell') {
         selectedAttacker = { handIdx: idx, card: cardData, isHandCard: true, isSpell: true };
         document.getElementById('logMessage').textContent = '✨ Spell selected! Click or drag to a target to cast.';
         highlightSpellTargets(cardData);
-        if (hintNotShown('playSpell')) {
-  setTimeout(() => showHint('✨ Tap a target to cast this spell.', handCard, 'above'), 400);
-}
       }
 
       const handCardEl = handCard;
@@ -2381,12 +2478,7 @@ if (dragState.active) {
     selectedAttacker = { row: source.row, idx: source.idx };
     document.getElementById('logMessage').textContent = 'Card selected! Click an enemy to attack.';
     highlightEnemyTargets();
-if (hintNotShown('attackUnit')) {
-  const hasEnemies = hasEnemyUnits();
-  const msg = hasEnemies ? 'Click a card on the field and Tap an enemy to attack.' : 'Click a card and Tap the Enemy GOD!';
-  // Point at the friendly card you just selected, not the enemy
-  setTimeout(() => showHint(msg, cardEl, 'above'), 400);
-}
+
   }
 }, {passive: false});
   }
@@ -2461,20 +2553,13 @@ function playCardFromHandToSlot(targetSlot, handSelection) {
     if (btnEndTurn) btnEndTurn.classList.remove('highlight-endturn');
     clearSelection();
     renderAll(); checkAffordableCards();
+        // Tutorial completion when a card is placed (click or drag)
+    if (tutorialState.active && tutorialState.step === 1) {
+        completeTutorial();
+        showPostTutorialMessage();
+    }
     
-if (!hasEnemyUnits() && hintNotShown('attackUnit') && state.turn === 'player' && !curseHintActive) {
-  const targetEl = document.getElementById('enemyGodHpDisplay');
-  if (targetEl) {
-    setTimeout(() => showHint('Tap a card on the Field and click this GOD to Attack!', targetEl, 'below'), 500);
-  }
-}
     
-    if (hasEnemyUnits() && hintNotShown('attackField') && state.turn === 'player' && !curseHintActive) {
-  const placedSlot = document.getElementById(`player${tgtRow.charAt(0).toUpperCase() + tgtRow.slice(1)}${tgtIdx + 1}`);
-  if (placedSlot) {
-    setTimeout(() => showHint('👇Click the card and drag to Attack.', placedSlot, 'above'), 500);
-  }
-}
   }
 
   function getEffectiveAtk(card) {
@@ -2809,6 +2894,13 @@ if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') ||
   state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake(); setTimeout(() => bleedGodCard('enemyGodSide'), 50);
   showFloatingDamage(target, effAtk, '#ff6b35');
   if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+
+          // Show End Turn hint after the first attack
+        if (tutorialState.waitingForAttack) {
+            tutorialState.waitingForAttack = false;
+            document.getElementById('tutorialOverlay').style.display = 'none';
+            showEndTurnMessage();
+        }
   document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
 
   // Lifesteal: always heal against God (God has no Thorns)
@@ -2819,13 +2911,6 @@ if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') ||
       if (bSlot) flashCardHeal(bSlot);
   }
 
-  // Show "reduce HP to 0" hint on first enemy God damage
-  if (hintNotShown('killGod')) {
-    const godSlot = document.getElementById('enemyRanged3');  // the battlefield God slot
-    if (godSlot) {
-      setTimeout(() => showHint('☝ Reduce his HP to 0!', godSlot, 'below'), 600);
-    }
-  }
   clearSelection();
   renderAll(); return;
 }
@@ -2852,13 +2937,7 @@ if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
     const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
     if (bSlot) flashCardHeal(bSlot);
 }
-          // Show "reduce HP to 0" hint on first enemy God damage
-if (hintNotShown('killGod')) {
-  const godSlot = document.getElementById('enemyRanged3');  // the battlefield God slot
-  if (godSlot) {
-    setTimeout(() => showHint('☝ Kill him and reduce his HP to 0!', godSlot, 'below'), 600);
-  }
-}
+          
           clearSelection();
           renderAll(); return;
         }
@@ -2875,13 +2954,6 @@ if (hintNotShown('killGod')) {
               setTimeout(function() { tauntCard.classList.remove('shake-taunt'); }, 1200);
             });
 
-            // 2. Pop up the hint bubble on top of the enemy melee row (only once per match)
-            if (hintNotShown('tauntWarning')) {
-              const enemyMeleeSlot = document.getElementById('enemyMelee1');
-              if (enemyMeleeSlot) {
-                showHint('⚠️ Kill cards with Taunt first!', enemyMeleeSlot, 'above');
-              }
-            }
 
             // 3. Restrict targeting so they can ONLY click the Taunt card
             document.querySelectorAll('.enemy-slot').forEach(function(slot) {
@@ -2917,6 +2989,12 @@ if (shield > 0) {
 
         // Show attack indicator
         if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
+                // Show End Turn hint after the first attack
+        if (tutorialState.waitingForAttack) {
+            tutorialState.waitingForAttack = false;
+            document.getElementById('tutorialOverlay').style.display = 'none';
+            showEndTurnMessage();
+        }
 
         if (enemyCard && enemyCard.hp > 0) {
           if (effAtk >= enemyCard.hp) {
@@ -2977,13 +3055,12 @@ function renderCardHTML(c, availableProv) {
     // Inline background image – only if the card has its own image
     const imageStyle = c.image ? `background-image: url('${c.image}') !important; background-size: 60% !important; background-position: center !important; background-repeat: no-repeat !important;` : '';
 
-    let passiveInfo = c.passive && PASSIVES[c.passive] ? PASSIVES[c.passive] : null;
+     let passiveInfo = c.passive && PASSIVES[c.passive] ? PASSIVES[c.passive] : null;
     if (c.type === 'Spell') {
       return `<div class="${classes}" style="${imageStyle}"><div class="card-top-row"><span class="card-spell-icon">🔥</span><span class="card-prov-badge">🍗 ${c.cost}</span></div><div class="card-spell-desc-top">${c.desc}</div><div class="card-name-center">${c.name}</div></div>`;
     }
-    return `<div class="${classes}" style="${imageStyle}"><div class="card-top-row"><span class="card-atk-badge">${c.atk !== undefined ? '⚔️ ' + c.atk : ''}</span><span class="card-hp-badge">${c.hp !== undefined && !isNaN(c.hp) ? '❤️ ' + c.hp : '❤️ ?'}</span><span class="card-prov-badge">🍗 ${c.cost}</span></div><div class="card-name-center">${c.name}</div>${passiveInfo ? `<div class="card-passive-badge ${passiveTypeClass}">${passiveInfo.icon} ${passiveInfo.name}</div>` : ''}</div>`;
-}
-
+    return `<div class="${classes}" style="${imageStyle}"><div class="card-top-row"><span class="card-atk-badge"><span>${c.atk !== undefined ? c.atk : '?'}</span></span><span class="card-hp-badge">${c.hp !== undefined && !isNaN(c.hp) ? c.hp : '?'}</span></div><div class="card-image-area"></div><div class="card-info-bottom"><div class="card-name-bottom">${c.name}</div><div class="card-bottom-row"><span class="card-prov-badge">${c.cost}</span>${passiveInfo ? `<span class="card-passive-icon-only">${passiveInfo.icon}</span>` : ''}</div></div></div>`;
+  }
   function executeUltimateScreenEffect(effectType) {
     const stage = document.getElementById('gameInterface');
     switch(effectType) {
@@ -3097,12 +3174,6 @@ case 'bakunawa_ult':
 
 function renderAll() {
 
-  const curseDisplay = document.getElementById('anitoCurseDisplay');
-  if (curseDisplay) {
-    const details = CURSE_DETAILS[state.wildModifier] || CURSE_DETAILS.none;
-    curseDisplay.innerHTML = `Anito Curse:<br><br>${details.name}`;
-  }
-
   const availableProv = state.provPool - state.provUsed;
   document.getElementById('enemyDeckPile').textContent = state.enemyDeckSize;
   document.getElementById('playerDeckPile').textContent = state.deck.length;
@@ -3198,10 +3269,11 @@ function renderAll() {
         let passiveCssClass = getPassiveCssClass(card);
 if (card.type === 'Spell') {
   const isBuff = card.effect === 'divine_buff' || card.effect === 'resurrect_2';
-  wrapper.innerHTML = `<div class="card spell-card ${isBuff ? 'spell-buff' : ''} ${borderClass} ${isUnaffordable ? 'unaffordable' : ''} ${passiveCssClass}"><div class="card-top-row"><span class="card-spell-icon">🔥</span><span class="card-prov-badge">🍗 ${card.cost}</span></div><div class="card-spell-desc-top">${card.desc}</div><div class="card-name-center">${card.name}</div></div>`;
+  wrapper.innerHTML = `<div class="card spell-card ${isBuff ? 'spell-buff' : ''} ${borderClass} ${isUnaffordable ? 'unaffordable' : ''} ${passiveCssClass}"><div class="card-top-row"><span class="card-spell-icon">🔥</span><span class="card-prov-badge"> ${card.cost}</span></div><div class="card-spell-desc-top">${card.desc}</div><div class="card-name-center">${card.name}</div></div>`;
 }
          else {
-          wrapper.innerHTML = `<div class="card ${borderClass} ${isUnaffordable ? 'unaffordable' : ''} ${passiveCssClass}"><div class="card-top-row"><span class="card-atk-badge">${card.atk !== undefined ? '⚔️ ' + card.atk : ''}</span><span class="card-hp-badge">${card.hp !== undefined && !isNaN(card.hp) ? '❤️ ' + card.hp : '❤️ ?'}</span><span class="card-prov-badge">🍗 ${card.cost}</span></div><div class="card-name-center">${card.name}</div>${passiveInfo ? '<div class="card-passive-badge ' + passiveTypeClass + '">' + passiveInfo.icon + ' ' + passiveInfo.name + '</div>' : ''}</div>`;
+
+          wrapper.innerHTML = `<div class="card ${borderClass} ${isUnaffordable ? 'unaffordable' : ''} ${passiveCssClass}"><div class="card-top-row"><span class="card-atk-badge"><span>${card.atk !== undefined ? card.atk : '?'}</span></span><span class="card-hp-badge">${card.hp !== undefined && !isNaN(card.hp) ? card.hp : '?'}</span></div><div class="card-image-area"></div><div class="card-info-bottom"><div class="card-name-bottom">${card.name}</div><div class="card-bottom-row"><span class="card-prov-badge">${card.cost}</span>${passiveInfo ? '<span class="card-passive-icon-only">' + passiveInfo.icon + '</span>' : ''}</div></div></div>`;
         }
         fanContainer.appendChild(wrapper);
       });
@@ -3276,10 +3348,10 @@ function endTurn() {
 function showInfoTab(tab) {
   const content = document.getElementById('infoTabContent');
   const godsBtn = document.getElementById('tabGodsBtn');
-  const cursesBtn = document.getElementById('tabCursesBtn');
   const diceBtn = document.getElementById('tabDiceBtn');
   const passBtn = document.getElementById('tabPassivesBtn');
   godsBtn.classList.toggle('active', tab === 'gods');
+    const cursesBtn = document.getElementById('tabCursesBtn');
   cursesBtn.classList.toggle('active', tab === 'curses');
   diceBtn.classList.toggle('active', tab === 'dice');
   passBtn.classList.toggle('active', tab === 'passives');
@@ -3348,16 +3420,8 @@ function showInfoTab(tab) {
     document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
   document.getElementById('btnChooseHeroes').addEventListener('click', () => { showGodSelection('heroes'); });
   document.getElementById('btnChooseMonsters').addEventListener('click', () => { showGodSelection('monsters'); });
-  document.getElementById('anitoCurseDisplay').addEventListener('click', showCurseInfo);
   document.getElementById('btnMenu').addEventListener('click', exitToMenu);
   document.getElementById('btnEndTurn').addEventListener('click', endTurn);
-
-// Hint toggle button
-const btnToggleHints = document.getElementById('btnToggleHints');
-if (btnToggleHints) {
-  btnToggleHints.addEventListener('click', toggleHints);
-  if (!hintsEnabled) btnToggleHints.classList.add('off');
-}
 
   document.getElementById('btnSurrender').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.add('active'); });
   document.getElementById('btnSurrenderYes').addEventListener('click', () => { document.getElementById('surrenderOverlay').classList.remove('active'); state.gameOver = true; if (state.timerInterval) clearInterval(state.timerInterval); if (state.enemyTimerInterval) clearInterval(state.enemyTimerInterval); exitToMenu(); });
