@@ -3,8 +3,8 @@
 :root {
   --panel-width: clamp(40px, 6vw, 80px);
   --panel-bg: rgba(20, 16, 10, 0.65);
-  --battlefield-max: 900px;
-  --hand-height: clamp(100px, 22vh, 170px);
+  --battlefield-max: 3000px;
+  --hand-height: clamp(90px, 22vh, 160px);
 }
 
 /* ========== GLOBAL RESET ========== */
@@ -102,7 +102,7 @@ html, body {
 
 /* ========== LEFT / RIGHT PANEL INNER ELEMENTS (responsive) ========== */
 .deck-pile {
-  width: 70%;
+  width: 80%;
   height: clamp(50px, 12vh, 100px);
   border-radius: 6px;
   display: flex;
@@ -144,7 +144,7 @@ html, body {
   justify-content: center;
   gap: 0.3rem;
   font-size: clamp(0.6rem, 1.8vh, 0.7rem);
-  width: 70%;
+  width: 80%;
   height: clamp(50px, 12vh, 100px);
   border-radius: 8px;
   border: 1px solid #2d3830;
@@ -220,22 +220,15 @@ html, body {
   border-color: #54463d;
   color: #f0e6d0;
 }
-
-.god-hp-display {
-  font-size: clamp(0.7rem, 2vh, 0.9rem);
-  font-weight: bold;
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
-  text-align: center;
-  background: rgba(20, 26, 16, 0.8);
-  border: 1px solid #2e3824;
-  white-space: nowrap;
-  width: 80%;
-  max-width: 90px;
+.slot.god-slot .god-card .card-info-bottom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0 3cqi 1cqi 3cqi;
+  border-top: 1px solid rgba(155, 122, 60, 0.4);
+  flex: 1;
 }
-.god-hp-display.enemy-hp { color: #c45444; }
-.god-hp-display.player-hp { color: #5a9a4a; }
-
 .turn-phase-indicator {
   background: rgba(26, 20, 16, 0.85);
   border: 1px solid #3a3028;
@@ -364,8 +357,8 @@ html, body {
 
 /* Circular buttons */
 button.circular-end-turn {
-  width: clamp(55px, 12vh, 80px);
-  height: clamp(55px, 12vh, 80px);
+  width: clamp(40px, 10vh, 60px);   /* was clamp(55px, 12vh, 80px) */
+  height: clamp(40px, 10vh, 60px);
   border-radius: 50%;
   background: #1d1814;
   border: 3px solid #5e5045;
@@ -508,7 +501,7 @@ button.circular-surrender:hover {
   background: rgba(20, 26, 16, 0.8);
   border-radius: 6px;
   height: 100%;
-  aspect-ratio: 95 / 120;
+  aspect-ratio: 95 / 110;
   border: 1px solid #2e3824;
   display: flex;
   align-items: center;
@@ -809,31 +802,26 @@ button.right-info-btn.glow-info {
 }
 
 .enemy-slot.targetable {
-  box-shadow: 0 0 10px rgba(180, 60, 40, 0.5), 0 0 20px rgba(160, 40, 20, 0.3) !important;
+  box-shadow: 0 0 15px rgba(220, 60, 60, 0.7), 0 0 35px rgba(200, 40, 40, 0.5) !important;
   border-color: #cc4444 !important;
-  animation: enemy-target-glow-subtle 1.5s ease-in-out infinite;
+  animation: enemy-target-glow-big 1.2s ease-in-out infinite alternate;
 }
-@keyframes enemy-target-glow-subtle {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(180, 60, 40, 0.4), 0 0 16px rgba(160, 40, 20, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(200, 80, 60, 0.6), 0 0 28px rgba(180, 60, 40, 0.4);
-  }
+
+@keyframes enemy-target-glow-big {
+  0%   { box-shadow: 0 0 10px rgba(220, 60, 60, 0.5), 0 0 25px rgba(200, 40, 40, 0.3); }
+  100% { box-shadow: 0 0 20px rgba(255, 60, 60, 0.9), 0 0 45px rgba(240, 40, 40, 0.6); }
 }
 
 .player-slot.targetable {
-  box-shadow: 0 0 8px rgba(60, 140, 50, 0.5), 0 0 16px rgba(50, 120, 40, 0.3) !important;
-  border-color: #55aa44 !important;
-  animation: player-target-glow-subtle 1.5s ease-in-out infinite;
+  box-shadow: 0 0 15px rgba(60, 220, 60, 0.7), 0 0 35px rgba(50, 200, 40, 0.5) !important;
+  border-color: #55cc44 !important;
+  animation: buff-target-glow 1.2s ease-in-out infinite alternate;
 }
-@keyframes player-target-glow-subtle {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(60, 140, 50, 0.4), 0 0 16px rgba(50, 120, 40, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 16px rgba(80, 180, 60, 0.6), 0 0 28px rgba(70, 150, 50, 0.4);
-  }
+
+@keyframes buff-target-glow {
+  0%   { box-shadow: 0 0 10px rgba(60, 220, 60, 0.5), 0 0 25px rgba(50, 200, 40, 0.3); }
+  100% { box-shadow: 0 0 20px rgba(60, 255, 60, 0.9), 0 0 45px rgba(50, 240, 40, 0.6); }
+
 }
 
 /* ========== MENUS & FULLSCREEN OVERLAYS ========== */
@@ -1463,13 +1451,6 @@ button.circular-end-turn.highlight-endturn {
   gap: 2px;
 }
 
-.god-content {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  gap: 2px;
-}
 
 .slot.god-slot .god-card {
   flex: 7;
@@ -1487,33 +1468,81 @@ button.circular-end-turn.highlight-endturn {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 6px;
-  padding: 6px 4px;
-  padding-top: 10px;
+  padding: 4px;
+  overflow: visible;
   transition: all 0.2s ease;
 }
 
-.slot.god-slot .god-card strong {
-  font-size: clamp(0.6rem, 1.5vh, 0.8rem);
-  color: #1a1410;
-  text-shadow: 0 1px 2px rgba(255,255,200,0.8);
-  text-align: center;
-  white-space: nowrap;
+.slot.god-slot .god-card .card-image-area {
+  height: 30%;
+  background: rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.slot.god-slot .god-card .card-bottom-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.god-hp-display.player-hp { color: #5a9a4a; }
+.god-hp-display.enemy-hp { color: #c45444; }
+/* God HP Bar */
+.god-hp-bar-container {
+  width: 110%;
+  height: 30cqi;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  letter-spacing: 0.5px;
-  font-weight: 800;
+  position: relative;
+  flex-shrink: 0;
+  right: 5%;                   /* half of (120% - 100%) to center it */
+}
+
+.god-hp-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.player-hp-bar {
+  background: linear-gradient(90deg, #2d5a1e, #5a9a4a);
+}
+
+.enemy-hp-bar {
+  background: linear-gradient(90deg, #8b3a3a, #c45444);
+}
+
+.god-hp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8cqi;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.slot.god-slot .god-card .card-image-area {
+  height: 60%;   /* was 30% from the general .card-image-area rule */
+  flex-shrink: 0;
 }
 
 .slot.god-slot .god-card button.ult {
   background: linear-gradient(180deg, #b54f07 0%, #7a2e00 100%);
   border: 2px solid #ffb347;
   color: #fff;
-  font-size: clamp(0.4rem, 0.9vh, 0.5rem);
-  padding: 4px 10px;
+  font-size: 5cqi;               /* even smaller for tiny screens */
+  padding: 0.5cqi 2cqi;          /* barely any padding */
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
@@ -1521,6 +1550,12 @@ button.circular-end-turn.highlight-endturn {
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   box-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
   transition: all 0.15s;
+  line-height: 1;                /* tightest possible */
+  min-height: 0;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .slot.god-slot .god-card button.ult:hover {
   background: linear-gradient(180deg, #d46a0e 0%, #9b3a00 100%);
@@ -1536,22 +1571,15 @@ button.circular-end-turn.highlight-endturn {
 }
 
 .slot.god-slot .god-hp-display {
-  flex: 3;
-  min-height: 0;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(0.7rem, 1.6vh, 1rem);
-  font-weight: bold;
-  border-radius: 6px;
-  background: rgba(10, 15, 10, 0.9);
-  border: 1px solid #9b7a3c;
-  box-shadow: 0 0 6px rgba(155,122,60,0.3);
-  white-space: nowrap;
+  width: 100%;
   text-align: center;
+  font-size: 7cqi;
+  font-weight: bold;
+  padding: 2cqi 0;
+  background: rgba(10, 15, 10, 0.9);
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ========== CENTER GROUP (RIGHT PANEL) ========== */

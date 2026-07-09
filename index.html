@@ -252,12 +252,11 @@
       <div class="hand-fan-container" id="handFanContainer"></div>
 
             <!-- TUTORIAL OVERLAY -->
-      <div id="tutorialOverlay" style="display:none; position:absolute; z-index:100; text-align:center; pointer-events:none;">
-        <div style="background:rgba(20,16,10,0.95); border:2px solid #9b7a3c; border-radius:12px; padding:0.5rem 1.5rem; box-shadow:0 0 20px rgba(0,0,0,0.8); pointer-events:auto; display:inline-block; position:relative;">
-          <p id="tutorialText" style="color:#f0e8d8; font-size:clamp(0.9rem, 2vh, 1.3rem); margin-bottom:0.5rem; white-space:nowrap;"></p>
-            
-        </div>
-      </div>
+<div id="tutorialOverlay" style="display:none; position:absolute; z-index:100; text-align:center; pointer-events:none;">
+  <div style="background:rgba(20,16,10,0.95); border:2px solid #9b7a3c; border-radius:12px; padding:0.5rem 1.5rem; box-shadow:0 0 20px rgba(0,0,0,0.8); display:inline-block; position:relative;">
+    <p id="tutorialText" style="color:#f0e8d8; font-size:clamp(0.9rem, 2vh, 1.3rem); margin-bottom:0.5rem; white-space:nowrap;"></p>
+  </div>
+</div>
 
       <div class="info-panel">
         <span id="logMessage">Drag cards to play or click to attack!</span>
@@ -927,22 +926,6 @@ document.getElementById('gameInterface').classList.add('active');
 
 
     setupPointerEngine();
-        // Request fullscreen on first user touch (mobile only)
-    if (window.innerWidth < 1024) {
-        const goFullscreen = () => {
-            document.documentElement.requestFullscreen().then(() => {
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(() => {});
-                }
-            }).catch(() => {});
-            // Remove the listener after the first touch
-            document.removeEventListener('click', goFullscreen);
-            document.removeEventListener('touchstart', goFullscreen);
-        };
-        document.addEventListener('click', goFullscreen);
-        document.addEventListener('touchstart', goFullscreen, { passive: true });
-    }
-
     checkAffordableCards();
     
     // Start tutorial if first time, otherwise normal turn logic
@@ -956,7 +939,7 @@ document.getElementById('gameInterface').classList.add('active');
       document.getElementById('logMessage').textContent = 'Your turn! Follow the tutorial.';
       renderAll();
       startTimer();
-      startTutorial();
+      setTimeout(() => startTutorial(), 100);
     } else {
     // Force player to go first if tutorial not completed, else normal
     // Force player to go first if tutorial not completed, else normal turn logic
@@ -2519,11 +2502,11 @@ document.addEventListener('pointerdown', (e) => {
         document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
         return;
       }
-      if (selectedAttacker && selectedAttacker.isHandCard && !selectedAttacker.isSpell && selectedAttacker.handIdx === idx) {
-        clearSelection();
-        document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
-        return;
-      }
+if (selectedAttacker && selectedAttacker.isHandCard && !selectedAttacker.isSpell && selectedAttacker.handIdx === idx) {
+    clearSelection();
+    document.getElementById('logMessage').textContent = 'Click a card to play or attack!';
+    return;
+}
 
       clearSelection();
       const cardEl = handCard.querySelector('.card');
@@ -2720,11 +2703,13 @@ if (dragState.active) {
     
 
 
-  function clearSelection() {
+function clearSelection() {
     selectedAttacker = null;
     document.querySelectorAll('.card.selected-for-attack').forEach(c => c.classList.remove('selected-for-attack'));
     document.querySelectorAll('.targetable').forEach(s => s.classList.remove('targetable'));
-  }
+    // Also remove any drag state that might be stuck
+    document.querySelectorAll('.enemy-slot.drag-target, .player-slot.drag-target').forEach(s => s.classList.remove('drag-target'));
+}
 
   function highlightEnemyTargets() {
     document.querySelectorAll('.enemy-slot').forEach(slot => {
@@ -3422,41 +3407,71 @@ function renderAll() {
     document.getElementById(`playerMelee${i+1}`).innerHTML = renderCardHTML(state.playerMelee[i]);
 
     // Player ranged – index 2 is the God slot
-    if (i === 2) {
-      document.getElementById(`playerRanged${i+1}`).innerHTML = `
-        <div class="god-content">
-          <div id="playerGodSide" class="card god-card">
-            <strong>${state.godName}</strong>
-            <button class="ult" ${!state.ultAvailable ? 'disabled' : ''} onclick="triggerUltimate()">${state.ultAvailable ? 'Ult Ready' : 'Ult Used'}</button>
-          </div>
-          <div class="god-hp-display player-hp" id="playerGodHpDisplay">HP: ${Math.max(0, state.godHp)}</div>
+if (i === 2) {
+  const playerHpPercent = Math.max(0, state.godHp);
+  document.getElementById(`playerRanged${i+1}`).innerHTML = `
+    <div id="playerGodSide" class="card god-card" onclick="${state.ultAvailable ? 'triggerUltimate()' : ''}" style="cursor:${state.ultAvailable ? 'pointer' : 'default'}; box-shadow:${state.ultAvailable ? '0 0 15px 5px #ffb347' : '0 3px 0 #8c7033, 0 4px 8px rgba(0,0,0,0.3)'};">
+      <div class="card-image-area"></div>
+      <div class="card-info-bottom">
+        <div class="card-name-bottom">${state.godName}</div>
+        <div class="god-hp-bar-container">
+          <div class="god-hp-bar-fill player-hp-bar" id="playerGodHpBar" style="width:${playerHpPercent}%;"></div>
+          <span class="god-hp-text" id="playerGodHpDisplay">${playerHpPercent}</span>
         </div>
-      `;
-    } else {
+      </div>
+    </div>
+  `;
+}
+
+
+else {
       document.getElementById(`playerRanged${i+1}`).innerHTML = renderCardHTML(state.playerRanged[i]);
     }
 
     // Enemy melee – always a normal unit slot
     document.getElementById(`enemyMelee${i+1}`).innerHTML = renderCardHTML(state.enemyMelee[i]);
 
-    // Enemy ranged – index 2 is the God slot
-    if (i === 2) {
-      document.getElementById(`enemyRanged${i+1}`).innerHTML = `
-        <div class="god-content">
-          <div id="enemyGodSide" class="card god-card">
-            <strong>${state.enemyGodName}</strong>
-            <button class="ult" ${state.enemyUltAvailable ? '' : 'disabled'}>
-              ${state.enemyUltAvailable ? 'Ult Ready' : 'Ult Used'}
-            </button>
-          </div>
-          <div class="god-hp-display enemy-hp" id="enemyGodHpDisplay">HP: ${Math.max(0, state.enemyGodHp)}</div>
+if (i === 2) {
+  const enemyHpPercent = Math.max(0, state.enemyGodHp);
+  document.getElementById(`enemyRanged${i+1}`).innerHTML = `
+    <div id="enemyGodSide" class="card god-card" style="pointer-events:none; box-shadow:0 3px 0 #8c7033, 0 4px 8px rgba(0,0,0,0.3);">
+      <div class="card-image-area"></div>
+      <div class="card-info-bottom">
+        <div class="card-name-bottom">${state.enemyGodName}</div>
+        <div class="god-hp-bar-container">
+          <div class="god-hp-bar-fill enemy-hp-bar" id="enemyGodHpBar" style="width:${enemyHpPercent}%;"></div>
+          <span class="god-hp-text" id="enemyGodHpDisplay">${enemyHpPercent}</span>
         </div>
-      `;
-    } else {
+      </div>
+    </div>
+  `;
+}
+else {
       document.getElementById(`enemyRanged${i+1}`).innerHTML = renderCardHTML(state.enemyRanged[i]);
     }
   }
   // --- END OF LOOP ---
+
+    // --- END OF LOOP ---
+
+  // Update God HP bars
+  const playerHpBar = document.getElementById('playerGodHpBar');
+  const playerHpText = document.getElementById('playerGodHpDisplay');
+  if (playerHpBar && playerHpText) {
+    const hp = Math.max(0, state.godHp);
+    playerHpBar.style.width = hp + '%';
+    playerHpText.textContent = hp;
+  }
+
+  const enemyHpBar = document.getElementById('enemyGodHpBar');
+  const enemyHpText = document.getElementById('enemyGodHpDisplay');
+  if (enemyHpBar && enemyHpText) {
+    const hp = Math.max(0, state.enemyGodHp);
+    enemyHpBar.style.width = hp + '%';
+    enemyHpText.textContent = hp;
+  }
+
+  // … rest of renderAll stays EXACTLY the same (prov pillars, hand, attack dots, etc.) …
 
   // … rest of renderAll stays EXACTLY the same (prov pillars, hand, attack dots, etc.) …
 
