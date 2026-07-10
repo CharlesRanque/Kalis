@@ -74,13 +74,11 @@
   <div class="right-panel-middle">
     <div class="center-group">
       <div class="prov-group">
-        <div class="pillar-label">Enemy Food</div>
         <div class="pillar-provision-block enemy-val" id="pillarEnemyProv">🍗 1</div>
         <div class="timer-pill enemy-timer" id="enemyTimer">30s</div>
       </div>
       <button class="circular-end-turn" id="btnEndTurn">END TURN</button>
       <div class="prov-group">
-        <div class="pillar-label">Your Food</div>
         <div class="pillar-provision-block player-val" id="pillarPlayerProv">🍗 1</div>
         <div class="timer-pill" id="turnTimer">30s</div>
       </div>
@@ -193,8 +191,6 @@
     <div class="info-box">
       <div class="info-tabs">
         <button class="info-tab-btn" id="tabGodsBtn">✨ Gods</button>
-        <button class="info-tab-btn" id="tabCursesBtn">🧿 Curses</button>
-        <button class="info-tab-btn active" id="tabDiceBtn">🎲 Dice Effects</button>
         <button class="info-tab-btn" id="tabPassivesBtn">🛡️ Passives</button>
       </div>
       <div id="infoTabContent"></div>
@@ -749,9 +745,7 @@ function showEnemySmite() {
 // showEnemySmite();  // Call when enemy attacks
 
 
-
-  function showGodSelection(faction) {
-    
+function showGodSelection(faction) {
     pendingFaction = faction;
     const overlay = document.getElementById('godSelectOverlay');
     const container = document.getElementById('godChoicesContainer');
@@ -766,15 +760,26 @@ function showEnemySmite() {
       </div>
     `).join('');
     overlay.classList.add('active');
+    
     container.querySelectorAll('.god-choice-card').forEach(card => {
       card.addEventListener('click', () => {
         const godName = card.dataset.god;
         const godEffect = card.dataset.effect;
         overlay.classList.remove('active');
+
+        // Request fullscreen + landscape (real user gesture = allowed)
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().then(() => {
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(() => {});
+            }
+          }).catch(() => {});
+        }
+
         resetGame(pendingFaction, godName, godEffect);
       });
     });
-  }
+}
 
   function resetGame(chosenFaction, godName, godEffect) {
     if (state.timerInterval) clearInterval(state.timerInterval);
@@ -1434,7 +1439,7 @@ function showCardLegendStep() {
     overlay.style.display = 'block';
     // Allow line breaks for this message only
     textEl.style.whiteSpace = 'normal';
-    textEl.innerHTML = '♦️ = Attack<br>🟢 = Health<br>🟫 = Food<br>⚔️ = Attack indicator';
+    textEl.innerHTML = '♦️ = Attack<br>🟢 = Health<br>🟫 = Food';
 
 setTimeout(() => {
     overlay.style.display = 'none';
@@ -2342,21 +2347,6 @@ svgLayer.innerHTML = `
         svgLayer.style.display = 'none';
     document.getElementById('attackIndicator').style.display = 'none';
     document.getElementById('enemyAttackIndicator').style.display = 'none';
-
-    // Request fullscreen + landscape on first user touch (mobile only)
-    if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
-        const goFullscreen = () => {
-            document.documentElement.requestFullscreen().then(() => {
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(() => {});
-                }
-            }).catch(() => {});
-            document.removeEventListener('pointerdown', goFullscreen);
-            document.removeEventListener('touchstart', goFullscreen);
-        };
-        document.addEventListener('pointerdown', goFullscreen, { once: true });
-        document.addEventListener('touchstart', goFullscreen, { once: true });
-    }
 
 
     // Drag state
@@ -3655,24 +3645,12 @@ function endTurn() {
 function showInfoTab(tab) {
   const content = document.getElementById('infoTabContent');
   const godsBtn = document.getElementById('tabGodsBtn');
-  const diceBtn = document.getElementById('tabDiceBtn');
   const passBtn = document.getElementById('tabPassivesBtn');
-  godsBtn.classList.toggle('active', tab === 'gods');
-    const cursesBtn = document.getElementById('tabCursesBtn');
-  cursesBtn.classList.toggle('active', tab === 'curses');
-  diceBtn.classList.toggle('active', tab === 'dice');
-  passBtn.classList.toggle('active', tab === 'passives');
-  
-  
 
-  if (tab === 'dice') {
-    content.innerHTML = DICE_EVENTS.map(d => `
-      <div class="info-dice-item">
-        <span class="dice-emoji">${d.emoji}</span>
-        <div><strong>${d.name}</strong><br><span style="color:#8b949e;font-size:0.75rem;">${d.desc}</span></div>
-      </div>
-    `).join('');
-  } else if (tab === 'passives') {
+  godsBtn.classList.toggle('active', tab === 'gods');
+  passBtn.classList.toggle('active', tab === 'passives');
+
+  if (tab === 'passives') {
     const passivesList = Object.values(PASSIVES);
     content.innerHTML = passivesList.map(p => `
       <div class="info-passive-item ${p.type}">
@@ -3681,27 +3659,10 @@ function showInfoTab(tab) {
         <span style="margin-left:auto;font-size:0.65rem;color:#7a828e;">${p.type}</span>
       </div>
     `).join('');
-  } else if (tab === 'curses') {
-    // Show only the current Anito Curse (could later list all, but for now just the active one)
-    const curseId = state.wildModifier || 'none';
-    const curse = CURSE_DETAILS[curseId] || CURSE_DETAILS.none;
-    content.innerHTML = `
-      <div class="info-curses-section">
-        <div class="info-curse-item">
-          <span class="curse-icon">${curse.icon}</span>
-          <div>
-            <strong>${curse.name}</strong><br>
-            <span style="color:#8b949e;font-size:0.75rem;">${curse.desc}</span>
-          </div>
-        </div>
-      </div>
-    `;
+
   } else if (tab === 'gods') {
-    // Player God
     const playerGod = GODS[state.faction].find(g => g.effect === state.godEffect);
     const playerGodDesc = playerGod ? `${playerGod.power}: ${playerGod.desc}` : '';
-
-    // Enemy God
     const enemyGod = GODS[state.enemyFaction].find(g => g.effect === state.enemyGodEffect);
     const enemyGodDesc = enemyGod ? `${enemyGod.power}: ${enemyGod.desc}` : '';
 
@@ -3771,8 +3732,6 @@ document.getElementById('btnFullscreen').addEventListener('click', () => {
   });
   document.getElementById('infoOverlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
   document.getElementById('tabGodsBtn').addEventListener('click', () => showInfoTab('gods'));
-  document.getElementById('tabCursesBtn').addEventListener('click', () => showInfoTab('curses'));
-  document.getElementById('tabDiceBtn').addEventListener('click', () => showInfoTab('dice'));
   document.getElementById('tabPassivesBtn').addEventListener('click', () => showInfoTab('passives'));
   document.addEventListener('click', (e) => { if (!e.target.closest('.card') && !e.target.closest('button') && !e.target.closest('.overlay')) { spawnClickRipple(e.clientX, e.clientY); } });
   window.addEventListener('resize', () => {
