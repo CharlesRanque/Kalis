@@ -277,6 +277,7 @@
 </div>
 <script src="Herodeck.js"></script>
 <script src="Monsterdeck.js"></script>
+<script src="GodImages.js"></script>
 
 <script>
   window.onerror = function(msg, url, line, col, error) {
@@ -293,37 +294,15 @@
 
   const PASSIVES = {
     'Shield 1': { name: 'Shield 1', desc: 'Absorbs 1 hit', type: 'defensive', icon: '🛡️', cssClass: 'passive-shield' },
-    'Shield 2': { name: 'Shield 2', desc: 'Absorbs 2 hits', type: 'defensive', icon: '🛡️', cssClass: 'passive-shield' },
     'Thorns 1': { name: 'Thorns 1', desc: 'Deal 1 dmg back (even if killed)', type: 'defensive', icon: '🌵', cssClass: 'passive-thorns' },
-    'Thorns 2': { name: 'Thorns 2', desc: 'Deal 2 dmg back (even if killed)', type: 'defensive', icon: '🌵', cssClass: 'passive-thorns' },
     'Overheal': { name: 'Overheal', desc: 'Heal 1 HP per turn', type: 'defensive', icon: '💖', cssClass: 'passive-regen' },
     'Pierce': { name: 'Pierce', desc: 'Ignore enemy Shield', type: 'offensive', icon: '🗡️', cssClass: '' },
     'Lifesteal': { name: 'Lifesteal', desc: 'Heal 1 HP every time this unit attacks', type: 'offensive', icon: '🩸', cssClass: 'passive-overheal' },
     'Taunt': { name: 'Taunt', desc: 'Enemy must attack this first', type: 'utility', icon: '😝', cssClass: 'passive-taunt' },
   };
 
-  function assignPassive(card) {
-    if (card.passive || card.type === 'Spell') return;
-    const passivesList = Object.keys(PASSIVES);
-    const roll = Math.random();
-    if (roll < 0.6) {
-      const defensive = passivesList.filter(p => PASSIVES[p].type === 'defensive');
-      card.passive = defensive[Math.floor(Math.random() * defensive.length)];
-    } else if (roll < 0.85) {
-      const offensive = passivesList.filter(p => PASSIVES[p].type === 'offensive');
-      card.passive = offensive[Math.floor(Math.random() * offensive.length)];
-    } else {
-      card.passive = 'Taunt';
-    }
-  }
-/*
-  const DICE_EVENTS = [
-    { name: "Die Old Man", desc: 'Oldest unit on each side dies', emoji: '⌛' },
-    { name: 'Duel', desc: 'Random ENEMY ranged & melee fight', emoji: '💥' },
-    { name: 'Gods Bleed', desc: 'Both Gods take 2 damage', emoji: '🩸' },
-    { name: 'Resurrection', desc: 'Each player returns 1 card from graveyard (need 2+ each)', emoji: '⚰️' },
-    { name: 'Smite', desc: 'Random unit on each side takes 2 damage', emoji: '🗲' }
-  ];*/
+
+
 
   const GOD_CLASH_LINES = [
   "I have waited long enough. The heavens will settle this.",
@@ -681,13 +660,11 @@ function modifyAllUnits(state, modifierFn) {
     for (let i=0; i<13; i++) {
       let c = bronzeUnits[i % bronzeUnits.length];
       let card = { ...c, id: 'c_b_' + i + '_' + Math.random().toString(36).slice(2,6), playOrder: i };
-      assignPassive(card);
       deck.push(card);
     }
     for (let i=0; i<7; i++) {
       let c = goldUnits[i % goldUnits.length];
       let card = { ...c, id: 'c_g_' + i + '_' + Math.random().toString(36).slice(2,6), playOrder: 13+i };
-      assignPassive(card);
       deck.push(card);
     }
     for (let i=0; i<10; i++) {
@@ -767,14 +744,7 @@ function showGodSelection(faction) {
         const godEffect = card.dataset.effect;
         overlay.classList.remove('active');
 
-        // Request fullscreen + landscape (real user gesture = allowed)
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().then(() => {
-            if (screen.orientation && screen.orientation.lock) {
-              screen.orientation.lock('landscape').catch(() => {});
-            }
-          }).catch(() => {});
-        }
+
 
         resetGame(pendingFaction, godName, godEffect);
       });
@@ -911,11 +881,12 @@ for (let i = 0; i < 3; i++) {
   if (!hasAffordableUnit) {
     const replaceIndex = state.hand.findIndex(c => c.type !== 'Unit' || c.cost > state.provPool);
     const idx = replaceIndex !== -1 ? replaceIndex : 0;
-    state.hand[idx] = {
-      name: 'Rebolusyonaryo', type: 'Unit', cost: 1, row: 'melee',
-      atk: 1, hp: 2, maxHp: 2, id: 'militia_' + Math.random().toString(36).slice(2,6),
-      _isNewDraw: true, playOrder: playerPlayOrderCounter++
-    };
+state.hand[idx] = {
+  name: 'Rebolusyonaryo', type: 'Unit', cost: 1, row: 'melee',
+  atk: 1, hp: 2, maxHp: 2, passive: 'Thorns 1',
+  id: 'militia_' + Math.random().toString(36).slice(2,6),
+  _isNewDraw: true, playOrder: playerPlayOrderCounter++
+};
   }
 }
 
@@ -991,7 +962,6 @@ if (state.wildModifier === 'fortress') {
   card.hp += 2;
   card.maxHp += 2;
 }
-    if (!card.passive && card.type !== 'Spell') assignPassive(card);
     state.hand.push(card);
   }
 
@@ -1592,7 +1562,6 @@ function executeEnemyAITurn() {
       }
 
       if (card.cost + enemyProvUsed > enemyProvPool) break;
-      assignPassive(card);
       if (state.wildModifier === 'double_trouble' && card.cost > 1) { card.cost--; }
       cardsToPlay.push(card);
       enemyProvUsed += card.cost;
@@ -1940,6 +1909,12 @@ function triggerAutoOverlay(title) {
     setTimeout(function() { overlay.classList.remove('active'); }, 1000);
 }
 function triggerTurnOverlay(text) {
+  // Suppress turn overlay while ANY tutorial-related state is active
+  if (tutorialState.active || 
+      tutorialState.waitingForAttack || 
+      tutorialState.panelTourReady || 
+      tutorialState.enemyTurnBlocked) return;
+
   const overlay = document.getElementById('turnOverlay');
   if (!overlay) return;
   const textEl = document.getElementById('turnOverlayText');
@@ -1948,7 +1923,6 @@ function triggerTurnOverlay(text) {
   textEl.textContent = text;
   overlay.classList.add('visible');
 
-  // Hide after 2.5 seconds
   setTimeout(() => {
     overlay.classList.remove('visible');
   }, 2500);
@@ -2768,9 +2742,10 @@ function playCardFromHandToSlot(targetSlot, handSelection) {
     const tgtRow = targetSlot.dataset.row; const tgtIdx = parseInt(targetSlot.dataset.idx);
     let targetArr = (tgtRow === 'melee') ? state.playerMelee : state.playerRanged;
     if (targetArr[tgtIdx]) return;
+
     state.hand.splice(handIdx, 1);
-    if (!card.passive && card.type !== 'Spell') assignPassive(card);
     targetArr[tgtIdx] = { ...card, hasAttacked: false, playOrder: playerPlayOrderCounter++ };
+
     state.provUsed += card.cost;
     document.getElementById('logMessage').textContent = `Played ${card.name}${card.passive ? ' [' + card.passive + ']' : ''}`;
     const btnEndTurn = document.getElementById('btnEndTurn');
@@ -3432,9 +3407,8 @@ if (i === 2) {
          onclick="${state.ultAvailable ? 'triggerUltimate()' : ''}"
          style="cursor:${state.ultAvailable ? 'pointer' : 'default'};
                 box-shadow:${state.ultAvailable ? '0 0 15px 5px #ffb347' : '0 0 6px 2px #3a2a00'};
-                border-color:${state.ultAvailable ? '#ffd700' : '#5a4a20'};
                 background:${state.ultAvailable ? '' : 'radial-gradient(ellipse at 50% 0%, #c0a060 0%, #8b6914 40%, #3a2a00 100%)'};">
-      <div class="card-image-area"></div>
+<div class="card-image-area" style="background: url('${GOD_IMAGES[state.godName] || ''}') center/cover no-repeat;"></div>
       <div class="card-info-bottom">
         <div class="card-name-bottom">${state.godName}</div>
         <div class="god-hp-bar-container">
@@ -3457,8 +3431,10 @@ else {
 if (i === 2) {
   const enemyHpPercent = Math.max(0, state.enemyGodHp);
   document.getElementById(`enemyRanged${i+1}`).innerHTML = `
-    <div id="enemyGodSide" class="card god-card" style="pointer-events:none; box-shadow:0 3px 0 #8c7033, 0 4px 8px rgba(0,0,0,0.3);">
-      <div class="card-image-area"></div>
+    <div id="enemyGodSide" class="card god-card" style="pointer-events:none;
+      box-shadow:${state.enemyUltAvailable ? '0 0 15px 5px #ffb347' : '0 0 6px 2px #3a2a00'};
+      background:${state.enemyUltAvailable ? '' : 'radial-gradient(ellipse at 50% 0%, #c0a060 0%, #8b6914 40%, #3a2a00 100%)'};">
+<div class="card-image-area" style="background: url('${GOD_IMAGES[state.enemyGodName] || ''}') center/cover no-repeat;"></div>
       <div class="card-info-bottom">
         <div class="card-name-bottom">${state.enemyGodName}</div>
         <div class="god-hp-bar-container">
@@ -3468,6 +3444,7 @@ if (i === 2) {
       </div>
     </div>
   `;
+
 }
 else {
       document.getElementById(`enemyRanged${i+1}`).innerHTML = renderCardHTML(state.enemyRanged[i]);
@@ -3688,7 +3665,19 @@ function showInfoTab(tab) {
   document.getElementById('howToPlayOverlay').addEventListener('click', function(e) {
   if (e.target === this) this.classList.remove('active');
 });
-  document.getElementById('btnPVE').addEventListener('click', () => { document.getElementById('mainMenu').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; });
+ document.getElementById('btnPVE').addEventListener('click', () => {
+    // Request fullscreen + landscape immediately (real user gesture)
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().then(() => {
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {});
+            }
+        }).catch(() => {});
+    }
+    // Always show the faction menu, even if fullscreen fails
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('menuScreen').style.display = 'flex';
+});
   document.getElementById('btnChooseHeroes').addEventListener('click', () => { showGodSelection('heroes'); });
   document.getElementById('btnChooseMonsters').addEventListener('click', () => { showGodSelection('monsters'); });
   document.getElementById('btnMenu').addEventListener('click', exitToMenu);
