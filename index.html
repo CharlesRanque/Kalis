@@ -69,6 +69,7 @@
   <div class="right-panel-top">
   </div>
 
+
   <!-- MIDDLE: Enemy Prov, End Turn, Your Prov grouped together -->
   <div class="right-panel-middle">
     <div class="center-group">
@@ -87,12 +88,14 @@
   </div>
 
   <!-- BOTTOM: Info and Surrender buttons only -->
-  <div class="right-panel-bottom">
-    <button class="right-info-btn" id="btnInfoPanel" title="All Information about the game">Info</button>
-    <button class="hint-toggle-btn" id="btnToggleHints" title="Toggle tutorial hints">💡</button>
-    <button class="circular-surrender" id="btnSurrender">🏳️</button>
-  </div>
+<div class="right-panel-bottom">
+  <button class="right-info-btn" id="btnInfoPanel" title="All Information about the game">Info</button>
+  <button class="right-info-btn" id="btnFullscreen" title="Toggle fullscreen">⛶</button>
+  <button class="hint-toggle-btn" id="btnToggleHints" title="How to play">💡</button>
+  <button class="circular-surrender" id="btnSurrender">🏳️</button>
 </div>
+</div>
+
 <!-- GAME AREA (between panels) -->
 <div class="game-area">
 
@@ -317,14 +320,14 @@
       card.passive = 'Taunt';
     }
   }
-
+/*
   const DICE_EVENTS = [
     { name: "Die Old Man", desc: 'Oldest unit on each side dies', emoji: '⌛' },
     { name: 'Duel', desc: 'Random ENEMY ranged & melee fight', emoji: '💥' },
     { name: 'Gods Bleed', desc: 'Both Gods take 2 damage', emoji: '🩸' },
     { name: 'Resurrection', desc: 'Each player returns 1 card from graveyard (need 2+ each)', emoji: '⚰️' },
     { name: 'Smite', desc: 'Random unit on each side takes 2 damage', emoji: '🗲' }
-  ];
+  ];*/
 
   const GOD_CLASH_LINES = [
   "I have waited long enough. The heavens will settle this.",
@@ -1129,7 +1132,7 @@ applyRegen(state.enemyRanged, 'enemyRanged');
       startTimer();
       checkAffordableCards();
     }
-  }, 3200);
+  }, 0);
 }
 
 function showDraftScreen() {
@@ -1912,20 +1915,11 @@ function endRound() {
   
   state.attackToken = state.attackToken === 'player' ? 'enemy' : 'player';
   
-  if (turnCounter % 2 === 0 && !tutorialState.enemyTurnBlocked) {
-    triggerDiceRoll();
-    setTimeout(() => {
-      state.turn = 'player';
-      startNewRound();
-      // Attack overlay removed
-    }, 6000);
-  } else {
-    setTimeout(() => {
-      state.turn = 'player';
-      startNewRound();
-      // Attack overlay removed
-    }, 1500);
-  }
+  // Dice temporarily disabled – always start new round directly
+  setTimeout(() => {
+    state.turn = 'player';
+    startNewRound();
+  }, 1500);
 }
 
 // Replace endTurn
@@ -2202,7 +2196,7 @@ function checkAffordableCards() {
     overlay.classList.add('active');
   }
 
-  function triggerDiceRoll() {
+  /*function triggerDiceRoll() {
     if (state.diceActive) return;
     state.diceActive = true;
     state.currentPhase = 'dice';
@@ -2321,6 +2315,7 @@ function checkAffordableCards() {
       }, 1000); break;
     }
 }
+    */
 
   function setupPointerEngine() {
     const svgLayer = document.getElementById('arrowSvgLayer');
@@ -2344,6 +2339,25 @@ svgLayer.innerHTML = `
     svgLayer.style.display = 'none';
     document.getElementById('attackIndicator').style.display = 'none';
     document.getElementById('enemyAttackIndicator').style.display = 'none';
+        svgLayer.style.display = 'none';
+    document.getElementById('attackIndicator').style.display = 'none';
+    document.getElementById('enemyAttackIndicator').style.display = 'none';
+
+    // Request fullscreen + landscape on first user touch (mobile only)
+    if (window.innerWidth < 1024 && document.documentElement.requestFullscreen) {
+        const goFullscreen = () => {
+            document.documentElement.requestFullscreen().then(() => {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                }
+            }).catch(() => {});
+            document.removeEventListener('pointerdown', goFullscreen);
+            document.removeEventListener('touchstart', goFullscreen);
+        };
+        document.addEventListener('pointerdown', goFullscreen, { once: true });
+        document.addEventListener('touchstart', goFullscreen, { once: true });
+    }
+
 
     // Drag state
     let dragState = {
@@ -3107,60 +3121,74 @@ if (selectedAttacker && selectedAttacker.isHandCard) {
       if (!attacker || attacker.hasAttacked) return;
 
       const attackerSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
-      // Attack enemy god
-if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
-  if (hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
+   if (target.id === 'enemyGodHpDisplay' || target.closest('#enemyGodHpDisplay') || target.closest('#enemyGodSide')) {
+  // ❗ Always block god attack if enemy units are still alive
+  if (hasEnemyUnits()) {
+    document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!';
+    return;
+  }
   const effAtk = getEffectiveAtk(attacker);
-  state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake(); setTimeout(() => bleedGodCard('enemyGodSide'), 50);
+  state.enemyGodHp -= effAtk;
+  attacker.hasAttacked = true;
+  executeShake();
+  setTimeout(() => bleedGodCard('enemyGodSide'), 50);
   showFloatingDamage(target, effAtk, '#ff6b35');
   if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
 
-          // Show End Turn hint after the first attack
-        if (tutorialState.waitingForAttack) {
-            tutorialState.waitingForAttack = false;
-            document.getElementById('tutorialOverlay').style.display = 'none';
-            showEndTurnMessage();
-        }
+  // Show End Turn hint after the first attack (tutorial only)
+  if (tutorialState.waitingForAttack) {
+    tutorialState.waitingForAttack = false;
+    document.getElementById('tutorialOverlay').style.display = 'none';
+    showEndTurnMessage();
+  }
+
   document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
 
-  // Lifesteal: always heal against God (God has no Thorns)
+  // Lifesteal against god
   if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
-      attacker.maxHp += 1;
-      attacker.hp += 1;
-      const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
-      if (bSlot) flashCardHeal(bSlot);
+    attacker.maxHp += 1;
+    attacker.hp += 1;
+    const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
+    if (bSlot) flashCardHeal(bSlot);
   }
 
   clearSelection();
-  renderAll(); return;
+  renderAll();
+  return;
 }
-
       // Attack enemy slot
       if (target.classList.contains('enemy-slot')) {
         const tRow = target.dataset.row, tgtIdx = parseInt(target.dataset.idx);
         const enemyArr = tRow === 'melee' ? state.enemyMelee : state.enemyRanged;
         let enemyCard = enemyArr[tgtIdx];
-        if (!enemyCard && hasEnemyUnits()) { document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!'; return; }
-    if (!enemyCard && !hasEnemyUnits()) {
+
+if (!enemyCard) {
+  // No enemy unit in this slot – only allow god attack if no enemy units remain
+  if (hasEnemyUnits()) {
+    document.getElementById('logMessage').textContent = '⚠️ Clear enemy units first!';
+    return;
+  }
+  // Attack the god via empty slot
   const effAtk = getEffectiveAtk(attacker);
-  state.enemyGodHp -= effAtk; attacker.hasAttacked = true; executeShake(); setTimeout(() => bleedGodCard('enemyGodSide'), 10);
+  state.enemyGodHp -= effAtk;
+  attacker.hasAttacked = true;
+  executeShake();
+  setTimeout(() => bleedGodCard('enemyGodSide'), 10);
   showFloatingDamage(target, effAtk, '#ff6b35');
   if (attackerSlot) showAttackIndicator(attackerSlot, target, false);
   document.getElementById('logMessage').textContent = `⚔️ ${attacker.name} hit enemy God for ${effAtk}!`;
-          
-          // Overheal on god hit
-// Lifesteal: always gain +1 HP & +1 max HP, with green flash
-// Lifesteal: gain +1 HP & max HP with green flash
-if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
+
+  // Lifesteal…
+  if (attacker.passive && attacker.passive.startsWith('Lifesteal')) {
     attacker.maxHp += 1;
     attacker.hp += 1;
     const bSlot = document.getElementById(`player${src.row.charAt(0).toUpperCase() + src.row.slice(1)}${src.idx + 1}`);
     if (bSlot) flashCardHeal(bSlot);
+  }
+  clearSelection();
+  renderAll();
+  return;
 }
-          
-          clearSelection();
-          renderAll(); return;
-        }
 
         // Taunt check
         if (hasTauntOnBoard(state.enemyMelee, state.enemyRanged)) {
@@ -3410,7 +3438,12 @@ function renderAll() {
 if (i === 2) {
   const playerHpPercent = Math.max(0, state.godHp);
   document.getElementById(`playerRanged${i+1}`).innerHTML = `
-    <div id="playerGodSide" class="card god-card" onclick="${state.ultAvailable ? 'triggerUltimate()' : ''}" style="cursor:${state.ultAvailable ? 'pointer' : 'default'}; box-shadow:${state.ultAvailable ? '0 0 15px 5px #ffb347' : '0 3px 0 #8c7033, 0 4px 8px rgba(0,0,0,0.3)'};">
+    <div id="playerGodSide" class="card god-card"
+         onclick="${state.ultAvailable ? 'triggerUltimate()' : ''}"
+         style="cursor:${state.ultAvailable ? 'pointer' : 'default'};
+                box-shadow:${state.ultAvailable ? '0 0 15px 5px #ffb347' : '0 0 6px 2px #3a2a00'};
+                border-color:${state.ultAvailable ? '#ffd700' : '#5a4a20'};
+                background:${state.ultAvailable ? '' : 'radial-gradient(ellipse at 50% 0%, #c0a060 0%, #8b6914 40%, #3a2a00 100%)'};">
       <div class="card-image-area"></div>
       <div class="card-info-bottom">
         <div class="card-name-bottom">${state.godName}</div>
@@ -3611,7 +3644,7 @@ function endTurn() {
     <p><strong>3. Attack</strong> – Tap one of your cards on the field, then tap an enemy card (or the enemy God) to strike it. You can also <strong>drag</strong> from your card to the target.</p>
     <p><strong>4. Provisions (Food)</strong> – Each card costs food. Your current food is shown on the right panel. It increases every round.</p>
     <p><strong>5. End Turn</strong> – When you’re ready, press the <strong>END TURN</strong> button. The enemy will then take its turn.</p>
-<p><strong>6. Card symbols</strong> – <span style="color:#a50707;">◆</span> Attack, <span style="color:#42c431;">●</span> Health, <span style="color:#6b3a1f;">■</span> Food cost. A glowing <span style="color:#ff3d00;">⚔️</span> on a card means it can attack.</p>
+<p><strong>6. Card symbols</strong> – <span style="color:#a50707;">◆</span> Attack, <span style="color:#42c431;">●</span> Health, <span style="color:#6b3a1f;">■</span> Food cost.</p>
     <p><strong>7. Passives</strong> – Cards can have special abilities like Shield, Thorns, or Lifesteal. See the Info panel (📋) for a full list.</p>
     <p><strong>8. Deck & Graveyard</strong> – Located on the left panel. Tap them to see your remaining cards or those that have been destroyed.</p>
     <p><strong>9. God Powers</strong> – Each God has a powerful ultimate ability. Use it once per game from the God card on the battlefield.</p>
@@ -3719,6 +3752,18 @@ function showInfoTab(tab) {
         renderAll();                    // force a clean re-render when dismissed
         checkAffordableCards();
     }
+});
+
+document.getElementById('btnFullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }).catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
 });
   document.getElementById('btnInfoPanel').addEventListener('click', () => {
     document.getElementById('infoOverlay').classList.add('active');
